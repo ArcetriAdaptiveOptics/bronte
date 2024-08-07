@@ -1,2 +1,8 @@
 .project
 .pydevproject
+*.pyc
+bronte.egg-info/dependency_links.txt
+bronte.egg-info/PKG-INFO
+bronte.egg-info/requires.txt
+bronte.egg-info/SOURCES.txt
+bronte.egg-info/top_level.txt

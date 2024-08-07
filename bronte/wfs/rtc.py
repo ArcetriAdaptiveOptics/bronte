@@ -5,6 +5,7 @@ from arte.utils.rebin import rebin
 from arte.types.zernike_coefficients import ZernikeCoefficients
 import logging
 from arte.utils.decorator import logEnterAndExit
+from arte.utils.circular_buffer import NumpyCircularBuffer
 
 class ScaoRealTimeComputer:
 
@@ -18,12 +19,22 @@ class ScaoRealTimeComputer:
         self._logger = logging.getLogger("ScaoRealTimeComputer")
         self.reset_modal_offset()
         self.reset_wavefront_disturb()
+        self._initialize_telemetry_buffers()
 
         self.pupil_radius = 5.25e-3
         # geometric factor for 10.5mm pupil and lab setup at 240731
         self._slope_unit_2_rad = 6.23e-3
 
         self._subap_mask, self._zernike_mask = self._compute_masks()
+
+    def _initialize_telemetry_buffers(self):
+        how_many = 100
+        self._delta_modal_command_buffer = NumpyCircularBuffer(
+            how_many, (self._md.nModes,), float)
+
+    def _update_telemetry_buffers(self, zc):
+        self._delta_modal_command_buffer.store(zc.toNumpyArray())
+
 
     def _compute_masks(self):
         # TODO move the creation of mask in the slope_computer or in the subaperture set
@@ -91,4 +102,6 @@ class ScaoRealTimeComputer:
             ZernikeCoefficients.fromNumpyArray(zc_filtered))
         # apply on slm
         self._dm.set_shape(
-            self._slm_rasterizer.reshape_map2vector(slm_raster+self.wavefront_disturb))
+            self._slm_rasterizer.reshape_map2vector(slm_raster.toNumpyArray()+self.wavefront_disturb))
+        # update telemetry buffers
+        self._update_telemetry_buffers(zc)

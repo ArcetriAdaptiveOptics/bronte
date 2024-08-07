@@ -57,7 +57,7 @@ class SubapertureGridInitialiser():
         plt.title(
             f"Grid Shift: Y, X = [{grid_shiftYX[0]} , {grid_shiftYX[1]}]")
 
-    def shift_subaperture_grid_to_null_tilt(self):
+    def _shift_subaperture_grid_to_null_tilt(self):
         offset_x = 42
         offset_y = 42
 
@@ -153,6 +153,22 @@ class SubapertureGridInitialiser():
         plt.clf()
         plt.imshow(frame)
         plt.colorbar()
+
+    @staticmethod
+    def shift_subapertures_to_null_tilt(slope_computer):
+        offset_x = 42
+        offset_y = 42
+        pixel_per_sub = next(iter(slope_computer.subapertures.values())).size()
+
+        while offset_x != 0 or offset_y != 0:
+            offset_y = round(slope_computer.slopes()[
+                :, 1].mean()/2*pixel_per_sub)
+            offset_x = round(slope_computer.slopes()[
+                :, 0].mean()/2*pixel_per_sub)
+            slope_computer.subapertures.shiftSubap(
+                slope_computer.subapertures.keys(), [offset_y, offset_x])
+            slope_computer._reset_all_computed_attributes()
+
 
 
 def main(wf_ref, corner_xy=(0, 0), nsubaps=50, flux_threshold=57000):

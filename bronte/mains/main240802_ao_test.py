@@ -1,9 +1,9 @@
 import numpy as np
-from tesi_slm.calib.wfs import shwfs_tilt_calibration
 import matplotlib.pyplot as plt
 from arte.types.zernike_coefficients import ZernikeCoefficients
 import time
 import logging
+from bronte import subapertures_initializer
 
 
 def define_subap_set(shwfs, slm, corner_xy=(0, 0), nsubaps=50, flux_threshold=100000):
@@ -12,7 +12,7 @@ def define_subap_set(shwfs, slm, corner_xy=(0, 0), nsubaps=50, flux_threshold=10
     '''
     slm.set_shape(np.zeros(1152*1920))
     wf_ref = shwfs.getFutureFrames(1, 20).toNumpyArray()
-    sgi = shwfs_tilt_calibration.main(
+    sgi = subapertures_initializer.main(
         wf_ref, corner_xy=corner_xy, nsubaps=nsubaps, flux_threshold=flux_threshold)
     return sgi
 
@@ -77,14 +77,7 @@ class TestAoLoop:
     def reset_long_exposure(self):
         self._long_exp = 0
 
-    def display(self):
-        plt.figure(1)
-        plt.clf()
-        plt.imshow(self._short_exp[340:440, 730:830])
-        plt.colorbar()
-        plt.show(block=False)
-        plt.pause(0.2)
-
+    def display_sh_ima(self):
         sh_ima = self._factory.sh_camera.getFutureFrames(1, 1).toNumpyArray()
         plt.figure(2)
         plt.clf()
@@ -92,6 +85,16 @@ class TestAoLoop:
         plt.colorbar()
         plt.show(block=False)
         plt.pause(0.2)
+
+    def display(self):
+        plt.figure(1)
+        plt.clf()
+        plt.imshow(self._short_exp[290:390, 580:680])
+        plt.colorbar()
+        plt.show(block=False)
+        plt.pause(0.2)
+
+        self.display_sh_ima()
 
         plt.figure(3)
         self.show_slopes_x_maps()
