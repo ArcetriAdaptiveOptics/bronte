@@ -84,7 +84,7 @@ class ShSubaperture():
         # Convert input array/lists to ndarray
         # idxPixelList = np.asarray(idxPixelList).flatten('F')  # COLUMN MAJOR
         # if pixelWeight is not None:
-            # pixelWeight = np.asarray(pixelWeight).flatten('F')  # COLUMN MAJOR
+        # pixelWeight = np.asarray(pixelWeight).flatten('F')  # COLUMN MAJOR
 
         # Parameters validation
         if ID == None:
@@ -94,7 +94,7 @@ class ShSubaperture():
         if pixelWeight is not None:
             assert (self._size * self._size,) == pixelWeight.shape
 
-        self._idx_cpixel = idxPixelList  
+        self._idx_cpixel = idxPixelList
 
         if pixelWeight is None:
             self.setPixelWeight(np.ones(self._size * self._size))
@@ -117,7 +117,7 @@ class ShSubaperture():
            self.linearCoeff() != other.linearCoeff() or \
            self.normalizationCoeff() != other.normalizationCoeff():
             # or (self.pupilCoords() != other.pupilCoords()).any():
-                return False
+            return False
         return True
 
     def __ne__(self, other):
@@ -245,7 +245,7 @@ class ShSubaperture():
         Set the "gamma" linearization coefficient
         '''
         self._linearCoeff = lc
-    
+
     # def setPupilCoords(self, pupilCoord):
     #     self._pupilCoord = pupilCoord
 
@@ -279,14 +279,14 @@ class ShSubaperture():
 
     @staticmethod
     def createSubap(ID, detector_shape, subaperture_size, bl):
-            pxidx = np.arange(
-                detector_shape[1] * detector_shape[0]
-                ).reshape(detector_shape[1], detector_shape[0])
-            npixpersub = subaperture_size
-            mask = pxidx[bl[0]:bl[0] + npixpersub, bl[1]:bl[1] + npixpersub]
-            subap = ShSubaperture(ID, mask.flatten(), detector_shape,
-                                  subaperture_size)
-            return subap
+        pxidx = np.arange(
+            detector_shape[1] * detector_shape[0]
+        ).reshape(detector_shape[1], detector_shape[0])
+        npixpersub = subaperture_size
+        mask = pxidx[bl[0]:bl[0] + npixpersub, bl[1]:bl[1] + npixpersub]
+        subap = ShSubaperture(ID, mask.flatten(), detector_shape,
+                              subaperture_size)
+        return subap
 
 
 class ShSubapertureSet(dict):
@@ -311,6 +311,10 @@ class ShSubapertureSet(dict):
             for idx in subapID:
                 if idx in self:
                     del self[idx]
+
+    def update_fix_threshold(self, threshold):
+        for i in self.values():
+            i.setFixThreshold(threshold)
 
     def shiftSubap(self, subapID, deltaXY):
         '''
@@ -340,19 +344,19 @@ class ShSubapertureSet(dict):
         dy = deltaXY[0]
         ccdx = det_shape[1]
         ccdy = det_shape[0]
-        if(
-            (suba_size-1 <= pixelList[suba_size-1] % ccdx + dx <= ccdx-1) & 
-            (0 <= pixelList[0] / ccdy + dy <= ccdy -1 - suba_size)
-            ):
+        if (
+            (suba_size-1 <= pixelList[suba_size-1] % ccdx + dx <= ccdx-1) &
+            (0 <= pixelList[0] / ccdy + dy <= ccdy - 1 - suba_size)
+        ):
             pixelList += dx
             pixelList += ccdy * dy
             # if((7 <= pixelList[7] % 264 + deltaXY[1] <= 263) &
             #    (0 <= pixelList[0] / 264 + deltaXY[0] <= 263 - 8)):
             #     pixelList += deltaXY[1]
-            #     pixelList += 264 * deltaXY[0]        
+            #     pixelList += 264 * deltaXY[0]
         else:
             raise Exception('Subap %d shift %d,%d is not allowed' %
-                        (subapID, deltaXY[0], deltaXY[1]))
+                            (subapID, deltaXY[0], deltaXY[1]))
 
     # def getSubaperturesPerWFSID(self, wfsID):
     #     return [k for k, v in self.items() if v.wfsID() == wfsID]
@@ -394,13 +398,12 @@ class ShSubapertureSet(dict):
     #     bl = self[subset[id1]].centerInCCDCoordinates()
     #     return (tr + bl) / 2
 
-
     def save(self, filename, header, overwrite=False):
 
         ID = np.squeeze(np.dstack([x.ID() for x in self.values()]))
         # WfsID = np.squeeze(np.dstack([x.wfsID() for x in self.values()]))
         det_shape = np.squeeze(np.dstack([(x.ccdy, x.ccdx)
-                                           for x in self.values()]))
+                                          for x in self.values()]))
         suba_size = np.squeeze(np.dstack([x.size() for x in self.values()]))
         px = np.squeeze(np.dstack([x.pixelList() for x in self.values()]))
         we = np.squeeze(np.dstack([x.pixelWeight() for x in self.values()]))
@@ -409,7 +412,7 @@ class ShSubapertureSet(dict):
         powC = np.squeeze(np.dstack([x.powerCoeff() for x in self.values()]))
         linC = np.squeeze(np.dstack([x.linearCoeff() for x in self.values()]))
         # pupC = np.squeeze(np.dstack([x.pupilCoords() for x in self.values()]))
-        normC = np.squeeze(np.dstack([x.normalizationCoeff() \
+        normC = np.squeeze(np.dstack([x.normalizationCoeff()
                                      for x in self.values()]))
 
         if os.path.isfile(filename):
@@ -462,17 +465,17 @@ class ShSubapertureSet(dict):
         nsubap = px.shape[1]
         for i in range(nsubap):
             s = ShSubaperture(ID[i],
-                           # WfsID[i],
-                           px[:, i],
-                           det_shape[i],
-                           suba_size[i],
-                           we[:, i],
-                           fixT[i],
-                           maxG[i],
-                           powC[i],
-                           linC[i],
-                           # pupC[:, i],
-                           normC[i])
+                              # WfsID[i],
+                              px[:, i],
+                              det_shape[:, i],
+                              suba_size[i],
+                              we[:, i],
+                              fixT[i],
+                              maxG[i],
+                              powC[i],
+                              linC[i],
+                              # pupC[:, i],
+                              normC[i])
             subapSet.addSubap(s)
         return subapSet
 
@@ -520,9 +523,9 @@ class ShSubapertureSet(dict):
         def createSingleSubap(ID, detector_shape, subaperture_size, bl):
             pxidx = np.arange(
                 detector_shape[1] * detector_shape[0]
-                ).reshape(detector_shape[1], detector_shape[0])
+            ).reshape(detector_shape[1], detector_shape[0])
             npixpersub = int(subaperture_size)
-            mask = pxidx[int(bl[0]): int(bl[0] + npixpersub), 
+            mask = pxidx[int(bl[0]): int(bl[0] + npixpersub),
                          int(bl[1]): int(bl[1] + npixpersub)]
             subap = ShSubaperture(ID, mask.flatten(), detector_shape,
                                   npixpersub)
@@ -535,28 +538,4 @@ class ShSubapertureSet(dict):
                                   detector_shape,
                                   subaperture_size,
                                   bl_list[i]))
-        # sset.addSubap(createSingleSubap(0, detector_shape, subaperture_size,
-        #                                 [10, 10]))
-        # sset.addSubap(createSingleSubap(1, detector_shape, subaperture_size,
-        #                                 [10, 18]))
-        # sset.addSubap(createSingleSubap(10, detector_shape, subaperture_size,
-        #                                 [20, 10]))
-        # sset.addSubap(createSingleSubap(11, detector_shape, subaperture_size,
-        #                                 [20, 18]))
-        # sset.addSubap(createSingleSubap(20, detector_shape, subaperture_size,
-        #                                 [30, 10]))
-        # sset.addSubap(createSingleSubap(21, detector_shape, subaperture_size,
-        #                                 [30, 18]))
-        # sset.addSubap(createSingleSubap(100, detector_shape, subaperture_size,
-        #                                 [10, 210]))
-        # sset.addSubap(createSingleSubap(101, detector_shape, subaperture_size,
-        #                                 [10, 218]))
-        # sset.addSubap(createSingleSubap(110, detector_shape, subaperture_size,
-        #                                 [20, 210]))
-        # sset.addSubap(createSingleSubap(111, detector_shape, subaperture_size,
-        #                                 [20, 218]))
-        # sset.addSubap(createSingleSubap(120, detector_shape, subaperture_size,
-        #                                 [30, 210]))
-        # sset.addSubap(createSingleSubap(121, detector_shape, subaperture_size,
-        #                                 [30, 218]))
         return sset
