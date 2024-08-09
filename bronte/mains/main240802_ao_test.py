@@ -89,7 +89,7 @@ class TestAoLoop:
     def display(self):
         plt.figure(1)
         plt.clf()
-        plt.imshow(self._short_exp[290:390, 580:680])
+        plt.imshow(self._short_exp)#[290:390, 580:680])
         plt.colorbar()
         plt.show(block=False)
         plt.pause(0.2)
@@ -120,7 +120,7 @@ class TestAoLoop:
         plt.clf()
         zc = ZernikeCoefficients.fromNumpyArray(
             self._factory.pure_integrator_controller.command())
-        plt.plot(zc.zernikeIndexes(), zc.toNumpyArray(), '.-')
+        plt.plot(zc.modeIndexes(), zc.toNumpyArray(), '.-')
         plt.grid(True)
         plt.ylabel('integrated modal coefficient')
         plt.xlim(2, 20)
@@ -130,7 +130,7 @@ class TestAoLoop:
         plt.figure(8)
         plt.clf()
         zc = self._factory.rtc._compute_zernike_coefficients()
-        plt.plot(zc.zernikeIndexes(), zc.toNumpyArray(), '.-')
+        plt.plot(zc.modeIndexes(), zc.toNumpyArray(), '.-')
         plt.grid(True)
         plt.ylabel('delta modal coefficient')
         plt.xlim(2, 20)
