@@ -3,7 +3,7 @@ from bronte.gui.camera_gui_factory import CameraGuiFactory
 
 class MasterGuiFactory():
     
-    #timers in seconds
+    #timer in seconds
     WFS_TIMER = 1
     CAM_TIMER = 1
     SLM_TIMER = 1
@@ -16,7 +16,7 @@ class MasterGuiFactory():
         self._cam_gui = self._cam_gui_factory.getGui()
         self._wfs_gui = self._wfs_gui_factory.getGui()
         
-        #self._cam_gui = Gui([['info about psf camera and display']])
+        
         self._slm_gui = Gui([['info about slm and display']])
         
         self._master_gui = Gui(

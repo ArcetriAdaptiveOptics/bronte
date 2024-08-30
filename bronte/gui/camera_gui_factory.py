@@ -1,5 +1,5 @@
 from pysilico import camera
-from guietta import Gui, PG, ___, III, _, M, Ax, G
+from guietta import Gui, PGI, ___, III, _, M, Ax, G
 #import pyqtgraph as pg
 
 
@@ -23,7 +23,7 @@ class CameraGuiFactory():
         self._camera_gui = Gui(
              
             [   'Server'       ,'Host Name:'   , '__hostname__' , 'Port:'    , '__port__' , ['Connect'] , ___     ,    ___     ],
-            [M('display')      ,     ___       ,  ___         ,  ___        ,  ___       ,  ___        , ___     ,     ___    ],
+            [PGI('display')      ,     ___       ,  ___         ,  ___        ,  ___       ,  ___        , ___     ,     ___     ],
             ['X coord:'        ,     'x'       , 'Y coord:'     ,     'y'    , 'I [ADU]:' ,     'I'     ,    _    ,     _      ], 
             [G('Controls')     ,     _         ,  _             ,     _      ,      _     , _           , _       ,     _      ],
             )
@@ -39,7 +39,7 @@ class CameraGuiFactory():
         self._camera_gui.Controls = self._camera_control_gui
         
         self._camera_gui.events(
-            [_, _, _,_,_,self._create_device  ,_, _],
+            [_, _, _,_,_,self._create_device      ,_, _],
             [_, _, _,_,_,_                        ,_, _],
             [_, _, _,_,_,_                        ,_, _],
             [_, _, _,_,_,_                        ,_, _],
@@ -64,11 +64,13 @@ class CameraGuiFactory():
         self._camera_control_gui.actual_texp = self._camera.exposureTime(timeoutInSec = 0.5)
         self._camera_control_gui.actual_fps = float('%.2f' % self._camera.getFrameRate(timeoutInSec = 0.5))
         
-        im = self._camera.getFutureFrames(1,1).toNumpyArray()
-        with Ax(self._camera_gui.display) as ax:
-            #ax.set_title('SHWFS Frame')
-            imm = ax.imshow(im)
-            ax.figure.colorbar(imm)
+        self._camera_gui.display = self._camera.getFutureFrames(1,1).toNumpyArray()
+        
+        # im = self._camera.getFutureFrames(1,1).toNumpyArray()
+        # with Ax(self._camera_gui.display) as ax:
+        #     #ax.set_title('SHWFS Frame')
+        #     imm = ax.imshow(im)
+        #     ax.figure.colorbar(imm)
             
     def getGui(self):
         return self._camera_gui
