@@ -3,21 +3,17 @@ import numpy as np
 class PsfComputer():
     
     def __init__(self,
+                pupil_sampling = 9.2e-6,
                 wl = 635e-9,
                 pixel_scale = (4.65e-6/250e-3)*(180*60*60/np.pi),
                 camera_frame_shape_in_pixel = (1024, 1360)):
         
         self._wl = wl
-        self._pupil_pixel_pitch = 9.2e-6 # Dpe/(2*571)
+        self._pupil_pixel_pitch = pupil_sampling
         self._pixel_scale = pixel_scale
         self._camera_frame_shape = camera_frame_shape_in_pixel
         self._diffracion_limited_psf = None
-        #for lab application 
-        #self._focal_length = 250e-3
-        #self._camera_pixel_pitch = 4.65e-6
-        
-    
-    
+ 
     def compute_psf_from_phase(self, phase, Npad = 4):
         '''
         phase is a 2D masked array where the mask mimics the pupil
@@ -90,14 +86,22 @@ class PsfComputer():
             ]
         
         normalization_value = self._diffracion_limited_psf.max()
+        max_coords = np.where(self._diffracion_limited_psf == normalization_value)
+        y0, x0= max_coords[0][0],max_coords[1][0]
+        #computing a row SR
+        SR = self._psf[y0,x0]/normalization_value
+        
         import matplotlib.pyplot as plt
+        
         plt.figure()
         plt.clf()
         plt.imshow(np.log10(self._psf/normalization_value), cmap = 'jet', extent=padded_frame_extent_in_arcsec)
+        #plt.imshow(self._psf/normalization_value, cmap = 'jet', extent=padded_frame_extent_in_arcsec)
         plt.xlabel('FOV [arcsec]')
         plt.ylabel('FOV [arcsec]')
+        plt.title("SR = %.2f " %SR)
         cbar = plt.colorbar()
-        cbar.ax.set_ylabel('Normalized PSF')
+        cbar.ax.set_ylabel('log10(Normalized PSF)')
         plt.xlim(-0.5*self._camera_frame_shape[1]*self._pixel_scale, 0.5*self._camera_frame_shape[1]*self._pixel_scale)
         plt.ylim(-0.5*self._camera_frame_shape[0]*self._pixel_scale, 0.5*self._camera_frame_shape[0]*self._pixel_scale)
     
