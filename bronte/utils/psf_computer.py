@@ -63,13 +63,12 @@ class PsfComputer():
         #computing psfs
         self._psf = np.abs(np.fft.fftshift(np.fft.fft2(padded_Ut))/(self._wl))**2
         
-       
-
     def get_psf(self):
         
         return self._psf    
         
     def display_normalized_psf(self):
+        
         #in rad 
         dy = np.abs(self._y[-1] - self._y[-2])
         dx = np.abs(self._x[-1] - self._x[-2])
