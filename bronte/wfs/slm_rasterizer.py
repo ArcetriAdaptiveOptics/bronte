@@ -10,7 +10,7 @@ from arte.types.zernike_coefficients import ZernikeCoefficients
 class SlmRasterizer:
     
     #SLM PUPIL MASK PARAMETERS IN PIXEL
-    PUPIL_CENTER = (581, 875)
+    PUPIL_CENTER = (581, 875)#YX
     PUPIL_RADIUS = 571
     FRAME_SHAPE = (1152, 1920)
     
