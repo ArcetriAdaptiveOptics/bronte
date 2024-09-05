@@ -6,7 +6,7 @@ class SlmResposeTime():
     
     #zernike coefficients to direct the beam on the photodiodes
     ZERNIKE_COEFF_TO_PD1 = np.array([0,0,0])
-    ZERNIKE_COEFF_TO_PD2 = np.array([-8.378854e-05, -7.196884e-06])
+    ZERNIKE_COEFF_TO_PD2 = np.array([-8.40512e-05, -1.05064e-05])
     
     def __init__(self):
 
@@ -44,14 +44,14 @@ class SlmResposeTime():
         
         self._slm.set_shape(cmd1)
     
-    def get_tiptilt_coeff_from_desplacement(self, dx = -15.95e-3, dy = -1.37e-3, f=250e-3, D=571*9.2e-6):
+    def get_tiptilt_coeff_from_desplacement(self, dx = -8e-3, dy = -1e-3, f=250e-3, D=2*571*9.2e-6):
         
         c2 = dx * D /(4*f)
         c3 = dy * D /(4*f)
         
         return np.array([c2,c3])
     
-    def apply_tiptilt_from_desplacement(self, dx=-15.95e-3, dy=-1.37e-3, f=250e-3, D=571*9.2e-6):
+    def apply_tiptilt_from_desplacement(self, dx=-8e-3, dy=-1e-3, f=250e-3, D=2*571*9.2e-6):
         
         tt_coeff = self.get_tiptilt_coeff_from_desplacement(dx, dy, f, D)
         ztt_coeff = self._sr.get_zernike_coefficients_from_numpy_array(tt_coeff)
@@ -59,5 +59,24 @@ class SlmResposeTime():
         tt_cmd = self._sr.reshape_map2vector(tt)
         self._slm.set_shape(tt_cmd)
     
+    @staticmethod
+    def get_data_from_DAQamiCSVfile(csv_file_name):
         
+        Nrows_to_skip = 7
+        import csv
+        with open(csv_file_name, newline='') as f:
+            reader = csv.reader(f)
+            time_in_sec = []
+            pd1_voltage_in_volt = []
+            pd2_voltage_in_volt = []
+            idx=0
+            
+            for row in reader:
+                #print(idx)
+                if idx>=Nrows_to_skip:
+                    time_in_sec.append(float(row[1]))
+                    pd1_voltage_in_volt.append(float(row[2]))
+                    pd2_voltage_in_volt.append(float(row[3]))
+                idx+=1
+        return np.array(time_in_sec), np.array(pd1_voltage_in_volt), np.array(pd2_voltage_in_volt)
         
