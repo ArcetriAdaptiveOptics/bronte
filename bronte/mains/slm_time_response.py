@@ -8,7 +8,7 @@ class SlmResposeTime():
     
     #zernike coefficients to direct the beam on the photodiodes
     ZERNIKE_COEFF_TO_PD1 = np.array([0,0,0])
-    ZERNIKE_COEFF_TO_PD2 = np.array([-8.40512e-05, -1.05064e-05])
+    ZERNIKE_COEFF_TO_PD2 = np.array([-1.05064e-04,  5.25320e-06])
     
     def __init__(self):
         self._set_up_basic_logging()
@@ -18,7 +18,6 @@ class SlmResposeTime():
     
     def _set_up_basic_logging(self):
         import importlib
-        #import logging
         importlib.reload(logging)
         FORMAT = '%(asctime)s:%(levelname)s:%(name)s  %(message)s'
         logging.basicConfig(level=logging.DEBUG, format=FORMAT)
@@ -32,7 +31,7 @@ class SlmResposeTime():
         cmd1 = self._sr.reshape_map2vector(wf)
         return cmd1
     
-    def get_command_to_go_on_photodiode2(self, coeff2 = None, addpiston = False):
+    def get_command_to_go_on_photodiode2(self, coeff2 = None):
         if coeff2 is None:
             coeff2 = self.ZERNIKE_COEFF_TO_PD2
         zernike_coeff = self._sr.get_zernike_coefficients_from_numpy_array(coeff2)
@@ -48,52 +47,52 @@ class SlmResposeTime():
             cmd1 = self.get_command_to_go_on_photodiode1()
         if cmd2 is None:
             cmd2 = self.get_command_to_go_on_photodiode2()
-        t=0
-        
-        while(t <=times):
+   
+        for t in np.arange(times):
             self._slm.set_shape(cmd1)
             self._slm.set_shape(cmd2)
-            t+=1
+            
         
         #self._slm.set_shape(cmd1)
-    @logEnterAndExit("UGLY sequential cmds focus on PDs",
-                     "Sequential cmds ended on PD2", level='debug')
-    def ugly_run_10times(self, cmd1, cmd2):
-        if cmd1 is None:
-            cmd1 = self.get_command_to_go_on_photodiode1()
-        if cmd2 is None:
-            cmd2 = self.get_command_to_go_on_photodiode2()
-        
-        self._slm.set_shape(cmd1)
-        self._slm.set_shape(cmd2)
-        self._slm.set_shape(cmd1)
-        self._slm.set_shape(cmd2)
-        self._slm.set_shape(cmd1)
-        self._slm.set_shape(cmd2)
-        self._slm.set_shape(cmd1)
-        self._slm.set_shape(cmd2)
-        self._slm.set_shape(cmd1)
-        self._slm.set_shape(cmd2)
-        self._slm.set_shape(cmd1)
-        self._slm.set_shape(cmd2)
-        self._slm.set_shape(cmd1)
-        self._slm.set_shape(cmd2)
-        self._slm.set_shape(cmd1)
-        self._slm.set_shape(cmd2)
-        self._slm.set_shape(cmd1)
-        self._slm.set_shape(cmd2)
-        self._slm.set_shape(cmd1)
-        self._slm.set_shape(cmd2)
-        
+    # @logEnterAndExit("UGLY sequential cmds focus on PDs",
+    #                  "Sequential cmds ended on PD2", level='debug')
+    # def ugly_run_10times(self, cmd1=None, cmd2=None):
+    #     if cmd1 is None:
+    #         cmd1 = self.get_command_to_go_on_photodiode1()
+    #     if cmd2 is None:
+    #         cmd2 = self.get_command_to_go_on_photodiode2()
+    #
+    #     self._slm.set_shape(cmd1)
+    #     self._slm.set_shape(cmd2)
+    #     self._slm.set_shape(cmd1)
+    #     self._slm.set_shape(cmd2)
+    #     self._slm.set_shape(cmd1)
+    #     self._slm.set_shape(cmd2)
+    #     self._slm.set_shape(cmd1)
+    #     self._slm.set_shape(cmd2)
+    #     self._slm.set_shape(cmd1)
+    #     self._slm.set_shape(cmd2)
+    #     self._slm.set_shape(cmd1)
+    #     self._slm.set_shape(cmd2)
+    #     self._slm.set_shape(cmd1)
+    #     self._slm.set_shape(cmd2)
+    #     self._slm.set_shape(cmd1)
+    #     self._slm.set_shape(cmd2)
+    #     self._slm.set_shape(cmd1)
+    #     self._slm.set_shape(cmd2)
+    #     self._slm.set_shape(cmd1)
+    #     self._slm.set_shape(cmd2)
+    #
+
     
-    def get_tiptilt_coeff_from_desplacement(self, dx = -8e-3, dy = -1e-3, f=250e-3, D=2*571*9.2e-6):
+    def get_tiptilt_coeff_from_desplacement(self, dx = -10e-3, dy = 0.5e-3, f=250e-3, D=2*571*9.2e-6):
         
         c2 = dx * D /(4*f)
         c3 = dy * D /(4*f)
         
         return np.array([c2,c3])
     
-    def apply_tiptilt_from_desplacement(self, dx=-8e-3, dy=-1e-3, f=250e-3, D=2*571*9.2e-6):
+    def apply_tiptilt_from_desplacement(self, dx=-10e-3, dy=0.5e-3, f=250e-3, D=2*571*9.2e-6):
         
         tt_coeff = self.get_tiptilt_coeff_from_desplacement(dx, dy, f, D)
         ztt_coeff = self._sr.get_zernike_coefficients_from_numpy_array(tt_coeff)
@@ -114,7 +113,7 @@ class SlmResposeTime():
             idx=0
             
             for row in reader:
-                #print(idx)
+                
                 if idx>=Nrows_to_skip:
                     time_in_sec.append(float(row[1]))
                     pd1_voltage_in_volt.append(float(row[2]))
