@@ -101,9 +101,9 @@ class SlmResposeTime():
         self._slm.set_shape(tt_cmd)
     
     @staticmethod
-    def get_data_from_DAQamiCSVfile(csv_file_name):
+    def get_data_from_DAQamiCSVfile(csv_file_name, Nrows_to_skip = 7):
         
-        Nrows_to_skip = 7
+        #Nrows_to_skip = 7
         import csv
         with open(csv_file_name, newline='') as f:
             reader = csv.reader(f)
@@ -126,11 +126,22 @@ class ResponseTimeAnalyzer():
     
     WINDOW_SIZE = 8
     
-    def __init__(self, csv_file_name):
+    def __init__(self, csv_file_name, csv_bkg_file_name = None):
+        
+        self._bkg1 = 0 
+        self._bkg2 = 0
+        
+        if csv_bkg_file_name is not None:
+            
+            self._bkg_fname = csv_bkg_file_name
+            self._compute_pd_bkgs(self._bkg_fname)
         
         self._fname = csv_file_name
-        self._t, self._v1, self._v2 = SlmResposeTime().get_data_from_DAQamiCSVfile(csv_file_name)
-        self.compute_simple_moving_avarage()
+        self._t, v1, v2 = SlmResposeTime().get_data_from_DAQamiCSVfile(csv_file_name)
+        self._v1 = v1 - self._bkg1
+        self._v2 = v2 - self._bkg2
+        
+        self.compute_simple_moving_avarage()  
         
     def display_data(self):
         import matplotlib.pyplot as plt
@@ -154,7 +165,12 @@ class ResponseTimeAnalyzer():
         plt.grid('--',alpha=0.3)
         plt.xlabel('Index')
         plt.ylabel('Voltage [V]')
+    
+    def _compute_pd_bkgs(self, fname):
         
+        t, bkg1, bkg2 = SlmResposeTime().get_data_from_DAQamiCSVfile(fname)
+        self._bkg1 = np.median(bkg1)
+        self._bkg2 = np.median(bkg2)
         
     def compute_simple_moving_avarage(self, window_size = None):
         
@@ -182,8 +198,8 @@ class ResponseTimeAnalyzer():
         import matplotlib.pyplot as plt
         plt.figure()
         plt.clf()
-        plt.plot(self._t, self._v1, label = 'raw PD1')
-        plt.plot(self._t, self._v2, label = 'raw PD2')
+       #plt.plot(self._t, self._v1, label = 'raw PD1')
+       #plt.plot(self._t, self._v2, label = 'raw PD2')
         plt.plot(self._t, self._v1_sma, 'b-', label='SMA PD1')
         plt.plot(self._t, self._v2_sma, 'r-', label='SMA PD2')
         plt.legend(loc = 'best')
