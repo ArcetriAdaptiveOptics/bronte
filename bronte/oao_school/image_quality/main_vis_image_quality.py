@@ -80,14 +80,70 @@ def main_seeing_estimation():
     
     return seeing
     
-    def main_ao_image_quality_estimation():
-        sl_image, ao_image = main_vis_data_reduction.main()
-        plt.close('all')
+def main_ao_image_resolution_estimation():
     
-        fig, axs = plt.subplots(1, 2, sharex=True, sharey=True)
+    sl_image, ao_image = main_vis_data_reduction.main()
+    plt.close('all')
+
+    fig, axs = plt.subplots(1, 2, sharex=True, sharey=True)
+
+    axs[0].imshow(np.log10(sl_image))
+    axs[0].title.set_text('Seeing Limited')
+    axs[1].imshow(np.log10(ao_image))
+    axs[1].title.set_text('AO compensated')
+    fig.tight_layout()
     
-        axs[0].imshow(np.log10(sl_image))
-        axs[0].title.set_text('Seeing Limited')
-        axs[1].imshow(np.log10(ao_image))
-        axs[1].title.set_text('AO compensated')
-        fig.tight_layout()
+    # AO resolution/FWHM estimation
+
+    #1st approach as in seeing estimation
+
+    #roi selection
+    
+    star_roi = ao_image[110:200, 100:210]
+    
+    profile_column_sum  = star_roi.sum(axis=0)
+    profile_row_sum = star_roi.sum(axis=1)
+    
+    fig, axs = plt.subplots(1, 2)
+    fig.suptitle('Seeing-limited Star Profile')
+    axs[0].plot(profile_column_sum,'.-')
+    axs[0].title.set_text("sum along columns")
+    axs[1].plot(profile_row_sum, '.-')
+    axs[1].title.set_text("sum along rows")
+    fig.tight_layout()
+    
+    profile = profile_column_sum
+    x  = np.arange(0, len(profile))
+    x_aroud_max = x[62:65]
+    y_aroud_max = profile[62:65]
+    
+    z = np.polyfit(x_aroud_max, y_aroud_max, 2)
+    x_max = -0.5*z[1]/z[0]
+    y = np.poly1d(z)
+    half_max = y(x_max) * 0.5
+    
+    axs[0].hlines(half_max, 0 , len(profile), ls = '--', colors = 'red', label='Half Max')
+    x_fit = np.linspace(61, 65.5, 19)
+    y_fit = y(x_fit)
+    axs[0].plot(x_fit, y_fit,'m-', label='fit')
+    axs[0].legend(loc='best')
+    
+    z[2]-=half_max
+    x1, x2 = np.roots(z)
+    fwhm_in_pixel = np.abs(x1-x2)
+    
+    Dtel = 1.52
+    #orca 
+    wl = 630e-9
+    dl_fwhm_in_rad = 1.028*wl/Dtel
+    dl_fwhm_in_pixels = 1.028*(12.12e-6/1.22)/6.5e-6
+    
+    pixel_scale_in_arcsec = (dl_fwhm_in_rad*(180/np.pi)*60*60)/dl_fwhm_in_pixels 
+    
+    ao_resolution = fwhm_in_pixel * pixel_scale_in_arcsec
+    
+    #however in this way you may underestimate (or overestimate, it 
+    #depends on the selected point used for fitting) the fwhm
+    #do better with a gaussian fit
+    
+    return ao_resolution

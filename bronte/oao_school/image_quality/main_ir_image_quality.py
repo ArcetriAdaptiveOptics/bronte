@@ -79,7 +79,7 @@ def main_seeing_estimation():
     return seeing
 
 
-def main_ao_image_quality_estimation():
+def main_ao_image_resolution_estimation():
     
     sl_image, ao_image = main_ir_data_reduction.main()
     plt.close('all')
@@ -94,7 +94,7 @@ def main_ao_image_quality_estimation():
     
     # AO resolution/FWHM estimation
     
-    #1st approach ad in seeing estimation
+    #1st approach as in seeing estimation
     
     #roi selection
     
