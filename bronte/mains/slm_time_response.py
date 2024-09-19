@@ -8,7 +8,7 @@ class SlmResposeTime():
     
     #zernike coefficients to direct the beam on the photodiodes
     ZERNIKE_COEFF_TO_PD1 = np.array([0,0,0])
-    ZERNIKE_COEFF_TO_PD2 = np.array([-1.05064e-04,  5.25320e-06])
+    ZERNIKE_COEFF_TO_PD2 = np.array([-9.45576e-05,  0.0])#np.array([-1.05064e-04,  5.25320e-06])
     
     def __init__(self):
         self._set_up_basic_logging()
