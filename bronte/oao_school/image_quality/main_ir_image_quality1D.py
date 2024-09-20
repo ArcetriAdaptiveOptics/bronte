@@ -121,11 +121,11 @@ def main_ao_image_resolution_estimation():
     y = np.poly1d(z)
     half_max = y(x_max) * 0.5
     
-    axs[1].hlines(half_max, 0 , len(profile), ls = '--', colors = 'red', label='Half Max')
+    axs[1].hlines(half_max, 0 , len(profile), ls = '--', colors = 'm', label='Half Max polyfit')
     x_fit = np.linspace(27.5, 30.5, 19)
     y_fit = y(x_fit)
-    axs[1].plot(x_fit, y_fit,'m-', label='fit')
-    axs[1].legend(loc='best')
+    axs[1].plot(x_fit, y_fit,'m-', label='polyfit')
+    
     
     z[2]-=half_max
     x1, x2 = np.roots(z)
@@ -145,5 +145,59 @@ def main_ao_image_resolution_estimation():
     #however in this way you may underestimate (or overestimate, it 
     #depends on the selected point used for fitting) the fwhm
     #do better with a gaussian fit
-  
-    return ao_resolution
+    
+    from astropy.modeling import models, fitting
+    #from astropy.stats.funcs import gaussian_fwhm_to_sigma
+    
+    xdata2fit = x[27:32]
+    ydata2fit = profile[27:32]
+    
+    amp = half_max * 2
+    x0 = x_max
+    gauss_std = fwhm_in_pixel/(2*np.sqrt(2*np.log(2)))
+    
+    model_gauss = models.Gaussian1D(amp, x0, gauss_std)
+    fitter_gauss = fitting.LevMarLSQFitter()
+    best_fit_gauss = fitter_gauss(
+        model_gauss, xdata2fit, ydata2fit
+    )
+    
+    xfit = np.linspace(27 , 31, 80)
+    yfit = models.Gaussian1D(*best_fit_gauss.parameters)
+    
+    axs[1].plot(xfit, yfit(xfit), 'c-', label='Gaussian fit')
+    axs[1].hlines(best_fit_gauss.parameters[0]*0.5, 0 , len(profile), ls = '--', colors = 'b', label='Half Max gauss')
+    #axs[1].legend(loc='best')
+    
+    best_fit_std = best_fit_gauss.parameters[-1]
+    
+    fwhm_in_pixel_gauss = 2 * best_fit_std * np.sqrt(2*np.log(2))
+    ao_res_gauss = fwhm_in_pixel_gauss * pixel_scale_in_arcsec
+    
+    #lorentz1d
+    model_lorentz = models.Lorentz1D(amp, x0, fwhm_in_pixel)
+    fitter_lorentz = fitting.LevMarLSQFitter()
+    best_fit_lorentz = fitter_lorentz(
+        model_lorentz, x[20:40], profile[20:40])
+    
+    yfit = models.Lorentz1D(*best_fit_lorentz.parameters)
+    xfit = np.linspace(20,40,80)
+    
+    axs[1].plot(xfit, yfit(xfit), 'g-', label='Lorentz fit')
+    axs[1].hlines(best_fit_lorentz.parameters[0]*0.5, 0 , len(profile), ls = '--', colors = 'g', label='Half Max Lorentz')
+    # axs[1].legend(loc='best')
+    ao_res_lor = best_fit_lorentz.parameters[-1]*pixel_scale_in_arcsec
+    
+    #moffat1d
+    model_moffat = models.Moffat1D(amp, x0, fwhm_in_pixel, 1)
+    fitter_moffat = fitting.LevMarLSQFitter()
+    best_fit_moffat = fitter_moffat(
+        model_moffat, x[20:40], profile[20:40])
+    
+    yfit = models.Moffat1D(*best_fit_moffat.parameters)
+    axs[1].plot(xfit, yfit(xfit), 'r-', label='Moffat fit')
+    axs[1].hlines(best_fit_moffat.parameters[0]*0.5, 0 , len(profile), ls = '--', colors = 'r', label='Half Max moffat')
+    axs[1].legend(loc='best')
+    ao_res_moffat = 2 * best_fit_moffat.parameters[2] * pixel_scale_in_arcsec
+        
+    return ao_resolution, ao_res_gauss, ao_res_lor, ao_res_moffat

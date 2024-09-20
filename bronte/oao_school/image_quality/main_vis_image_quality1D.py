@@ -125,7 +125,7 @@ def main_ao_image_resolution_estimation():
     axs[0].hlines(half_max, 0 , len(profile), ls = '--', colors = 'red', label='Half Max')
     x_fit = np.linspace(61, 65.5, 19)
     y_fit = y(x_fit)
-    axs[0].plot(x_fit, y_fit,'m-', label='fit')
+    axs[0].plot(x_fit, y_fit,'m-', label='polyfit')
     axs[0].legend(loc='best')
     
     z[2]-=half_max
