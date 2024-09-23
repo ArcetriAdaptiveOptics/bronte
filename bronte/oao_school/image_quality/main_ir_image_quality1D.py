@@ -68,7 +68,7 @@ def main_seeing_estimation():
     
     Dtel = 1.52 
     #cred3
-    wl = 1310e-9
+    wl = 1.65e-6#1310e-9
     dl_fwhm_in_rad = 1.028*wl/Dtel
     dl_fwhm_in_pixels = 3.6
     
@@ -133,7 +133,7 @@ def main_ao_image_resolution_estimation():
     
     Dtel = 1.52 
     #cred3
-    wl = 1310e-9
+    wl = 1.65e-6#1310e-9
     dl_fwhm_in_rad = 1.028*wl/Dtel
     dl_fwhm_in_pixels = 3.6
     

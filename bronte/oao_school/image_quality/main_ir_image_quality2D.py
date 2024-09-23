@@ -17,9 +17,9 @@ def main_ao_image_resolution_estimation():
     
     Dtel = 1.52 
     #cred3
-    wl = 1310e-9
+    wl = 1.65e-6#1310e-9
     dl_fwhm_in_rad = 1.028*wl/Dtel
-    dl_fwhm_in_pixels = 3.6
+    dl_fwhm_in_pixels = 3.6 # or from fov
     pixel_scale_in_arcsec = (dl_fwhm_in_rad*(180/np.pi)*60*60)/dl_fwhm_in_pixels 
     
     
@@ -64,9 +64,63 @@ def main_ao_image_resolution_estimation():
     #SR estimation assuming a gaussaian model
     
     Ntot = star_roi.sum()
-    sigma_dl = dl_fwhm_in_pixels/(2*np.sqrt(2*np.log(2)))
-    amp_dl = Ntot/(2*np.pi*sigma_dl**2)
     
-    sr_gaussian = best_fit_gauss.parameters[0]/amp_dl
     
-    return ao_res_gauss2d, ao_res_moffat2d, best_fit_moffat, best_fit_gauss
+    
+    alpha = np.pi/(28*wl)*15e-6
+    amp_dl  = 3 *alpha* Ntot / 32
+    sr = best_fit_gauss.parameters[0]/amp_dl
+    
+    #computing SR from fft of pupil
+    
+    from arte.types.mask import CircularMask
+    
+    Npix = 200
+    pupil = np.zeros((Npix,Npix))
+    pupil_radius_in_pix = 76
+    obs_radius_in_pix = int(np.round(0.33*pupil_radius_in_pix))
+    
+    cmask = CircularMask(
+        frameShape=pupil.shape,
+        maskRadius=pupil_radius_in_pix,
+        maskCenter=(99,99))
+    
+    pupil_mask = cmask.mask()
+    
+    obs_cmask = CircularMask(
+        frameShape=pupil.shape,
+        maskRadius=obs_radius_in_pix,
+        maskCenter=(99,99))
+    obs_mask = obs_cmask.mask()
+    
+    pupil_mask[obs_mask == False] = True
+    
+    phase = np.ma.array(pupil, mask = pupil_mask)
+    
+    #computing transmitted electric field
+    Ui = 1
+    transmission_amplitude = 1
+    transmission = transmission_amplitude * np.exp(1j * phase)
+    Ut = transmission * Ui
+    
+    Ut.fill_value = 0
+    Ut.data[Ut.mask == True] = 0
+    
+    #padding transmitted electric field
+    Npad = 5
+    padded_frame_size = np.max(phase.shape) * Npad
+    padded_Ut = np.zeros((padded_frame_size, padded_frame_size), dtype=complex)
+    padded_Ut[0 : Ut.shape[0], 0 : Ut.shape[1]] = Ut   
+    
+    #computing angular frequencies
+    dxi = 0.5*Dtel/pupil_radius_in_pix
+    deta = dxi 
+    
+    #in rad
+    x = np.fft.fftshift(np.fft.fftfreq(padded_Ut.shape[1], dxi)) * wl 
+    y = np.fft.fftshift(np.fft.fftfreq(padded_Ut.shape[0], deta)) * wl
+    
+    #computing psf
+    psf = np.abs(np.fft.fftshift(np.fft.fft2(padded_Ut))/(wl))**2
+    
+    return sr, pupil, psf, x, y
