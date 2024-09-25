@@ -7,13 +7,13 @@ def main_ao_image_resolution_estimation():
     sl_image, ao_image = main_ir_data_reduction.main()
     plt.close('all')
     
-    fig, axs = plt.subplots(1, 2, sharex=True, sharey=True)
-    
-    axs[0].imshow(np.log10(sl_image))
-    axs[0].title.set_text('Seeing Limited')
-    axs[1].imshow(np.log10(ao_image))
-    axs[1].title.set_text('AO compensated')
-    fig.tight_layout()
+    # fig, axs = plt.subplots(1, 2, sharex=True, sharey=True)
+    #
+    # axs[0].imshow(np.log10(sl_image))
+    # axs[0].title.set_text('Seeing Limited')
+    # axs[1].imshow(np.log10(ao_image))
+    # axs[1].title.set_text('AO compensated')
+    # fig.tight_layout()
     
     Dtel = 1.52 
     #cred3
@@ -27,7 +27,7 @@ def main_ao_image_resolution_estimation():
     
     #roi selection
     
-    star_roi = ao_image[240:296, 335:392]
+    star_roi = ao_image[240:296, 335:391]
     
     from astropy.modeling import models, fitting
     
@@ -78,19 +78,20 @@ def main_ao_image_resolution_estimation():
     Npix = 200
     pupil = np.zeros((Npix,Npix))
     pupil_radius_in_pix = 76
+    pupil_center = (99,99)
     obs_radius_in_pix = int(np.round(0.33*pupil_radius_in_pix))
     
     cmask = CircularMask(
         frameShape=pupil.shape,
         maskRadius=pupil_radius_in_pix,
-        maskCenter=(99,99))
+        maskCenter=pupil_center)
     
     pupil_mask = cmask.mask()
     
     obs_cmask = CircularMask(
         frameShape=pupil.shape,
         maskRadius=obs_radius_in_pix,
-        maskCenter=(99,99))
+        maskCenter=pupil_center)
     obs_mask = obs_cmask.mask()
     
     pupil_mask[obs_mask == False] = True
@@ -108,7 +109,7 @@ def main_ao_image_resolution_estimation():
     
     #padding transmitted electric field
     Npad = 5
-    padded_frame_size = np.max(phase.shape) * Npad
+    padded_frame_size = int(np.round(np.max(phase.shape) * Npad))
     padded_Ut = np.zeros((padded_frame_size, padded_frame_size), dtype=complex)
     padded_Ut[0 : Ut.shape[0], 0 : Ut.shape[1]] = Ut   
     
@@ -120,7 +121,52 @@ def main_ao_image_resolution_estimation():
     x = np.fft.fftshift(np.fft.fftfreq(padded_Ut.shape[1], dxi)) * wl 
     y = np.fft.fftshift(np.fft.fftfreq(padded_Ut.shape[0], deta)) * wl
     
+
     #computing psf
-    psf = np.abs(np.fft.fftshift(np.fft.fft2(padded_Ut))/(wl))**2
+    dl_psf = np.abs(np.fft.fftshift(np.fft.fft2(padded_Ut)))**2
     
-    return sr, pupil, psf, x, y
+    total_dl_flux = dl_psf.sum()
+    total_meas_flux = star_roi.sum()
+    
+    dl_psf_norm = dl_psf * total_meas_flux/total_dl_flux
+    
+    from scipy.ndimage import zoom
+    
+    pix_scale_dl_in_rad = x[-1]-x[-2]
+    pix_scale_meas_in_rad = (wl/Dtel)/3.6
+    
+    scale_factor = pix_scale_meas_in_rad/pix_scale_dl_in_rad
+    measured_shape = star_roi.shape
+    
+    dl_shape = dl_psf_norm.shape
+    
+    zoom_factors = (measured_shape[0] / dl_shape[0] *scale_factor,
+                    measured_shape[1] / dl_shape[1] *scale_factor)
+    dl_psf_rebinned = zoom(dl_psf_norm, zoom_factors)
+    
+
+
+    #assert dl_psf_rebinned.shape == star_roi.shape, "Rebinning failed, shapes do not match"
+    
+    # def rebin(arr, new_shape):
+    #     """
+    #     Rebin the array `arr` into a new shape `new_shape`.
+    #     This function works by averaging blocks of pixels.
+    #     """
+    #     # Compute the shape of the input array
+    #     old_shape = arr.shape
+    #
+    #     if old_shape[0] % new_shape[0] != 0 or old_shape[1] % new_shape[1] != 0:
+    #         raise ValueError("Cannot rebin: dimensions are not compatible.")
+    #     # Calculate the shape of the re-binned array
+    #     sh = (old_shape[0] // new_shape[0], new_shape[0],
+    #           old_shape[1] // new_shape[1], new_shape[1])
+    #     # Use reshaping and averaging
+    #     return arr.reshape(sh).mean(axis=(1, 3))
+    #
+    # # Rebin the normalized DL PSF to match star_roi shape
+    # dl_psf_rebinned = rebin(dl_psf_norm, star_roi.shape)
+
+
+    sr = best_fit_gauss.parameters[0]/dl_psf_rebinned.max()
+    return sr, phase, dl_psf_norm, x, dl_psf_rebinned, star_roi
