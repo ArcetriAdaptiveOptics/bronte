@@ -18,8 +18,8 @@ def main_ao_image_resolution_estimation():
     Dtel = 1.52 
     #cred3
     wl = 1.65e-6#1310e-9
-    dl_fwhm_in_rad = 1.028*wl/Dtel
-    dl_fwhm_in_pixels = 3.6 # or from fov
+    dl_fwhm_in_rad = wl/Dtel
+    dl_fwhm_in_pixels = 2.5 # or from fov
     pixel_scale_in_arcsec = (dl_fwhm_in_rad*(180/np.pi)*60*60)/dl_fwhm_in_pixels 
     
     
@@ -36,7 +36,7 @@ def main_ao_image_resolution_estimation():
     amp = star_roi.max()
     x0 = np.where(star_roi == star_roi.max())[1][0]
     y0 = np.where(star_roi == star_roi.max())[0][0]
-    sigma_x = 3.6/(2*np.sqrt(2*np.log(2)))
+    sigma_x =  dl_fwhm_in_pixels/(2*np.sqrt(2*np.log(2)))
     sigma_y = sigma_x
     
     model_gauss = models.Gaussian2D(amp, x0, y0, sigma_x, sigma_y)
@@ -67,9 +67,9 @@ def main_ao_image_resolution_estimation():
     
     
     
-    alpha = np.pi/(28*wl)*15e-6
-    amp_dl  = 3 *alpha* Ntot / 32
-    sr = best_fit_gauss.parameters[0]/amp_dl
+    # alpha = np.pi/(28*wl)*15e-6
+    # amp_dl  = 3 *alpha* Ntot / 32
+    # sr = best_fit_gauss.parameters[0]/amp_dl
     
     #computing SR from fft of pupil
     
@@ -77,21 +77,21 @@ def main_ao_image_resolution_estimation():
     
     Npix = 200
     pupil = np.zeros((Npix,Npix))
-    pupil_radius_in_pix = 76
-    pupil_center = (99,99)
+    pupil_radius_in_pix = 100
+    #pupil_center = (99,99)
     obs_radius_in_pix = int(np.round(0.33*pupil_radius_in_pix))
     
     cmask = CircularMask(
         frameShape=pupil.shape,
-        maskRadius=pupil_radius_in_pix,
-        maskCenter=pupil_center)
+        maskRadius=pupil_radius_in_pix
+        )
     
     pupil_mask = cmask.mask()
     
     obs_cmask = CircularMask(
         frameShape=pupil.shape,
-        maskRadius=obs_radius_in_pix,
-        maskCenter=pupil_center)
+        maskRadius=obs_radius_in_pix
+        )
     obs_mask = obs_cmask.mask()
     
     pupil_mask[obs_mask == False] = True
@@ -108,7 +108,7 @@ def main_ao_image_resolution_estimation():
     Ut.data[Ut.mask == True] = 0
     
     #padding transmitted electric field
-    Npad = 5
+    Npad = 2.5
     padded_frame_size = int(np.round(np.max(phase.shape) * Npad))
     padded_Ut = np.zeros((padded_frame_size, padded_frame_size), dtype=complex)
     padded_Ut[0 : Ut.shape[0], 0 : Ut.shape[1]] = Ut   
@@ -132,8 +132,8 @@ def main_ao_image_resolution_estimation():
     
     from scipy.ndimage import zoom
     
-    pix_scale_dl_in_rad = x[-1]-x[-2]
-    pix_scale_meas_in_rad = (wl/Dtel)/3.6
+    pix_scale_dl_in_rad = (wl/Dtel)/Npad
+    pix_scale_meas_in_rad = (wl/Dtel)
     
     scale_factor = pix_scale_meas_in_rad/pix_scale_dl_in_rad
     measured_shape = star_roi.shape
@@ -144,29 +144,6 @@ def main_ao_image_resolution_estimation():
                     measured_shape[1] / dl_shape[1] *scale_factor)
     dl_psf_rebinned = zoom(dl_psf_norm, zoom_factors)
     
-
-
-    #assert dl_psf_rebinned.shape == star_roi.shape, "Rebinning failed, shapes do not match"
-    
-    # def rebin(arr, new_shape):
-    #     """
-    #     Rebin the array `arr` into a new shape `new_shape`.
-    #     This function works by averaging blocks of pixels.
-    #     """
-    #     # Compute the shape of the input array
-    #     old_shape = arr.shape
-    #
-    #     if old_shape[0] % new_shape[0] != 0 or old_shape[1] % new_shape[1] != 0:
-    #         raise ValueError("Cannot rebin: dimensions are not compatible.")
-    #     # Calculate the shape of the re-binned array
-    #     sh = (old_shape[0] // new_shape[0], new_shape[0],
-    #           old_shape[1] // new_shape[1], new_shape[1])
-    #     # Use reshaping and averaging
-    #     return arr.reshape(sh).mean(axis=(1, 3))
-    #
-    # # Rebin the normalized DL PSF to match star_roi shape
-    # dl_psf_rebinned = rebin(dl_psf_norm, star_roi.shape)
-
 
     sr = best_fit_gauss.parameters[0]/dl_psf_rebinned.max()
     return sr, phase, dl_psf_norm, x, dl_psf_rebinned, star_roi

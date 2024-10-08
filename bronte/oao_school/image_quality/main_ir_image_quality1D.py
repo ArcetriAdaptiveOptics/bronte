@@ -69,8 +69,8 @@ def main_seeing_estimation():
     Dtel = 1.52 
     #cred3
     wl = 1.65e-6#1310e-9
-    dl_fwhm_in_rad = 1.028*wl/Dtel
-    dl_fwhm_in_pixels = 3.6
+    dl_fwhm_in_rad = wl/Dtel
+    dl_fwhm_in_pixels = 2.5
     
     pixel_scale_in_arcsec = (dl_fwhm_in_rad*(180/np.pi)*60*60)/dl_fwhm_in_pixels 
     
@@ -134,8 +134,8 @@ def main_ao_image_resolution_estimation():
     Dtel = 1.52 
     #cred3
     wl = 1.65e-6#1310e-9
-    dl_fwhm_in_rad = 1.028*wl/Dtel
-    dl_fwhm_in_pixels = 3.6
+    dl_fwhm_in_rad = wl/Dtel
+    dl_fwhm_in_pixels = 2.5
     
     pixel_scale_in_arcsec = (dl_fwhm_in_rad*(180/np.pi)*60*60)/dl_fwhm_in_pixels 
     
