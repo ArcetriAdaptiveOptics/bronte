@@ -39,12 +39,16 @@ class TestAoLoop:
 
 
     def loop(self, how_many=10):
+        # if self._display_in_loop:
+        #     fig, axs = plt.subplots(2, 4, layout = "constrained")
+            
         for i in range(how_many):
             self._logger.info("loop %d/%d" % (i+1, how_many))
             self.step()
             self.integrate_long_exposure()
             if self._display_in_loop:
                 self.display()
+                #self.display2(fig, axs)
         self.display()
 
     def step(self):
@@ -86,24 +90,31 @@ class TestAoLoop:
         plt.show(block=False)
         plt.pause(0.2)
     
-    def display2(self):
+    def display2(self, fig , axs):
         
         sc = self._factory.slope_computer
         zc = ZernikeCoefficients.fromNumpyArray(
             self._factory.pure_integrator_controller.command())
         
-        fig, axs = plt.subplots(2, 4, layout = "constrained")
+        #fig, axs = plt.subplots(2, 4, layout = "constrained")
+       
         ax = axs.flat
         
         im0 = ax[0].imshow(self._short_exp)
         fig.colorbar(im0, ax=ax[0], label='[adu]')
+        plt.show(block=False)
+        plt.pause(0.2)
         
         im1 = ax[1].imshow(sc.slopes_x_map())
         fig.colorbar(im1, ax=ax[1])
+        plt.show(block=False)
+        plt.pause(0.2)
         
         im2 = ax[2].imshow(self._factory.slm_rasterizer.reshape_vector2map(
             self._factory.deformable_mirror.get_shape()))
         fig.colorbar(im2, ax=ax[2],label='[m]')
+        plt.show(block=False)
+        plt.pause(0.2)
         
         zc = ZernikeCoefficients.fromNumpyArray(
             self._factory.pure_integrator_controller.command())
@@ -112,23 +123,33 @@ class TestAoLoop:
         ax[3].grid(True)
         ax[3].set_ylabel('integrated modal coefficient')
         ax[3].set_xlim(2, 20)
- 
+        plt.show(block=False)
+        plt.pause(0.2)
+        
         im4 = ax[4].imshow(
             self._factory.slope_computer.subapertures_map()*1000 + self._factory.rtc._sc.frame()
             )
         fig.colorbar(im4, ax=ax[4], label='[adu]')
+        plt.show(block=False)
+        plt.pause(0.2)
         
         im5 = ax[5].imshow(sc.slopes_y_map())
         fig.colorbar(im5, ax=ax[5])
+        plt.show(block=False)
+        plt.pause(0.2)
         
         ax[6].plot(self._factory.slope_computer.slopes()[:, 0])
         ax[6].plot(self._factory.slope_computer.slopes()[:, 1])
+        plt.show(block=False)
+        plt.pause(0.2)
         
         zc = self._factory.rtc._compute_zernike_coefficients()
         ax[7].plot(zc.modeIndexes(), zc.toNumpyArray(), '.-')
         ax[7].grid(True)
         ax[7].set_ylabel('delta modal coefficient')
         ax[7].set_xlim(2, 20)
+        plt.show(block=False)
+        plt.pause(0.2)
     
     def display(self):
         

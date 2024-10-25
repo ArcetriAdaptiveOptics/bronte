@@ -105,7 +105,7 @@ class SlmRasterizer:
     def get_slm_raster_from_wf(self, wf, c2_m_rms = 30e-6):
         '''
         it sets a tilt where is masked
-        c2_m_rms over cmask, then is extended to the fool screen with the same slope
+        c2_m_rms over cmask, then is extended to the full screen with the same slope
         '''
         c2 = c2_m_rms * 0.5 * self.FRAME_SHAPE[1]/self.PUPIL_RADIUS
         tilt_profile = np.linspace(-2*c2, 2*c2, self.FRAME_SHAPE[1])
