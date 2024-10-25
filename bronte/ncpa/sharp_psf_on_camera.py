@@ -131,7 +131,7 @@ class SharpPsfOnCamera():
     def _get_sr(self, image):
         return self._sr_computer.get_SR_from_image(image, enable_display=False)
         
-    
+    # TODO: estimate the best coeff from interpolation 
     def _get_best_amplitude(self, sr_vector):
         #TODO: compute the best coeff to apply with the Cubic spline interpolation
         idx_best_coef = np.where(sr_vector == sr_vector.max())[0][0]

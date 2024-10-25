@@ -24,7 +24,7 @@ def demo():
     size = 60
     spoc.define_roi(yc, xc, size)
     
-    # get dark ... turn off thelaser
+    # get dark ... turn off the laser
     spoc.acquire_master_dark()
     
     

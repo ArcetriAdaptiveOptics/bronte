@@ -1,5 +1,6 @@
 import numpy as np 
 from arte.types.mask import CircularMask
+from bronte.wfs.slm_rasterizer.SlmRasterizer import PUPIL_RADIUS
 
 class StrehlRatioComputer():
     
@@ -7,7 +8,7 @@ class StrehlRatioComputer():
     
     def __init__(self):
         
-        self._pupil_diameter = 2*571*9.2e-6
+        self._pupil_diameter = 2*PUPIL_RADIUS*9.2e-6
         self._wl = 633e-9
         self._telescope_focal_length = 250e-3
         self._ccd_pixel_size = 4.65e-6
@@ -50,6 +51,7 @@ class StrehlRatioComputer():
         self._dl_psf_scale_in_arcsec = self._wl / self._pupil_diameter / Npad * self.RAD2ARCSEC
         self._total_dl_flux = self._dl_psf.sum()
     
+    #TODO: estimate better the max of the dl psf and add FWHM estimations
     def get_SR_from_image(self, image, enable_display = False):
         
         hsize = int(np.round(image.shape()[0]*0.5))
@@ -58,7 +60,7 @@ class StrehlRatioComputer():
         center=(normalized_dl_psf.shape[0]) // 2
         normalized_dl_psf_roi = normalized_dl_psf[center-hsize:center+hsize,
                                                   center-hsize:center+hsize]
-        
+        #TODO: estimate dl_max = from airy disk fit 
         sr = image.max()/normalized_dl_psf_roi.max()
         
         if enable_display is True:
