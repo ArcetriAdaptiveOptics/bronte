@@ -11,7 +11,7 @@ class SharpPsfOnCamera():
     RESCALING_INDEX2START_FROM_Z2 = 2 # so that arr[0] corresponds to Z2
     SLM_RESPONSE_TIME_SEC = 0.005
     
-    def __init__(self, noll_index_list2correct=[4,5,6,7,8,9,10,11]):
+    def __init__(self, noll_index_list2correct=[4,5,7,11]):
         
         self._factory = startup()
         self._slm = self._factory.deformable_mirror
@@ -112,9 +112,9 @@ class SharpPsfOnCamera():
                 roi_master = master_image[self._yc_roi-hsize:self._yc_roi+hsize,
                                           self._xc_roi-hsize:self._xc_roi+hsize]
                 
-                measured_sr[idx_n, idx_m]  = self.get_SR(roi_master)
+                measured_sr[idx_n, idx_m]  = self._get_sr(roi_master)
                 
-            best_amplitude = self.get_best_amplitude(measured_sr[idx_n, :])
+            best_amplitude = self._get_best_amplitude(measured_sr[idx_n, :])
             
             zc2apply.toNumpyArray()[idx_n] = best_amplitude
         
@@ -124,12 +124,15 @@ class SharpPsfOnCamera():
         print(self._ncpa_zc)
         # command = self._sr.reshape_map2vector(ncpa_wfz.toNumpyArray())
         # self._slm.set_shape(command)
-        
-    def get_SR(self, image):
+    
+    def get_ncpa(self):
+        return self._ncpa_zc
+    
+    def _get_sr(self, image):
         return self._sr_computer.get_SR_from_image(image, enable_display=False)
         
     
-    def get_best_amplitude(self, sr_vector):
+    def _get_best_amplitude(self, sr_vector):
         #TODO: compute the best coeff to apply with the Cubic spline interpolation
         idx_best_coef = np.where(sr_vector == sr_vector.max())[0][0]
         return self._amp_span[idx_best_coef]
