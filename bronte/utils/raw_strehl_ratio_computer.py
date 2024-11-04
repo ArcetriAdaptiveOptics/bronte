@@ -1,19 +1,20 @@
 import numpy as np 
 from arte.types.mask import CircularMask
-from bronte.wfs.slm_rasterizer.SlmRasterizer import PUPIL_RADIUS
+from astropy.modeling import models, fitting
 
 class StrehlRatioComputer():
     
     RAD2ARCSEC = 180/np.pi*3600
+    PUPIL_RADIUS = 571
     
     def __init__(self):
         
-        self._pupil_diameter = 2*PUPIL_RADIUS*9.2e-6
+        self._pupil_diameter = 2*self.PUPIL_RADIUS*9.2e-6
         self._wl = 633e-9
         self._telescope_focal_length = 250e-3
         self._ccd_pixel_size = 4.65e-6
-        self._pixel_scale_in_arcsec = self._ccd_pixel_size/self._telescope_focal_length
-        self._dl_size_in_arcsec = self._el / self._pupil_diameter * self.RAD2ARCSEC 
+        self._pixel_scale_in_arcsec = self._ccd_pixel_size/self._telescope_focal_length * self.RAD2ARCSEC
+        self._dl_size_in_arcsec = self._wl / self._pupil_diameter * self.RAD2ARCSEC 
         self._dl_size_in_pixels = self._dl_size_in_arcsec / self._pixel_scale_in_arcsec
         
         self._compute_dl_psf()
@@ -40,8 +41,8 @@ class StrehlRatioComputer():
     
        
         # padding transmitted electric field to match resulting px scale with the instrument pixel scale
-        Npad = self._wl / self._pupil_diameter  * self.RAD2ARCSEC /  self._pixel_scale_in_arcsec
-        print("Pupil padding %g" % Npad)
+        Npad = self._dl_size_in_pixels #(self._wl / self._pupil_diameter  * self.RAD2ARCSEC) /  self._pixel_scale_in_arcsec
+        #print("Pupil padding %g" % Npad)
         padded_frame_size = int(np.round(Npix * Npad))
         padded_Ut = np.zeros((padded_frame_size, padded_frame_size), dtype=complex)
         padded_Ut[0 : Ut.shape[0], 0 : Ut.shape[1]] = Ut   
@@ -50,18 +51,36 @@ class StrehlRatioComputer():
         self._dl_psf = np.abs(np.fft.fftshift(np.fft.fft2(padded_Ut)))**2
         self._dl_psf_scale_in_arcsec = self._wl / self._pupil_diameter / Npad * self.RAD2ARCSEC
         self._total_dl_flux = self._dl_psf.sum()
+        
+        #estimating psf parameters from Airy fitting
+        amp = self._dl_psf.max()
+        yc = np.where(self._dl_psf == amp)[0][0]
+        xc = np.where(self._dl_psf == amp)[1][0]
+        airy_radius_in_pixel =  (1.22*self._wl/self._pupil_diameter*self._telescope_focal_length)/self._ccd_pixel_size
+        
+        model_airy = models.AiryDisk2D(amp, xc, yc, airy_radius_in_pixel)
+        fitter = fitting.LevMarLSQFitter()
+        
+        roi_shape = self._dl_psf.shape
+        y, x = np.mgrid[:roi_shape[0], :roi_shape[1]]
+        
+        best_fit_airy = fitter(model_airy, x, y, z = self._dl_psf)
+        self._fitted_dl_max_au = best_fit_airy.parameters[0]
+        self._fitted_dl_fwhm_in_pixel  = 1.028 * best_fit_airy.parameters[-1]/(1.22)
     
     #TODO: estimate better the max of the dl psf and add FWHM estimations
     def get_SR_from_image(self, image, enable_display = False):
         
-        hsize = int(np.round(image.shape()[0]*0.5))
+        hsize = int(np.round(image.shape[0]*0.5))
         total_measured_flux = image.sum()
         normalized_dl_psf = self._dl_psf * total_measured_flux/self._total_dl_flux
-        center=(normalized_dl_psf.shape[0]) // 2
+        center=int(np.round(normalized_dl_psf.shape[0] * 0.5))
         normalized_dl_psf_roi = normalized_dl_psf[center-hsize:center+hsize,
                                                   center-hsize:center+hsize]
-        #TODO: estimate dl_max = from airy disk fit 
-        sr = image.max()/normalized_dl_psf_roi.max()
+        #TODO: estimate the measured psf maximum in a better way, moffat maybe 
+        #sr = image.max()/normalized_dl_psf_roi.max()
+        
+        sr = image.max()/(self._fitted_dl_max_au * total_measured_flux/self._total_dl_flux)
         
         if enable_display is True:
             

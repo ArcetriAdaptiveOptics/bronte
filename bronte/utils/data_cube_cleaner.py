@@ -13,7 +13,7 @@ class DataCubeCleaner():
         
         for idx in range(Nframes):
             
-            red_cube[:,:,idx] = raw_cube[:,:,idx] - master_dark
+            red_cube[:,:,idx] = raw_cube[:,:,idx].astype(float) - master_dark.astype(float)
         
         red_cube[red_cube<0] = 0
         

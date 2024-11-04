@@ -7,7 +7,7 @@ from arte.utils.decorator import logEnterAndExit
 from arte.types.zernike_coefficients import ZernikeCoefficients
 
 
-class SlmRasterizer:
+class SlmRasterizer():
     
     #SLM PUPIL MASK PARAMETERS IN PIXEL
     PUPIL_CENTER = (581, 875)#YX
