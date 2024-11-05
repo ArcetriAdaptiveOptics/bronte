@@ -29,3 +29,6 @@ def subaperture_set_folder():
 
 def phase_screen_folder():
     return data_root_dir() / "phase_screens"
+
+def modal_decomposer_folder():
+    return data_root_dir() / "modal_decomposer"

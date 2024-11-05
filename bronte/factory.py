@@ -2,6 +2,7 @@ from pysilico import camera
 from plico_dm import deformableMirror
 from functools import cached_property
 
+from bronte.utils.objects_io import load_object
 from bronte import package_data
 from bronte.wfs.rtc import ScaoRealTimeComputer
 from bronte.wfs.slm_rasterizer import SlmRasterizer
@@ -16,6 +17,7 @@ from bronte.wfs.temporal_controller import PureIntegrator
 class BronteFactory():
     SUBAPS_TAG = '240807_152700'  # '240802_122800'
     PHASE_SCREEN_TAG = '240806_124700'
+    MODAL_DEC_TAG = '241105_170400' #None
     N_ZERNIKE_MODES_TO_CORRECT = 200
 
     def __init__(self):
@@ -64,7 +66,12 @@ class BronteFactory():
 
     @cached_property
     def modal_decomposer(self):
-        return ModalDecomposer(self.N_ZERNIKE_MODES_TO_CORRECT)
+        
+        if self.MODAL_DEC_TAG is None:
+            return ModalDecomposer(self.N_ZERNIKE_MODES_TO_CORRECT)
+        
+        md_fname = package_data.modal_decomposer_folder() / (self.MODAL_DEC_TAG + '.pkl')
+        return load_object(md_fname)
 
     @cached_property
     def pure_integrator_controller(self):
