@@ -35,10 +35,10 @@ class BronteFactory():
         logging.basicConfig(level=logging.DEBUG, format=FORMAT)
 
     def _create_phase_screen_generator(self):
-        r0 = 0.3
+        self._r0 = 0.3
         self._psg = PhaseScreenGenerator.load_normalized_phase_screens(
             package_data.phase_screen_folder() / (self.PHASE_SCREEN_TAG+'.fits'))
-        self._psg.rescale_to(r0)
+        self._psg.rescale_to(self._r0)
 
     @cached_property
     def sh_camera(self):

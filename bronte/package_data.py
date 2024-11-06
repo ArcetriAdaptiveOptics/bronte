@@ -32,3 +32,6 @@ def phase_screen_folder():
 
 def modal_decomposer_folder():
     return data_root_dir() / "modal_decomposer"
+
+def telemetry_folder():
+    return data_root_dir() / "telemetry"
