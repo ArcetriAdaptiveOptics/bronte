@@ -203,7 +203,7 @@ class TestAoLoop:
         hdr['WIND_SP'] = self._wind_speed # in phase screen/step
         
         #LOOP PARAMETERS
-        #hdr['AO_LOOP'] = self._ao_loop # 'open' or 'closed'
+        #hdr['AO_STAT'] = self._ao_status # 'open' or 'closed'
         hdr['INT_TYPE'] = self._factory.pure_integrator_controller._integrator_type
         hdr['INT_GAIN'] = self._factory.pure_integrator_controller._gain
         hdr['N_STEPS'] = self._t
@@ -244,7 +244,7 @@ class TestAoLoop:
         atmospheric_param_list = [r0, wind_speed]
         
         #LOOP PARAMETERS
-        #ao_loop = header['AO_LOOP']
+        #ao_status = header['AO_STAT']
         integrator_type = header['INT_TYPE']
         int_gain = header['INT_GAIN']
         loop_steps = header['N_STEPS']
