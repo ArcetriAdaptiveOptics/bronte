@@ -1,0 +1,264 @@
+main:
+  root_dir: /raid1/guido/PASSATA/MAORYC
+  store_dir: ./output
+  pixel_pupil: 480
+  pixel_pitch: 0.0802
+  total_time: 0.004
+  time_step: 0.002
+data_store:
+  class: DataStore
+  store_dir: ./output
+  data_format: fits
+  inputs:
+    input_list:
+    - ngs_ef-prop.out_on_axis_source_ef
+seeing:
+  class: FuncGenerator
+  constant: 0.65
+  outputs:
+  - output
+wind_speed:
+  class: FuncGenerator
+  constant:
+  - 5.5
+  - 5.5
+  - 5.1
+  - 5.5
+  - 5.6
+  - 5.7
+  - 5.8
+  - 6.0
+  - 6.5
+  - 7.0
+  - 7.5
+  - 8.5
+  - 9.5
+  - 11.5
+  - 17.5
+  - 23.0
+  - 26.0
+  - 29.0
+  - 32.0
+  - 27.0
+  - 22.0
+  - 14.5
+  - 9.5
+  - 6.3
+  - 5.5
+  - 6.0
+  - 6.5
+  - 7.0
+  - 7.5
+  - 8.0
+  - 8.5
+  - 9.0
+  - 9.5
+  - 10.0
+  - 10.0
+  outputs:
+  - output
+wind_direction:
+  class: FuncGenerator
+  constant:
+  - 0
+  - -180
+  - 0
+  - 0
+  - 90
+  - 180
+  - 0
+  - 0
+  - 0
+  - -180
+  - 0
+  - 0
+  - -90
+  - 0
+  - 90
+  - -180
+  - 90
+  - 0
+  - -90
+  - -90
+  - 0
+  - -90
+  - 0
+  - 0
+  - 180
+  - 180
+  - 0
+  - -180
+  - 90
+  - 0
+  - 0
+  - 180
+  - -90
+  - 90
+  - -90
+  outputs:
+  - output
+on_axis_source:
+  class: Source
+  polar_coordinate:
+  - 0.0
+  - 0.0
+  magnitude: 8
+  wavelengthInNm: 750
+lgs1_source:
+  class: Source
+  polar_coordinate:
+  - 45.0
+  - 0.0
+  height: 90000
+  magnitude: 5.0
+  wavelengthInNm: 589
+lgs2_source:
+  class: Source
+  polar_coordinate:
+  - 45.0
+  - 60.0
+  height: 90000
+  magnitude: 5.0
+  wavelengthInNm: 589
+lgs3_source:
+  class: Source
+  polar_coordinate:
+  - 45.0
+  - 120.0
+  height: 90000
+  magnitude: 5.0
+  wavelengthInNm: 589
+lgs4_source:
+  class: Source
+  polar_coordinate:
+  - 45.0
+  - 180.0
+  height: 90000
+  magnitude: 5.0
+  wavelengthInNm: 589
+lgs5_source:
+  class: Source
+  polar_coordinate:
+  - 45.0
+  - 240.0
+  height: 90000
+  magnitude: 5.0
+  wavelengthInNm: 589
+lgs6_source:
+  class: Source
+  polar_coordinate:
+  - 45.0
+  - 300.0
+  height: 90000
+  magnitude: 5.0
+  wavelengthInNm: 589
+atmo:
+  class: AtmoEvolution
+  L0: 25
+  heights:
+  - 30.0
+  - 90.0
+  - 150.0
+  - 200.0
+  - 245.0
+  - 300.0
+  - 390.0
+  - 600.0
+  - 1130.0
+  - 1880.0
+  - 2630.0
+  - 3500.0
+  - 4500.0
+  - 5500.0
+  - 6500.0
+  - 7500.0
+  - 8500.0
+  - 9500.0
+  - 10500.0
+  - 11500.0
+  - 12500.0
+  - 13500.0
+  - 14500.0
+  - 15500.0
+  - 16500.0
+  - 17500.0
+  - 18500.0
+  - 19500.0
+  - 20500.0
+  - 21500.0
+  - 22500.0
+  - 23500.0
+  - 24500.0
+  - 25500.0
+  - 26500.0
+  Cn2:
+  - 0.241954
+  - 0.119977
+  - 0.0968817
+  - 0.0589889
+  - 0.0472911
+  - 0.0472911
+  - 0.0472911
+  - 0.0472911
+  - 0.0398925
+  - 0.0323939
+  - 0.0161969
+  - 0.0260951
+  - 0.0155971
+  - 0.010398
+  - 0.00999811
+  - 0.0119977
+  - 0.00400924
+  - 0.0139974
+  - 0.0129975
+  - 0.00700868
+  - 0.015997
+  - 0.0258951
+  - 0.0190964
+  - 0.00986813
+  - 0.00616883
+  - 0.00400924
+  - 0.00246953
+  - 0.00215959
+  - 0.00184965
+  - 0.00135974
+  - 0.00110979
+  - 0.000616883
+  - 0.000925825
+  - 0.000493907
+  - 0.000431918
+  source_dict_ref:
+  - on_axis_source
+  - lgs1_source
+  - lgs2_source
+  - lgs3_source
+  - lgs4_source
+  - lgs5_source
+  - lgs6_source
+  inputs:
+    seeing: seeing.output
+    wind_speed: wind_speed.output
+    wind_direction: wind_direction.output
+  outputs:
+  - layer_list
+prop:
+  class: AtmoPropagation
+  source_dict_ref:
+  - on_axis_source
+  - lgs1_source
+  - lgs2_source
+  - lgs3_source
+  - lgs4_source
+  - lgs5_source
+  - lgs6_source
+  inputs:
+    layer_list:
+    - atmo.layer_list
+  outputs:
+  - out_on_axis_source_ef
+  - out_lgs1_source_ef
+  - out_lgs2_source_ef
+  - out_lgs3_source_ef
+  - out_lgs4_source_ef
+  - out_lgs5_source_ef
+  - out_lgs6_source_ef
