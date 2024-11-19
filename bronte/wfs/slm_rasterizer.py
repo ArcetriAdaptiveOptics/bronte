@@ -8,6 +8,12 @@ from arte.types.zernike_coefficients import ZernikeCoefficients
 
 
 class SlmRasterizer():
+    '''
+    Input: modal coefficients vector, pupil
+    Output: wavefront to be applied on the SLM
+    
+    Assumes that the modal basis is a Zernike base
+    '''
     
     #SLM PUPIL MASK PARAMETERS IN PIXEL
     PUPIL_CENTER = (581, 875)#YX
@@ -41,8 +47,6 @@ class SlmRasterizer():
         '''
         wfz = self._zernike_modal_decomposer.recomposeWavefrontFromModalCoefficients(
             zernike_coefficients, self.slm_pupil_mask)
-                
-        wfz.toNumpyArray().fill_value = 0
         return wfz
     
       

@@ -6,6 +6,7 @@ import logging
 from bronte import subapertures_initializer
 from astropy.io import fits
 from bronte import package_data
+from arte.utils.decorator import logEnterAndExit
 
 
 def define_subap_set(shwfs, slm, corner_xy=(0, 0), nsubaps=50, flux_threshold=100000):
@@ -49,18 +50,19 @@ class TestAoLoop:
         for i in range(how_many):
             self._logger.info("loop %d/%d" % (i+1, how_many))
             self.step()
-            self.integrate_long_exposure()
-            self._update_telemetry()
-            if self._display_in_loop:
-                self.display()
-                #self.display2(fig, axs)
         self.display()
 
+    @logEnterAndExit("Stepping...", "Stepped", level='debug')
     def step(self):
         self._t += 1
         self.set_wavefront_disturb(self._t)
         self._factory.rtc.step()
         time.sleep(self.SLM_RESPONSE_TIME)
+        self.integrate_long_exposure()
+        self._update_telemetry()
+        if self._display_in_loop:
+            self.display()
+            # self.display2(fig, axs)
 
     def set_wavefront_disturb(self, temporal_step, wind_speed = 4):
         if self._wavefront_disturb is None:
@@ -78,6 +80,7 @@ class TestAoLoop:
         self._factory.rtc.reset_wavefront_disturb()
         self._wavefront_disturb = None
 
+    @logEnterAndExit("Integrating long exposure...", "Long exposure integrated", level='debug')
     def integrate_long_exposure(self):
         self._short_exp = self._factory.psf_camera.getFutureFrames(
             1, 1).toNumpyArray()
@@ -90,14 +93,15 @@ class TestAoLoop:
         self._initialize_telemetry()
         
     def _initialize_telemetry(self):
-        
         self._slopes_x_maps_list = []
         self._slopes_y_maps_list = []
         self._short_exp_psf_list = []
     
+    @logEnterAndExit("Updating telemetry...", "Telemetry updated", level='debug')
     def _update_telemetry(self):
-        
-        self._slopes_x_maps_list.append(self._factory.slope_computer.slopes_x_map())
+        # TODO just save slope vector instead of map
+        self._slopes_x_maps_list.append(
+            self._factory.slope_computer.slopes_x_map())
         self._slopes_y_maps_list.append(self._factory.slope_computer.slopes_y_map())
         self._short_exp_psf_list.append(self._short_exp)
         
@@ -110,7 +114,7 @@ class TestAoLoop:
         plt.show(block=False)
         plt.pause(0.2)
  
-    
+    @logEnterAndExit("Refreshing display...", "Display refreshed", level='debug')
     def display(self):
         
         plt.figure(1)
