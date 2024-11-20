@@ -12,21 +12,24 @@ from bronte.wfs.subaperture_set import ShSubapertureSet
 from arte.utils.modal_decomposer import ModalDecomposer
 from arte.atmo.phase_screen_generator import PhaseScreenGenerator
 from bronte.wfs.temporal_controller import PureIntegrator
-
+from bronte.types.slm_pupil_mask import SlmPupilMask
 
 class BronteFactory():
     SUBAPS_TAG = '240807_152700'  # '240802_122800'
     PHASE_SCREEN_TAG = '240806_124700'
     MODAL_DEC_TAG = '241105_170400' #None
     N_ZERNIKE_MODES_TO_CORRECT = 200
-
+    N_MODES_TO_CORRECT = 200
+    
     def __init__(self):
+        
         self._set_up_basic_logging()
         self._create_phase_screen_generator()
         self._subaps = ShSubapertureSet.restore(
             package_data.subaperture_set_folder() / (self.SUBAPS_TAG+'.fits'))
         self._sc = PCSlopeComputer(self._subaps)
-
+        self._crate_slm_pupil_mask()
+        
     def _set_up_basic_logging(self):
         import importlib
         import logging
@@ -39,7 +42,11 @@ class BronteFactory():
         self._psg = PhaseScreenGenerator.load_normalized_phase_screens(
             package_data.phase_screen_folder() / (self.PHASE_SCREEN_TAG+'.fits'))
         self._psg.rescale_to(self._r0)
-
+    
+    def _crate_slm_pupil_mask(self):
+        spm = SlmPupilMask()
+        self._slm_pupil_mask = spm.circular_pupil_mask
+    
     @cached_property
     def sh_camera(self):
         return camera('193.206.155.69', 7110)
@@ -59,16 +66,20 @@ class BronteFactory():
     @cached_property
     def slope_computer(self):
         return self._sc
-
+    
+    @cached_property
+    def slm_pupil_mask(self):
+        return self._slm_pupil_mask
+    
     @cached_property
     def slm_rasterizer(self):
-        return SlmRasterizer()
+        return SlmRasterizer(self._slm_pupil_mask)
 
     @cached_property
     def modal_decomposer(self):
         
         if self.MODAL_DEC_TAG is None:
-            return ModalDecomposer(self.N_ZERNIKE_MODES_TO_CORRECT)
+            return ModalDecomposer(self.N_MODES_TO_CORRECT)
         
         md_fname = package_data.modal_decomposer_folder() / (self.MODAL_DEC_TAG + '.pkl')
         return load_object(md_fname)

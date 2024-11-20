@@ -1,6 +1,6 @@
 import numpy as np 
 from arte.utils.zernike_generator import ZernikeGenerator
 
-class SyntheticInteractionMatrix():
+class SyntheticInteractionMatrixComputer():
     def __init__(self):
         pass
