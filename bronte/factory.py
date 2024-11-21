@@ -18,8 +18,10 @@ class BronteFactory():
     SUBAPS_TAG = '240807_152700'  # '240802_122800'
     PHASE_SCREEN_TAG = '240806_124700'
     MODAL_DEC_TAG = '241105_170400' #None
+    ELT_PUPIL_TAG = None #'EELT480pp0.0803m_obs0.283_spider2023'
     N_ZERNIKE_MODES_TO_CORRECT = 200
     N_MODES_TO_CORRECT = 200
+    
     
     def __init__(self):
         
@@ -28,7 +30,7 @@ class BronteFactory():
         self._subaps = ShSubapertureSet.restore(
             package_data.subaperture_set_folder() / (self.SUBAPS_TAG+'.fits'))
         self._sc = PCSlopeComputer(self._subaps)
-        self._crate_slm_pupil_mask()
+        self._create_slm_pupil_mask()
         
     def _set_up_basic_logging(self):
         import importlib
@@ -43,9 +45,14 @@ class BronteFactory():
             package_data.phase_screen_folder() / (self.PHASE_SCREEN_TAG+'.fits'))
         self._psg.rescale_to(self._r0)
     
-    def _crate_slm_pupil_mask(self):
+    def _create_slm_pupil_mask(self):
+        
         spm = SlmPupilMask()
-        self._slm_pupil_mask = spm.circular_pupil_mask
+        if self.ELT_PUPIL_TAG is not None:
+            self._slm_pupil_mask = spm.elt_pupil_mask(
+                package_data.elt_pupil_folder()/(self.ELT_PUPIL_TAG + '.fits'))
+        else:
+            self._slm_pupil_mask = spm.circular_pupil_mask
     
     @cached_property
     def sh_camera(self):

@@ -22,6 +22,8 @@ def data_root_dir():
 def snapshot_folder():
     return data_root_dir() / "snapshots"
 
+def elt_pupil_folder():
+    return data_root_dir() / "elt_pupil"
 
 def subaperture_set_folder():
     return data_root_dir() / "subaperture_set"

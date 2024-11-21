@@ -16,7 +16,7 @@ class SlmPupilMask():
     PUPIL_RADIUS = 571
     FRAME_SHAPE = (1152, 1920)
     
-    #ELT LIKE PUPIL PARAMETERS SCALED TO SLM 
+    #CUSTOM ELT LIKE PUPIL PARAMETERS SCALED TO SLM 
     SPIDER_DIM = 6
     SPIDER_ANGLE = 60*np.pi/180
     OBSTRUCTION_RADIUS = 161
@@ -44,7 +44,7 @@ class SlmPupilMask():
         return amask
     
     @cached_property
-    def elt_like_pupil_mask(self):
+    def custom_elt_like_pupil_mask(self):
                
         emask = self.annular_pupil_mask
         pupil_mask = emask.mask()
@@ -65,4 +65,50 @@ class SlmPupilMask():
             pupil_mask[y2_idx - ds : y2_idx + ds + 1, x_idx] = True
         
         return emask
+    
+    @cached_property
+    def elt_pupil_mask(self, fname):
+        
+        original_elt_mask = self._get_elt_pupil_from_idl_file_data(fname)
+        pupil_mask_on_slm_frame = self._get_rescaled_mask_to_slm_frame(original_elt_mask)
+        emask = self.circular_pupil_mask
+        emask.mask = pupil_mask_on_slm_frame
+        return emask
+    
+    def _get_elt_pupil_from_idl_file_data(self, fname):
+        from astropy.io import fits
+        header = fits.getheader(fname)
+        hduList = fits.open(fname)
+        elt_idl_mask = hduList[1].data.astype(bool)
+        elt_mask = elt_idl_mask.copy()    
+        elt_mask[elt_idl_mask == True] = False
+        elt_mask[elt_idl_mask == False] = True
+        return elt_mask
+    
+    def _get_rescaled_mask_to_slm_frame(self, original_pupil_mask):
+        from scipy.interpolate import RegularGridInterpolator
+        
+        new_size = 2 * self.PUPIL_RADIUS
+        x_original = np.linspace(0, 1, original_pupil_mask.shape[0])
+        y_original = np.linspace(0, 1, original_pupil_mask.shape[1])
+        original_grid = (x_original, y_original)
+        
+        x_new = np.linspace(0, 1, new_size)
+        y_new = np.linspace(0, 1, new_size)
+        x_new_grid, y_new_grid = np.meshgrid(x_new, y_new)
+        new_points = np.column_stack([y_new_grid.ravel(), x_new_grid.ravel()])
+        
+        interpolator = RegularGridInterpolator(original_grid, original_pupil_mask, method='linear')
+        
+        interpolated_pupil = interpolator(new_points).reshape(new_size, new_size)
+        
+        rescaled_pupil = (interpolated_pupil > 0.5).astype(int)
+        
+        pupil_on_slm_frame = np.ones(self.FRAME_SHAPE)
+        top_left = self.PUPIL_RADIUS - self.PUPIL_CENTER[0]
+        bottom_left = self.PUPIL_CENTER[1] - self.PUPIL_RADIUS
+        
+        pupil_on_slm_frame[top_left:top_left + new_size,
+                            bottom_left : bottom_left + new_size ] = rescaled_pupil
+        return pupil_on_slm_frame
         

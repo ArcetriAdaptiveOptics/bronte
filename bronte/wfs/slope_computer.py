@@ -3,6 +3,8 @@ import numpy.ma as ma
 from scipy import ndimage
 from arte.utils.decorator import logEnterAndExit
 import logging
+from arte.utils.rebin import rebin
+from arte.types.mask import CircularMask
 
 class PCSlopeComputer():
 
@@ -485,7 +487,29 @@ class PCSlopeComputer():
 
         vv = masked_frame_thre.mean(axis=0).data
         return vv
-
+    
+    # TODO: find proper names for computed masks
+    def _compute_masks(self):
+        '''
+        returns two masks:
+        1. the measured subaperture set mask
+        2. and a circular one defined in a full pupil,
+        used to represent the wavefront (for instance with Zernike modes).
+        '''
+        subIdMap = self.subapertures_id_map()
+        l = np.where(subIdMap.sum(axis=0))[0].min()
+        r = np.where(subIdMap.sum(axis=0))[0].max()
+        b = np.where(subIdMap.sum(axis=1))[0].min()
+        t = np.where(subIdMap.sum(axis=1))[0].max()
+        n_subap_l_r = int((r-l+1)/self.subaperture_size)
+        n_subap_b_t = int((t-b+1)/self.subaperture_size)
+        
+        subIdMap = rebin(subIdMap[b:t+1, l:r+1], (n_subap_b_t, n_subap_l_r))
+        subIdMap[subIdMap > 0] = 1
+        subaperture_mask =  (1-subIdMap).astype(bool)
+        full_subaperture_mask = CircularMask((n_subap_b_t, n_subap_l_r))
+        return subaperture_mask, full_subaperture_mask
+    
     # def spotsFitFWHM(self):
     #     if self._spotarr is None:
     #         self._computeSpotsByFit()

@@ -2,6 +2,8 @@ import numpy as np
 from astropy.io import fits
 import matplotlib.pyplot as plt
 from bronte.wfs import slm_rasterizer
+from bronte.types.slm_pupil_mask import SlmPupilMask
+from scipy.interpolate import RegularGridInterpolator
 
 
 def main():
@@ -40,9 +42,15 @@ def main():
     axs.set_axis_off()
     
     wf_on_pupil = np.ma.array(np.zeros((1152,1920)), mask = slm_mask)
-    sr = slm_rasterizer.SlmRasterizer()
     
-    pupil_with_tilt_under_mask = sr.get_slm_raster_from_wf(wf_on_pupil)
+    spm = SlmPupilMask()
+    slm_pupil_mask = spm.circular_pupil_mask
+    
+    sr = slm_rasterizer.SlmRasterizer(slm_pupil_mask)
+    
+    
+    
+    pupil_with_tilt_under_mask = sr.load_a_tilt_under_masked_pupil(wf_on_pupil)
     plt.figure()
     plt.clf()
     plt.imshow(pupil_with_tilt_under_mask)
@@ -72,4 +80,24 @@ def main():
     axs[0].set_axis_off()
     axs[1].set_axis_off()
     
+    return elt_mask
+
+def get_elt_pupil_mask_rescaled2slm(elt_mask, new_size = 1142):
     
+    original_pupil = elt_mask
+    x_original = np.linspace(0, 1, original_pupil.shape[0])
+    y_original = np.linspace(0, 1, original_pupil.shape[1])
+    original_grid = (x_original, y_original)
+    
+    x_new = np.linspace(0, 1, new_size)
+    y_new = np.linspace(0, 1, new_size)
+    x_new_grid, y_new_grid = np.meshgrid(x_new, y_new)
+    new_points = np.column_stack([y_new_grid.ravel(), x_new_grid.ravel()])
+    
+    interpolator = RegularGridInterpolator(original_grid, original_pupil, method='linear')
+    
+    interpolated_pupil = interpolator(new_points).reshape(new_size, new_size)
+    
+    rescaled_pupil = (interpolated_pupil > 0.5).astype(int)
+    
+    return rescaled_pupil
