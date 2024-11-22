@@ -18,19 +18,12 @@ class BronteFactory():
     SUBAPS_TAG = '240807_152700'  # '240802_122800'
     PHASE_SCREEN_TAG = '240806_124700'
     MODAL_DEC_TAG = '241105_170400' #None
-    ELT_PUPIL_TAG = None #'EELT480pp0.0803m_obs0.283_spider2023'
+    ELT_PUPIL_TAG = 'EELT480pp0.0803m_obs0.283_spider2023'
     N_ZERNIKE_MODES_TO_CORRECT = 200
     N_MODES_TO_CORRECT = 200
-    
-    
+
     def __init__(self):
-        
         self._set_up_basic_logging()
-        self._create_phase_screen_generator()
-        self._subaps = ShSubapertureSet.restore(
-            package_data.subaperture_set_folder() / (self.SUBAPS_TAG+'.fits'))
-        self._sc = PCSlopeComputer(self._subaps)
-        self._create_slm_pupil_mask()
         
     def _set_up_basic_logging(self):
         import importlib
@@ -41,18 +34,18 @@ class BronteFactory():
 
     def _create_phase_screen_generator(self):
         self._r0 = 0.3
-        self._psg = PhaseScreenGenerator.load_normalized_phase_screens(
+        psg = PhaseScreenGenerator.load_normalized_phase_screens(
             package_data.phase_screen_folder() / (self.PHASE_SCREEN_TAG+'.fits'))
-        self._psg.rescale_to(self._r0)
+        psg.rescale_to(self._r0)
+        return psg
     
     def _create_slm_pupil_mask(self):
-        
         spm = SlmPupilMask()
         if self.ELT_PUPIL_TAG is not None:
-            self._slm_pupil_mask = spm.elt_pupil_mask(
+            return spm.elt_pupil_mask(
                 package_data.elt_pupil_folder()/(self.ELT_PUPIL_TAG + '.fits'))
         else:
-            self._slm_pupil_mask = spm.circular_pupil_mask()
+            return spm.circular_pupil_mask()
     
     @cached_property
     def sh_camera(self):
@@ -68,19 +61,20 @@ class BronteFactory():
 
     @cached_property
     def subapertures_set(self):
-        return self._subaps
+        return ShSubapertureSet.restore(
+            package_data.subaperture_set_folder() / (self.SUBAPS_TAG+'.fits'))
 
     @cached_property
     def slope_computer(self):
-        return self._sc
+        return PCSlopeComputer(self.subapertures_set)
     
     @cached_property
     def slm_pupil_mask(self):
-        return self._slm_pupil_mask
+        return self._create_slm_pupil_mask()
     
     @cached_property
     def slm_rasterizer(self):
-        return SlmRasterizer(self._slm_pupil_mask)
+        return SlmRasterizer(self.slm_pupil_mask)
 
     @cached_property
     def modal_decomposer(self):
@@ -101,4 +95,4 @@ class BronteFactory():
 
     @cached_property
     def phase_screen_generator(self):
-        return self._psg
+        return self._create_phase_screen_generator()
