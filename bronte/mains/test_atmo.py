@@ -1,14 +1,19 @@
 
+from specula.data_objects.layer import Layer
+from specula.data_objects.source import Source
+from specula.processing_objects.atmo_propagation import AtmoPropagation
+from specula.processing_objects.atmo_evolution import AtmoEvolution
+from specula.processing_objects.func_generator import FuncGenerator
+from specula.processing_objects.int_control import IntControl
+from specula.processing_objects.sh_slopec import ShSlopec
+from specula.processing_objects.dm import DM
 import specula
 specula.init(-1, precision=1)  # Default target=-1 (CPU), float32=1
 
 from specula import np, cpuArray
 
-from specula.data_objects.source import Source
-from specula.data_objects.layer import Layer
-from specula.processing_objects.func_generator import FuncGenerator
-from specula.processing_objects.atmo_evolution import AtmoEvolution
-from specula.processing_objects.atmo_propagation import AtmoPropagation
+
+
 
 
 def test_atmo(target_device_idx=-1, xp=np):
@@ -67,16 +72,35 @@ def test_atmo(target_device_idx=-1, xp=np):
                                         'lgs6_source': lgs6_source},
                            target_device_idx=target_device_idx)
 
-    dm_layer = Layer(480, 480, 0.0802, height=0, target_device_idx=target_device_idx)
-    
+    bronte = Bronte(bronte_factory.deformable_mirror, bronte_factory.sh_camera)
+
+    slopec = ShSlopec(subapdata: SubapData)
+
+    rec = ModalRec('scao_recmat')
+
+    nModes = 54
+    control = IntControl(delay=2, int_gain=np.ones(nModes)*0.5)
+    dm = DM('zernike', nmodes=nModes)
+    # dm_layer = Layer(480, 480, 0.0802, height=0, target_device_idx=target_device_idx)
+
     atmo.inputs['seeing'].set(seeing.output)
     atmo.inputs['wind_direction'].set(wind_direction.output)
     atmo.inputs['wind_speed'].set(wind_speed.output)
-    prop.inputs['layer_list'].set([atmo.layer_list] + dm_layer)
+    prop.inputs['layer_list'].set([atmo.layer_list] + dm.out_layer[:-1])
+    bronte.inputs['ef_in_pupil'].set(prop.outputs)
+    slopec.inputs['in_pixels'].set(bronte.out_pixels)
+    rec.inputs['in_slopes'].set(slopec.out_slopes)
+    control.inputs['delta_comm'].set(rec.out_modes)
+    dm.inputs['in_command'].set(control.out_comm)
 
     group1 = [seeing, wind_speed, wind_direction]
-    group2 = [atmo]
+    group2 = [atmo, dm_layer]
     group3 = [prop]
+    group4 = [bronte]
+    group5 = [slopec]
+    group6 = [rec]
+    group7 = [control]
+    group8 = [dm]
 
     time_step = 0.01
     
@@ -93,8 +117,34 @@ def test_atmo(target_device_idx=-1, xp=np):
                 obj.trigger()
                 obj.post_trigger()
             
-        ef = prop.outputs['out_on_axis_source_ef']
-        _ = cpuArray(ef.phaseInNm)
+        # ef = prop.outputs['out_on_axis_source_ef']
+        # phase_on_axis_source = cpuArray(ef.phaseInNm)
+        # applyPhaseOnSlm(slm, phase_on_axis_source)
+        # frame_on_axis_source = cam.getFrame()
+
+        # ef = prop.outputs['out_lgs1_source_ef']
+        # phase_lgs1_source = cpuArray(ef.phaseInNm)
+        # applyPhaseOnSlm(slm, phase_lgs1_source)
+        # frame_lgs1_source = cam.getFrame()
+
+        # rtc.step(frame_lgs1_source, frame_lgs2_source)
+        # dm_layer.set_value(1, rtc.dm_command_in_nm)
+
+
+class Bronte(BaseProcessingObj):
+
+    def __init__(self, slm_client, cam_client):
+        self._slm = slm_client
+        self._cam = cam_client
+
+    def trigger_code(self):
+        input_efs = self.local_inputs['ef_in_pupil']
+        output_frames = []
+        for ef in input_efs:
+            self._slm.set_shape(ef)
+            output_frames.append(self._cam.getFrame())
+        self.outputs
+
         
 if __name__ == '__main__':
     test_atmo()
