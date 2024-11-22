@@ -24,7 +24,7 @@ class SlmPupilMask():
     def __init__(self):
         self._logger = logging.getLogger("PupilMask")
     
-    @cached_property
+    #@cached_property
     def circular_pupil_mask(self):
         
         cmask = CircularMask(
@@ -33,7 +33,7 @@ class SlmPupilMask():
             maskCenter = self.PUPIL_CENTER)
         return cmask
     
-    @cached_property
+    #@cached_property
     def annular_pupil_mask(self):
         
         amask = AnnularMask(
@@ -43,10 +43,10 @@ class SlmPupilMask():
             inRadius= self.OBSTRUCTION_RADIUS)
         return amask
     
-    @cached_property
+    #@cached_property
     def custom_elt_like_pupil_mask(self):
                
-        emask = self.annular_pupil_mask
+        emask = self.annular_pupil_mask()
         pupil_mask = emask.mask()
         
         ds = int(np.round(0.5 * self.SPIDER_DIM/np.cos(self.SPIDER_ANGLE)))
@@ -66,18 +66,27 @@ class SlmPupilMask():
         
         return emask
     
-    @cached_property
+    #@cached_property
     def elt_pupil_mask(self, fname):
-        
+        print('here1')
         original_elt_mask = self._get_elt_pupil_from_idl_file_data(fname)
         pupil_mask_on_slm_frame = self._get_rescaled_mask_to_slm_frame(original_elt_mask)
-        emask = self.circular_pupil_mask
-        emask.mask = pupil_mask_on_slm_frame
+        emask = CircularMask(
+            frameShape = self.FRAME_SHAPE,
+            maskRadius = self.PUPIL_RADIUS,
+            maskCenter = self.PUPIL_CENTER)
+        temp_mask = emask.mask() 
+        # WHY do I need to specify [:,:] to assign the content of 
+        # pupil_mask_on_slm_frame to emask.mask() ???
+        temp_mask[:,:] = pupil_mask_on_slm_frame.astype(bool)
         return emask
     
     def _get_elt_pupil_from_idl_file_data(self, fname):
         from astropy.io import fits
-        header = fits.getheader(fname)
+        #TODO: could be useful to save the pixel pitch of the original file
+        # and rescaled for the new slm pupil mask
+        #header = fits.getheader(fname)
+        print('here2')
         hduList = fits.open(fname)
         elt_idl_mask = hduList[1].data.astype(bool)
         elt_mask = elt_idl_mask.copy()    
@@ -105,9 +114,11 @@ class SlmPupilMask():
         rescaled_pupil = (interpolated_pupil > 0.5).astype(int)
         
         pupil_on_slm_frame = np.ones(self.FRAME_SHAPE)
-        top_left = self.PUPIL_RADIUS - self.PUPIL_CENTER[0]
+        #TODO: rise error if the shift exceed the slm frame size
+        top_left = self.PUPIL_CENTER[0] - self.PUPIL_RADIUS
         bottom_left = self.PUPIL_CENTER[1] - self.PUPIL_RADIUS
-        
+        print(pupil_on_slm_frame.shape)
+        print(rescaled_pupil.shape)
         pupil_on_slm_frame[top_left:top_left + new_size,
                             bottom_left : bottom_left + new_size ] = rescaled_pupil
         return pupil_on_slm_frame

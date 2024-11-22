@@ -52,7 +52,7 @@ class BronteFactory():
             self._slm_pupil_mask = spm.elt_pupil_mask(
                 package_data.elt_pupil_folder()/(self.ELT_PUPIL_TAG + '.fits'))
         else:
-            self._slm_pupil_mask = spm.circular_pupil_mask
+            self._slm_pupil_mask = spm.circular_pupil_mask()
     
     @cached_property
     def sh_camera(self):
