@@ -52,7 +52,7 @@ def test_atmo(target_device_idx=-1, xp=np):
     atmo = AtmoEvolution(pixel_pupil=pupil_diameter_in_pixel,              # Linear dimension of pupil phase array
                          pixel_pitch= pupil_pixel_pitch,         # Linear dimension of pupil phase array
                          data_dir = 'calib/ELT',      # Data directory for phasescreens
-                              L0=23,                        # [m] Outer scale
+                         L0=23,                        # [m] Outer scale
                          heights = [30.0000, 90.0000, 150.000, 200.000, 245.000, 300.000, 390.000, 600.000, 1130.00, 1880.00,
                         2630.00, 3500.00, 4500.00, 5500.00, 6500.00, 7500.00, 8500.00, 9500.00, 10500.0, 11500.0,
                         12500.0, 13500.0, 14500.0, 15500.0, 16500.0, 17500.0, 18500.0, 19500.0, 20500.0, 21500.0,
@@ -174,7 +174,8 @@ class Bronte(BaseProcessingObj):
             phase_screen_to_raster = self.slm_raster.get_recentered_phase_screen_on_slm_pupil_frame(phase_screen)
             self._slm.set_shape(phase_screen_to_raster)
             time.sleep(self.SLM_RESPONSE_TIME)
-            
+            #TODO: manage the different integration times for the each wfs group
+            # how to reproduce faint source? shall we play with the texp of the hardware?
             self.output_frames[i].append(self._sh_camera.getFutureFrames(1, 1).toNumpyArray())
             self.output_frames[i].generation_time = self.current_time
 
