@@ -1,5 +1,7 @@
-
-from specula.data_objects.layer import Layer
+import specula
+specula.init(-1, precision=1)  # Default target=-1 (CPU), float32=1
+from specula import np, cpuArray
+#from specula.data_objects.layer import Layer
 from specula.data_objects.source import Source
 from specula.processing_objects.atmo_propagation import AtmoPropagation
 from specula.processing_objects.atmo_evolution import AtmoEvolution
@@ -7,16 +9,24 @@ from specula.processing_objects.func_generator import FuncGenerator
 from specula.processing_objects.int_control import IntControl
 from specula.processing_objects.sh_slopec import ShSlopec
 from specula.processing_objects.dm import DM
-import specula
-specula.init(-1, precision=1)  # Default target=-1 (CPU), float32=1
+from specula.processing_objects.modalrec import Modalrec
+from specula.data_objects.subap_data import SubapData
+from specula.data_objects.ef import ElectricField
+from specula.data_objects.recmat import Recmat
 
-from specula import np, cpuArray
-
-
+from specula.base_processing_obj import BaseProcessingObj
+from specula.connections import InputList
+from bronte.startup import startup
+import time
 
 
 
 def test_atmo(target_device_idx=-1, xp=np):
+    
+    factory = startup()
+    telescope_pupil_diameter = 40
+    pupil_diameter_in_pixel  = 2 * factory.slm_pupil_mask.radius()
+    pupil_pixel_pitch = round(telescope_pupil_diameter/pupil_diameter_in_pixel, 3)
     
     seeing = FuncGenerator(constant=0.65,
                            target_device_idx=target_device_idx)
@@ -39,8 +49,8 @@ def test_atmo(target_device_idx=-1, xp=np):
     lgs5_source = Source(polar_coordinate=[45.0, 240.0], height=90000, magnitude=5, wavelengthInNm=589)
     lgs6_source = Source(polar_coordinate=[45.0, 300.0], height=90000, magnitude=5, wavelengthInNm=589)
 
-    atmo = AtmoEvolution(pixel_pupil=480,              # Linear dimension of pupil phase array
-                         pixel_pitch= 0.0802,         # Linear dimension of pupil phase array
+    atmo = AtmoEvolution(pixel_pupil=pupil_diameter_in_pixel,              # Linear dimension of pupil phase array
+                         pixel_pitch= pupil_pixel_pitch,         # Linear dimension of pupil phase array
                          data_dir = 'calib/ELT',      # Data directory for phasescreens
                               L0=23,                        # [m] Outer scale
                          heights = [30.0000, 90.0000, 150.000, 200.000, 245.000, 300.000, 390.000, 600.000, 1130.00, 1880.00,
@@ -61,8 +71,8 @@ def test_atmo(target_device_idx=-1, xp=np):
                         target_device_idx=target_device_idx,
                         )
 
-    prop = AtmoPropagation(pixel_pupil=480,              # Linear dimension of pupil phase array
-                           pixel_pitch= 0.0802,         # Linear dimension of pupil phase array
+    prop = AtmoPropagation(pixel_pupil=pupil_diameter_in_pixel,              # Linear dimension of pupil phase array
+                           pixel_pitch= pupil_pixel_pitch,         # Linear dimension of pupil phase array
                            source_dict = {'on_axis_source': on_axis_source,
                                         'lgs1_source': lgs1_source,
                                         'lgs2_source': lgs2_source,
@@ -71,30 +81,40 @@ def test_atmo(target_device_idx=-1, xp=np):
                                         'lgs5_source': lgs5_source,
                                         'lgs6_source': lgs6_source},
                            target_device_idx=target_device_idx)
+    
+    
+    factory = startup()
+    
+    bronte = Bronte(factory)
+    
+ 
+    subapdata = SubapData.restore('hiresA_ps512p0.076_pyr90x90_wl798_fv2.1_ft3.0_bn1_th0.30a0.30b')
+    slopec = ShSlopec(subapdata= SubapData)
 
-    bronte = Bronte(bronte_factory.deformable_mirror, bronte_factory.sh_camera)
-
-    slopec = ShSlopec(subapdata: SubapData)
-
-    rec = ModalRec('scao_recmat')
+    recmat = Recmat.restore('hiresA_ps512p0.076_pyr90x90_wl798_fv2.1_ft3.0_ma4_bn1_th0.30a0.30b_mn4094')
+    rec = Modalrec('scao_recmat')
 
     nModes = 54
     control = IntControl(delay=2, int_gain=np.ones(nModes)*0.5)
-    dm = DM('zernike', nmodes=nModes)
-    # dm_layer = Layer(480, 480, 0.0802, height=0, target_device_idx=target_device_idx)
+    dm = DM('zernike', nmodes=nModes,
+            npixels= pupil_diameter_in_pixel,                    # linear dimension of DM phase array
+            obsratio= 0,                    # obstruction dimension ratio w.r.t. diameter
+            height=  0)                      # DM height [m]
+  
 
     atmo.inputs['seeing'].set(seeing.output)
     atmo.inputs['wind_direction'].set(wind_direction.output)
     atmo.inputs['wind_speed'].set(wind_speed.output)
-    prop.inputs['layer_list'].set([atmo.layer_list] + dm.out_layer[:-1])
-    bronte.inputs['ef_in_pupil'].set(prop.outputs)
-    slopec.inputs['in_pixels'].set(bronte.out_pixels)
-    rec.inputs['in_slopes'].set(slopec.out_slopes)
+    prop.inputs['layer_list'].set([atmo.layer_list] + dm.out_layer)
+    bronte.inputs['ef_list'].set(prop.outputs['ef_list'])
+    slopec.inputs['in_pixels_list'].set(bronte.outputs['out_pixels_list'])
+    
+    rec.inputs['in_slopes_list'].set(slopec.outputs['out_slopes_list'])
     control.inputs['delta_comm'].set(rec.out_modes)
     dm.inputs['in_command'].set(control.out_comm)
 
     group1 = [seeing, wind_speed, wind_direction]
-    group2 = [atmo, dm_layer]
+    group2 = [atmo]
     group3 = [prop]
     group4 = [bronte]
     group5 = [slopec]
@@ -104,7 +124,7 @@ def test_atmo(target_device_idx=-1, xp=np):
 
     time_step = 0.01
     
-    for group in [group1, group2, group3]:
+    for group in [group1, group2, group3, group4, group5, group6, group7, group8]:
         for obj in group:
             obj.run_check(time_step)
     
@@ -132,18 +152,31 @@ def test_atmo(target_device_idx=-1, xp=np):
 
 
 class Bronte(BaseProcessingObj):
-
-    def __init__(self, slm_client, cam_client):
-        self._slm = slm_client
-        self._cam = cam_client
+    
+    SLM_RESPONSE_TIME = 0.005
+    
+    def __init__(self, factory):
+        
+        self._slm = factory.deformable_mirror
+        self._sh_camera = factory.sh_camera
+        self.slm_raster = factory.slm_rasterizer
+        self.output_frames = [None] * 6
+        self.outputs['out_pixels_list'] = self.output_frames
+        self.inputs['ef_list'] = InputList(type=ElectricField)
 
     def trigger_code(self):
-        input_efs = self.local_inputs['ef_in_pupil']
-        output_frames = []
-        for ef in input_efs:
-            self._slm.set_shape(ef)
-            output_frames.append(self._cam.getFrame())
-        self.outputs
+        input_efs = self.local_inputs['ef_list']
+        
+        for i, ef in enumerate(input_efs):
+            
+            phase_screen = cpuArray(ef.phaseInNm)
+            
+            phase_screen_to_raster = self.slm_raster.get_recentered_phase_screen_on_slm_pupil_frame(phase_screen)
+            self._slm.set_shape(phase_screen_to_raster)
+            time.sleep(self.SLM_RESPONSE_TIME)
+            
+            self.output_frames[i].append(self._sh_camera.getFutureFrames(1, 1).toNumpyArray())
+            self.output_frames[i].generation_time = self.current_time
 
         
 if __name__ == '__main__':

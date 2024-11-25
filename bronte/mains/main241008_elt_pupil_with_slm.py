@@ -2,7 +2,7 @@ import numpy as np
 from astropy.io import fits
 import matplotlib.pyplot as plt
 from bronte.wfs import slm_rasterizer
-from bronte.types.slm_pupil_mask import SlmPupilMask
+from bronte.types.slm_pupil_mask_generator import SlmPupilMask
 from scipy.interpolate import RegularGridInterpolator
 
 

@@ -5,7 +5,7 @@ from functools import cached_property
 from scipy.interpolate import RegularGridInterpolator
 #from arte.utils.decorator import logEnterAndExit
 
-class SlmPupilMask():
+class SlmPupilMaskGenerator():
     '''
     This class is meant to generate a pupil mask
     for the slm

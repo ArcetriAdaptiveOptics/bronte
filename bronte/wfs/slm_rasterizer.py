@@ -59,5 +59,18 @@ class SlmRasterizer():
     
     def get_zernike_coefficients_from_numpy_array(self, coef_array):
         return ZernikeCoefficients.fromNumpyArray(coef_array)
+    
+    def get_recentered_phase_screen_on_slm_pupil_frame(self, phase_screen):
+        # TODO: rise error if the shift exceed the slm frame size
+        new_size = 2 * self.slm_pupil_mask.radius()
+        phase_on_slm_pupil_frame = np.zeros(self.slm_pupil_mask.shape())
+        top_left = self.slm_pupil_mask.center()[0] - self.slm_pupil_mask.radius()
+        bottom_left = self.slm_pupil_mask.center()[1] - self.slm_pupil_mask.radius()
+        phase_on_slm_pupil_frame[top_left:top_left + new_size,
+                           bottom_left: bottom_left + new_size] = phase_screen
+        phase_screen_mask = self.slm_pupil_mask.mask()
         
+        return np.ma.array(phase_on_slm_pupil_frame, mask = phase_screen_mask)
+        
+    
 

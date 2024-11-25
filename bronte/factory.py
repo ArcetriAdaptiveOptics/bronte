@@ -12,13 +12,13 @@ from bronte.wfs.subaperture_set import ShSubapertureSet
 from arte.utils.modal_decomposer import ModalDecomposer
 from arte.atmo.phase_screen_generator import PhaseScreenGenerator
 from bronte.wfs.temporal_controller import PureIntegrator
-from bronte.types.slm_pupil_mask import SlmPupilMask
+from bronte.types.slm_pupil_mask_generator import SlmPupilMaskGenerator
 
 class BronteFactory():
     SUBAPS_TAG = '240807_152700'  # '240802_122800'
     PHASE_SCREEN_TAG = '240806_124700'
     MODAL_DEC_TAG = '241105_170400' #None
-    ELT_PUPIL_TAG = 'EELT480pp0.0803m_obs0.283_spider2023'
+    ELT_PUPIL_TAG = None #'EELT480pp0.0803m_obs0.283_spider2023'
     N_ZERNIKE_MODES_TO_CORRECT = 200
     N_MODES_TO_CORRECT = 200
 
@@ -40,7 +40,7 @@ class BronteFactory():
         return psg
     
     def _create_slm_pupil_mask(self):
-        spm = SlmPupilMask()
+        spm = SlmPupilMaskGenerator()
         if self.ELT_PUPIL_TAG is not None:
             return spm.elt_pupil_mask(
                 package_data.elt_pupil_folder()/(self.ELT_PUPIL_TAG + '.fits'))
