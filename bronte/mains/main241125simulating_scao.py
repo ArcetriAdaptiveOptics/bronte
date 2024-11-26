@@ -7,7 +7,7 @@ from specula.processing_objects.func_generator import FuncGenerator
 from specula.data_objects.source import Source
 from specula.processing_objects.atmo_evolution import AtmoEvolution
 from specula.processing_objects.atmo_propagation import AtmoPropagation
-from bronte.types.virtual_wavefront_sensor import VirtualWavefrontSensor
+#from bronte.types.virtual_wavefront_sensor import VirtualWavefrontSensor
 import matplotlib.pyplot as plt
 
 class DumbScaoSimulator():
@@ -151,12 +151,13 @@ class DumbScaoSimulator():
                 self.display()
         
         self._finalise_groups()
-        
+    
+    @logEnterAndExit("Finalising Groups...", "Groups finalised.", level='debug')        
     def _finalise_groups(self):
+        
         for group in self._group_list:
             for obj in group:
-                for obj in self.objs.values():
-                    obj.finalize()
+                obj.finalize()
     
     def enable_display_in_loop(self, true_or_false):
         self._display_in_loop = true_or_false
