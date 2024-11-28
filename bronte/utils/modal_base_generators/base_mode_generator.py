@@ -1,5 +1,6 @@
 import numpy as np
 
+#TODO: not sure its a Base class ...
 class BaseModesGenerator():
     
     def __init__(self, pupil, covariance_matrix = None):

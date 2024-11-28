@@ -1,7 +1,7 @@
 import numpy as np
 from arte.utils.zernike_generator import ZernikeGenerator
     
-class KLModalBaseGenerator():
+class KLModesGenerator():
     '''
     Generator of Karhunen-Loève (KL) modal basis from a give pupil and
     covariance matrix (Ca) obtained from a Zernike modal base
