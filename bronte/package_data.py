@@ -28,6 +28,8 @@ def elt_pupil_folder():
 def subaperture_set_folder():
     return data_root_dir() / "subaperture_set"
 
+def reconstructor_folder():
+    return data_root_dir() / "reconstructor"
 
 def phase_screen_folder():
     return data_root_dir() / "phase_screens"

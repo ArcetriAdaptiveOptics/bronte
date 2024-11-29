@@ -398,6 +398,21 @@ class ShSubapertureSet(dict):
     #     bl = self[subset[id1]].centerInCCDCoordinates()
     #     return (tr + bl) / 2
 
+    def subapertures_map(self):
+        a_subap = list(self.values())[0]
+        frame_shape = [a_subap.ccdy, a_subap.ccdx]
+        frame_size = a_subap.ccdy * a_subap.ccdx
+        subaperture_size = a_subap.size()
+        sf = np.zeros(frame_size, dtype=float)
+        for i in self.values():
+            pl = i.pixelList()
+            sz = int(subaperture_size)
+            sf[pl[0:sz]] = 1
+            sf[pl[sz*(sz-1):]] = 1
+            sf[pl[sz:sz*(sz-1):sz]] = 1
+            sf[pl[2*sz-1:sz*(sz-1):sz]] = 1
+        return sf.reshape(frame_shape)
+
     def save(self, filename, header, overwrite=False):
 
         ID = np.squeeze(np.dstack([x.ID() for x in self.values()]))
