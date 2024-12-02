@@ -203,6 +203,9 @@ class TestAoLoop:
         hdr['MD_TAG'] = self._factory.MODAL_DEC_TAG
         
         #ATMO PARAMETERS
+        if self._wavefront_disturb is None:
+            self._wind_speed = 0
+            self._factory._r0 = 0
         hdr['R0_IN_M'] = self._factory._r0
         hdr['WIND_SP'] = self._wind_speed # in phase screen/step
         
