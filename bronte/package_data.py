@@ -39,3 +39,6 @@ def modal_decomposer_folder():
 
 def telemetry_folder():
     return data_root_dir() / "telemetry"
+
+def shframes_folder(): 
+    return data_root_dir() / "shwfs_frames"
