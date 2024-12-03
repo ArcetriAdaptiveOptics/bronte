@@ -96,6 +96,8 @@ class TestAoLoop:
         self._slopes_x_maps_list = []
         self._slopes_y_maps_list = []
         self._short_exp_psf_list = []
+        self._zc_delta_modal_command_list = []
+        self._zc_integrated_modal_command_list = []
     
     @logEnterAndExit("Updating telemetry...", "Telemetry updated", level='debug')
     def _update_telemetry(self):
@@ -104,6 +106,12 @@ class TestAoLoop:
             self._factory.slope_computer.slopes_x_map())
         self._slopes_y_maps_list.append(self._factory.slope_computer.slopes_y_map())
         self._short_exp_psf_list.append(self._short_exp)
+        self._zc_delta_modal_command_list.append(
+            self._factory.rtc._delta_modal_command_buffer.get(self._t)
+            )
+        self._zc_integrated_modal_command_list.append(
+            self._factory.pure_integrator_controller.command()
+            )
         
     def display_sh_ima(self):
         sh_ima = self._factory.sh_camera.getFutureFrames(1, 1).toNumpyArray()
@@ -232,6 +240,13 @@ class TestAoLoop:
         fits.append(file_name, self._factory.modal_decomposer._lastIM)
         fits.append(file_name, self._factory.modal_decomposer._lastReconstructor)
         
+        #MODAL COMMANDS
+        fits.append(file_name, np.array(self._zc_delta_modal_command_list))
+        fits.append(file_name, np.array(self._zc_integrated_modal_command_list))
+        
+        #OFFSETS
+        fits.append(file_name, self._factory.rtc.modal_offset.toNumpyArray())
+        
     @staticmethod
     def load_telemetry(fname):
         
@@ -273,8 +288,18 @@ class TestAoLoop:
         slopes_y_maps = hduList[3].data
         
         #CONTROL MATRICES
+        #TO DO: to fix cached prorerties are not picklable
+        # save the slope2modal_coeff matrix (rec_mat)
+        # and the modal_coeff2command/wf matrix (int_mat)
         interaction_matrix = hduList[4].data
-        reconstructor = hduList[5].data 
+        reconstructor = hduList[5].data
+        
+        #MODAL COMMANDS
+        zc_delta_modal_commands = hduList[6].data
+        zc_integrated_modal_commands  = hduList[7].data
+        
+        #OFFSETS
+        zc_modal_offset = hduList[8].data
         
         return tag_list,\
              atmospheric_param_list,\
@@ -283,4 +308,6 @@ class TestAoLoop:
                 long_exp_psf,\
                  short_exp_psfs,\
                   slopes_x_maps, slopes_y_maps,\
-                  interaction_matrix, reconstructor
+                  interaction_matrix, reconstructor,\
+                    zc_delta_modal_commands, zc_integrated_modal_commands,\
+                        zc_modal_offset

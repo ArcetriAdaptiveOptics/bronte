@@ -14,6 +14,7 @@ from specula.processing_objects.modalrec import Modalrec
 from specula.data_objects.subap_data import SubapData
 from specula.data_objects.recmat import Recmat
 from specula.data_objects.layer import Layer
+from specula.display.modes_display import ModesDisplay
 
 from bronte.startup import startup
 from bronte.types.testbench_device_manager import TestbenchDeviceManager
@@ -31,7 +32,7 @@ class TestSpecula():
         pupil_diameter_in_pixel  = 2 * factory.slm_pupil_mask.radius()
         pupil_pixel_pitch = round(telescope_pupil_diameter/pupil_diameter_in_pixel, 3)
         
-        seeing = FuncGenerator(constant=0.,
+        seeing = FuncGenerator(constant=0.0,
                                target_device_idx=target_device_idx)
         wind_speed = FuncGenerator(constant=[25.5, 5.5],
                                    target_device_idx=target_device_idx) 
@@ -70,16 +71,23 @@ class TestSpecula():
         slopec = ShSlopec(subapdata= subapdata)
     
         nslopes = subapdata.n_subaps * 2 #1510*2
-        nModes = 2
+        nModes = 21
         
         if calib_rec:
             recmat = Recmat(recmat=np.zeros((nModes, nslopes)))
+            rec = Modalrec(nModes, recmat=recmat)
         else:
-            recmat = Recmat.restore(reconstructor_folder() / "241129_183600_bronte_rec.fits")
-        rec = Modalrec(nModes, recmat=recmat)
+            #recmat = Recmat.restore(reconstructor_folder() / "241129_183600_bronte_rec.fits")
+    #        recmat = Recmat.restore(reconstructor_folder() / "241202_174000_bronte_rec.fits")
+            recmat = Recmat.restore(reconstructor_folder() / "241203_140300_bronte_rec.fits")
+            modal_offset= np.zeros(nModes)
+            modal_offset[2]=50 # Z4
+#            modal_offset[3]=0
+#            modal_offset[4]=000
+            rec = Modalrec(nModes, recmat=recmat, modal_offset=modal_offset)
     
-        #int_gains = np.ones(nModes)*0.5
-        int_gains = np.zeros(nModes); int_gains[0:2]=0.5  
+        #int_gains = np.ones(nModes)*-0.5
+        int_gains = np.zeros(nModes); int_gains[0:3]=-0.5  
         control = IntControl(delay=2, int_gain=int_gains)
         dm = DM(type_str='zernike',
                 pixel_pitch=pupil_diameter_in_pixel,
@@ -90,7 +98,9 @@ class TestSpecula():
       
         self._bronte_factory = startup()
         
-        bronte = TestbenchDeviceManager(self._bronte_factory, target_device_idx=target_device_idx)
+        bronte = TestbenchDeviceManager(self._bronte_factory, 
+                                        do_plots=True,
+                                        target_device_idx=target_device_idx)
     
         ######################
         # CALIBRATION objects
@@ -104,15 +114,24 @@ class TestSpecula():
         #     target_device_idx=target_device_idx)
         # sh_subap_calibrator.inputs['in_pixels'].set(bronte.outputs['out_pixels'])
         
+        
+        ampla = np.ones(152)
+        ampla[0:2]=1
+        ampla[2:5]=0.2
+        ampla[5:14]=0.15
+        ampla[14:54]=0.1
+        ampla[54:]=0.08
+        amplv = ampla[0:nModes]*1000
         pp = FuncGenerator(func_type= 'PUSHPULL',
                            nmodes=nModes,
-                           vect_amplitude = np.ones(nModes)*1000,#in nm
+                           vect_amplitude = amplv,#in nm
                            target_device_idx=target_device_idx)
     
         im_calibrator = ImRecCalibrator(
                             data_dir = reconstructor_folder(),
                             nmodes=nModes,
-                            output_tag='241129_183900_bronte_rec',
+                            rec_tag='241203_140300_bronte_rec',
+                            im_tag='241203_140300_bronte_im',
                             target_device_idx=target_device_idx)
     
     
@@ -141,8 +160,11 @@ class TestSpecula():
             prop.inputs['layer_list'].set([empty_layer, dm.outputs['out_layer']])
             self._n_steps = nModes * 2
         else:
-            self._n_steps = 20
+            self._n_steps = 30
     
+        disp = ModesDisplay()
+        disp.inputs['modes'].set(rec.out_modes)
+
         if calib_rec:
             group1 = [seeing, wind_speed, wind_direction, pp]
             group2 = [dm, atmo]
@@ -159,7 +181,7 @@ class TestSpecula():
             group4 = [bronte]
             group5 = [slopec]
             group6 = [rec]
-            group7 = [control]
+            group7 = [control, disp]
             group8 = [dm]
 
         self._groups = [group1, group2, group3, group4, group5, group6, group7, group8]

@@ -35,23 +35,6 @@ class ScaoRealTimeComputer:
     def _update_telemetry_buffers(self, zc):
         self._delta_modal_command_buffer.store(zc.toNumpyArray())
 
-    # def _compute_masks(self):
-    #     # TODO: move the creation of mask in the slope_computer or in the subaperture set
-    #     dd = self._sc.subapertures_id_map()
-    #     l = np.where(dd.sum(axis=0))[0].min()
-    #     r = np.where(dd.sum(axis=0))[0].max()
-    #     b = np.where(dd.sum(axis=1))[0].min()
-    #     t = np.where(dd.sum(axis=1))[0].max()
-    #     n_subap_l_r = int((r-l+1)/self._sc.subaperture_size)
-    #     n_subap_b_t = int((t-b+1)/self._sc.subaperture_size)
-    #     dd = rebin(dd[b:t+1, l:r+1], (n_subap_b_t, n_subap_l_r))
-    #     dd[dd > 0] = 1
-    #     maska = (1-dd).astype(bool)
-    #
-    #     # create Circular Mask to be used as Zernike unitary circle
-    #     mask = CircularMask((n_subap_b_t, n_subap_l_r))
-    #     return maska, mask
-
     @logEnterAndExit("Computing Zernike coefficients...", "Zernike coefficients computed", level='debug')
     def _compute_zernike_coefficients(self):
         # create Slopes object in rad
