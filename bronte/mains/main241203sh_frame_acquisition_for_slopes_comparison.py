@@ -4,7 +4,7 @@ from bronte.startup import startup
 from bronte import package_data
 from arte.types.zernike_coefficients import ZernikeCoefficients
 from astropy.io import fits
-from setuptools.tests import test_packageindex
+
 
 def main(ftag, amp):
     SLM_RESPONSE_TIME = 0.005
