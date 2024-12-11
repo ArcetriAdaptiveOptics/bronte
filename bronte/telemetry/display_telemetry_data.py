@@ -3,12 +3,15 @@ import numpy as np
 from bronte.mains.main240802_ao_test import TestAoLoop
 import matplotlib.pyplot as plt
 from mpl_toolkits.axes_grid1 import make_axes_locatable
+from bronte.package_data import modal_offsets_folder
+from astropy.io import fits
 
 class DisplayTelemetryData():
     
-    def __init__(self, fname):
+    def __init__(self, ftag):
         
-        self._load_telemetry_data_from_file(fname)
+        self._telemetry_data_ftag = ftag
+        self._load_telemetry_data_from_file(ftag)
         self._n_of_modes = self._zc_integrated_modal_cmds.shape[-1]
         self._first_idx_mode = 2 # j noll index mode
              
@@ -72,7 +75,8 @@ class DisplayTelemetryData():
             mode_index_list = np.arange(self._first_idx_mode,
                                          self._n_of_modes + self._first_idx_mode)
         else:
-            delta_modal_command = self._zc_delta_modal_cmds[step][mode_index_list]
+            mode_index = np.array(mode_index_list) - self._first_idx_mode
+            delta_modal_command = self._zc_delta_modal_cmds[step][mode_index]
         
         plt.figure()
         plt.clf()
@@ -90,7 +94,8 @@ class DisplayTelemetryData():
             mode_index_list = np.arange(self._first_idx_mode,
                                          self._n_of_modes + self._first_idx_mode)
         else:
-            modal_command = self._zc_integrated_modal_cmds[step ,mode_index_list]
+            mode_index = np.array(mode_index_list) - self._first_idx_mode
+            modal_command = self._zc_integrated_modal_cmds[step, mode_index]
         
         plt.figure()
         plt.clf()
@@ -161,3 +166,24 @@ class DisplayTelemetryData():
         self._texp_psf_cam, self._fps_psf_cam,\
             self._texp_sh_cam, self._fps_sh_cam,\
              self._tresp_slm = hardware_param_list[:]
+             
+    def save_integrated_coefficients_as_modal_offset(self, ftag):
+        
+        file_name = modal_offsets_folder() / (ftag + '.fits')
+        modal_offset = self.get_integrated_modal_commands_at_step(-1)
+        hdr = fits.Header()
+        hdr['TEL_TAG'] = self._telemetry_data_ftag
+        fits.writeto(file_name, modal_offset, hdr)
+       
+    @staticmethod
+    def load_modal_offset(ftag):
+        
+        file_name = modal_offsets_folder() / (ftag + '.fits')
+        
+        header = fits.getheader(file_name)
+        hduList = fits.open(file_name)
+        
+        telemetry_data_tag = header['TEL_TAG']
+        modal_offset = hduList[0].data
+        
+        return modal_offset, telemetry_data_tag

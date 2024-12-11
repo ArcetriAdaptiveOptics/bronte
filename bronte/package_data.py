@@ -42,3 +42,9 @@ def telemetry_folder():
 
 def shframes_folder(): 
     return data_root_dir() / "shwfs_frames"
+
+def modal_offsets_folder():
+    return data_root_dir() / "modal_offsets"
+
+def temp_folder():
+    return data_root_dir() / "temp_trash"

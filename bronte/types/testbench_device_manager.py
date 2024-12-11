@@ -34,6 +34,7 @@ class TestbenchDeviceManager(BaseProcessingObj):
         time.sleep(self.SLM_RESPONSE_TIME)
         #TODO: manage the different integration times for the each wfs group
         # how to reproduce faint source? shall we play with the texp of the hardware?
+        #TODO: load dark and bkg for sh frame reduction
         sh_camera_frame = self._sh_camera.getFutureFrames(1, 1).toNumpyArray()        
         self.output_frame.pixels = sh_camera_frame
         self.output_frame.generation_time = self.current_time

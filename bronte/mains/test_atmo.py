@@ -1,4 +1,5 @@
 import specula
+from astropy.modeling.tests.test_model_sets import xxx
 specula.init(-1, precision=1)  # Default target=-1 (CPU), float32=1
 from specula import np
 from specula.processing_objects.im_rec_calibrator import ImRecCalibrator
@@ -19,13 +20,14 @@ from specula.display.modes_display import ModesDisplay
 from bronte.startup import startup
 from bronte.types.testbench_device_manager import TestbenchDeviceManager
 from bronte.package_data import subaperture_set_folder, reconstructor_folder,\
-    phase_screen_folder
-
+    phase_screen_folder, temp_folder
+from astropy.io import fits
 
 class TestSpecula():
     
-    def __init__(self, target_device_idx=-1, xp=np):
-        calib_rec = False
+    def __init__(self, calib_rec = False, target_device_idx=-1, xp=np):
+        #calib_rec = False
+        self._calib_rec = calib_rec
     
         factory = startup()
         telescope_pupil_diameter = 40
@@ -66,14 +68,14 @@ class TestSpecula():
                                             },
                                target_device_idx=target_device_idx)
     
-        subapdata = SubapData.restore_from_bronte(subaperture_set_folder() / "241129_162300.fits")  #240807_152700.fits
+        subapdata = SubapData.restore_from_bronte(subaperture_set_folder() / "241202_172000.fits") #"241129_162300.fits"  #240807_152700.fits
         
         slopec = ShSlopec(subapdata= subapdata)
     
         nslopes = subapdata.n_subaps * 2 #1510*2
-        nModes = 21
+        nModes = 3#21
         
-        if calib_rec:
+        if self._calib_rec:
             recmat = Recmat(recmat=np.zeros((nModes, nslopes)))
             rec = Modalrec(nModes, recmat=recmat)
         else:
@@ -97,6 +99,7 @@ class TestSpecula():
                 height=  0)     # DM height [m]
       
         self._bronte_factory = startup()
+        self._bronte_factory.sh_camera.setExposureTime(10)
         
         bronte = TestbenchDeviceManager(self._bronte_factory, 
                                         do_plots=True,
@@ -116,8 +119,9 @@ class TestSpecula():
         
         
         ampla = np.ones(152)
-        ampla[0:2]=1
-        ampla[2:5]=0.2
+        ampla[0:3]=1
+        ampla[2]= 0 # Focus
+        ampla[3:5]=0.2
         ampla[5:14]=0.15
         ampla[14:54]=0.1
         ampla[54:]=0.08
@@ -130,8 +134,8 @@ class TestSpecula():
         im_calibrator = ImRecCalibrator(
                             data_dir = reconstructor_folder(),
                             nmodes=nModes,
-                            rec_tag='241203_140300_bronte_rec',
-                            im_tag='241203_140300_bronte_im',
+                            rec_tag='241211_142000__bronte_rec',
+                            im_tag='241211_142000_bronte_im',
                             target_device_idx=target_device_idx)
     
     
@@ -155,7 +159,7 @@ class TestSpecula():
         control.inputs['delta_comm'].set(rec.out_modes)
         dm.inputs['in_command'].set(control.out_comm)
     
-        if calib_rec:
+        if self._calib_rec:
             dm.inputs['in_command'].set(pp.output)
             prop.inputs['layer_list'].set([empty_layer, dm.outputs['out_layer']])
             self._n_steps = nModes * 2
@@ -165,7 +169,7 @@ class TestSpecula():
         disp = ModesDisplay()
         disp.inputs['modes'].set(rec.out_modes)
 
-        if calib_rec:
+        if self._calib_rec:
             group1 = [seeing, wind_speed, wind_direction, pp]
             group2 = [dm, atmo]
             group3 = [prop]
@@ -203,7 +207,12 @@ class TestSpecula():
                     print('trigger', obj)
                     obj.trigger()
                     obj.post_trigger()
-    
+            if self._calib_rec:
+                fits.writeto( 
+                    temp_folder() / f'241211_142000_frame{step}.fits',
+                    self._groups[3][0].outputs['out_pixels'].pixels
+                    )
+            
         for group in self._groups:
             for obj in group:
                 obj.finalize()

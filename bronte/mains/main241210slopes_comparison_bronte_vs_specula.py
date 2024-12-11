@@ -14,6 +14,7 @@ from specula import np
 
 from specula.data_objects.subap_data import SubapData
 from specula.data_objects.intmat import Intmat
+from specula.data_objects.recmat import Recmat
 from specula.data_objects.slopes import Slopes
 
 
@@ -61,7 +62,8 @@ class BronteVsSpeculaSlopeComputer():
         
     def compute_slopes_with_bronte_and_display(self, idx):
         
-        self._compute_slope_offset_with_bronte()
+        #useless
+        #self._compute_slope_offset_with_bronte()
         
         sh_frame = self._red_frames[idx].astype(float)
         
@@ -99,18 +101,25 @@ class BronteVsSpeculaSlopeComputer():
         
         #subapdata = SubapData.restore_from_bronte(subaperture_set_folder() / (self._factory.SUBAPS_TAG + ".fits"))  
 
-        self._im = Intmat.restore(
-            reconstructor_folder() / "241203_140300_bronte_im.fits")
-        
-        subapdata = SubapData.restore_from_bronte(
-            subaperture_set_folder() / "241129_162300.fits")
-        s = Slopes(slopes = self._im._intmat[idx])
-        self._slope_map = s.get2d(cm=None, pupdata=subapdata)
-        slope_map_x = self._slope_map[0]
-        slope_map_y = self._slope_map[1]
-        
-        self._display_slope_maps(slope_map_x, slope_map_y)
-    
+        # self._im = Intmat.restore(
+        #     reconstructor_folder() / "241203_140300_bronte_im.fits")
+        #
+        # self._rec = Recmat.restore(reconstructor_folder() / "241203_140300_bronte_rec.fits")
+        #
+        # subapdata = SubapData.restore_from_bronte(
+        #     subaperture_set_folder() / "241129_162300.fits")
+        #
+        # s = Slopes(slopes = self._im._intmat[idx])
+        #
+        # self._slope_map = s.get2d(cm=None, pupdata=subapdata)
+        #
+        # slope_map_x = self._slope_map[0]
+        # slope_map_y = self._slope_map[1]
+        #
+        # self._display_slope_maps(slope_map_x, slope_map_y)
+        #
+        pass
+
     def _get_redCube_from_rawCube(self, raw_cube, frame2sub):
         
         Nframes = raw_cube.shape[0]
