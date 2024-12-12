@@ -9,7 +9,6 @@ from specula.data_objects.pixels import Pixels
 from specula.processing_objects.sh_slopec import ShSlopec
 from specula.data_objects.slopes import Slopes
 from bronte.mains import main241211_pixel_output_from_specula
-#from bronte.telemetry.display_telemetry_data import DisplayTelemetryData
 from bronte.startup import startup
 from bronte.package_data import subaperture_set_folder
 from mpl_toolkits.axes_grid1 import make_axes_locatable
