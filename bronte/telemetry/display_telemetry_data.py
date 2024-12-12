@@ -7,7 +7,17 @@ from bronte.package_data import modal_offsets_folder
 from astropy.io import fits
 
 class DisplayTelemetryData():
-    
+    """
+    A class for visualizing and managing telemetry data collected from main240802_ao_test.py.
+
+    This class provides methods to display point spread functions (PSFs), slope maps, and Zernike modal coefficients
+    from telemetry data, as well as utility functions for saving and loading modal offsets.
+
+    Attributes:
+        ftag (str): File tag associated with the telemetry data file, saved with
+        main240802_ao_test.py.
+
+    """
     def __init__(self, ftag):
         
         self._telemetry_data_ftag = ftag
@@ -16,7 +26,13 @@ class DisplayTelemetryData():
         self._first_idx_mode = 2 # j noll index mode
              
     def display_short_exp_psf_at_step(self, step, roi_str = None):
-        
+        """
+        Display the short-exposure PSF at a specific step of the loop.
+
+        Args:
+            step (int): Step index of the PSF frame.
+            roi_str (str, optional): Region of interest (ROI) of the PSF to be displayed as a string, e.g., '2:10,100:200'.
+        """
         if roi_str is None:
             psf = self._short_exp_psfs[step]
         else:
@@ -28,7 +44,12 @@ class DisplayTelemetryData():
         plt.colorbar(label='ADU')
     
     def display_long_exp_psf(self, roi_str = None):
-        
+        """
+        Display the long-exposure PSF.
+
+        Args:
+            roi_str (str, optional): Region of interest (ROI)  of the PSF to be displayed as a string, e.g., '2:10,100:200'.
+        """
         if roi_str is None:
             psf = self._long_exp_psf
         else:
@@ -41,7 +62,13 @@ class DisplayTelemetryData():
         plt.colorbar(label='ADU')
         
     def display_slopes_maps_at_step(self, step, roi_str = None):
-        
+        """
+        Display the slope maps (X and Y) at a specific step of the loop.
+
+        Args:
+            step (int): Step index of the loop.
+            roi_str (str, optional): Region of interest (ROI) of the slope maps as a string, e.g., '2:10,100:200'.
+        """
         if roi_str is None:
             slope_map_x = self._slopes_x_maps[step]
             slope_map_y = self._slopes_y_maps[step]
@@ -69,7 +96,13 @@ class DisplayTelemetryData():
         fig.tight_layout()
     
     def display_delta_modal_commads_at_step(self, step, mode_index_list = None):
-        
+        """
+        Display the delta modal commands (i.e. Zernike coefficients) at a specific step of the loop.
+
+        Args:
+            step (int): Step index of the loop.
+            mode_index_list (list, optional): List of mode indices to display. If None, display all.
+        """
         if mode_index_list is None:
             delta_modal_command = self._zc_delta_modal_cmds[step]
             mode_index_list = np.arange(self._first_idx_mode,
@@ -88,7 +121,13 @@ class DisplayTelemetryData():
         plt.legend(loc='best')
     
     def display_integrated_modal_commands_at_step(self, step, mode_index_list=None):
-        
+        """
+        Display the integrated modal commands (i.e Zernike coefficients) at a specific step of the loop.
+
+        Args:
+            step (int): Step index of the loop.
+            mode_index_list (list, optional): List of mode indices to display. If None, display all.
+        """
         if mode_index_list is None:
             modal_command = self._zc_integrated_modal_cmds[step]
             mode_index_list = np.arange(self._first_idx_mode,
@@ -107,13 +146,40 @@ class DisplayTelemetryData():
         plt.legend(loc='best')
     
     def get_slopes_x_at_step(self, step):
+        """
+        Returns the slope map (2D) in the X axis at a specific step of the loop.
+
+        Args:
+            step (int): Step index of the loop.
+
+        Returns:
+            np.ndarray: slope map in the X direction for the specified step of the loop.
+        """
         return self._slopes_x_maps[step]
     
     def get_slopes_y_at_step(self, step):
+        """
+        Returns the slope map (2D) in the Y axis at a specific step of the loop.
+
+        Args:
+            step (int): Step index of the loop.
+
+        Returns:
+            np.ndarray: slope map in the Y direction for the specified step of the loop.
+        """
         return self._slopes_y_maps[step]
     
     def get_delta_modal_commands_at_step(self, step, mode_index_list = None):
-        
+        """
+        Returns the delta modal commands at a specific step of the loop.
+
+        Args:
+            step (int): Step index of the loop.
+            mode_index_list (list, optional): List of mode indices to return. If None, returns.
+
+        Returns:
+            np.ndarray: Delta modal commands for the specified step of the loop.
+        """
         if mode_index_list is None:
             delta_modal_command = self._zc_delta_modal_cmds[step]   
         else:
@@ -122,7 +188,16 @@ class DisplayTelemetryData():
         return delta_modal_command
     
     def get_integrated_modal_commands_at_step(self, step, mode_index_list = None):
-        
+        """
+        Returns the integrated modal commands at a specific step of the loop.
+
+        Args:
+            step (int): Step index of the loop.
+            mode_index_list (list, optional): List of mode indices to return. If None, returns.
+
+        Returns:
+            np.ndarray: Integrated modal commands for the specified step of the loop.
+        """
         if mode_index_list is None:
             modal_command = self._zc_integrated_modal_cmds[step]
         else:
@@ -131,10 +206,17 @@ class DisplayTelemetryData():
         return modal_command
     
     def _get_roi(self, array_map, roi_str):
-        '''
-        return the roi of a 2d array
-        roi_str is a string (for instance '2:10,100:200')
-        '''
+        """
+        Returns the region of interest (ROI) from a 2D array.
+
+        Args:
+            array_map (np.ndarray): 2D array.
+            roi_str (str): ROI as a string, e.g., '2:10,100:200'.
+
+        Returns:
+            np.ndarray: Extracted ROI from the input array.
+        """
+        
         rows, cols = roi_str.split(',')
         row_start, row_end = map(lambda x: int(x) if x else None, rows.split(':'))
         col_start, col_end = map(lambda x: int(x) if x else None, cols.split(':'))
@@ -168,7 +250,12 @@ class DisplayTelemetryData():
              self._tresp_slm = hardware_param_list[:]
              
     def save_integrated_coefficients_as_modal_offset(self, ftag):
-        
+        """
+        Saves the integrated modal coefficients as modal offsets in a fits file.
+
+        Args:
+            ftag (str): File tag for the modal offset file.
+        """
         file_name = modal_offsets_folder() / (ftag + '.fits')
         modal_offset = self.get_integrated_modal_commands_at_step(-1)
         hdr = fits.Header()
@@ -177,7 +264,15 @@ class DisplayTelemetryData():
        
     @staticmethod
     def load_modal_offset(ftag):
-        
+        """
+        Returns modal offsets from a file.
+
+        Args:
+            ftag (str): File tag for the modal offset file to be loaded.
+
+        Returns:
+            tuple: A tuple containing the modal offset array and the telemetry data file tag, from which are derived.
+        """
         file_name = modal_offsets_folder() / (ftag + '.fits')
         
         header = fits.getheader(file_name)

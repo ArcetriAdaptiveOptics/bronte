@@ -1,5 +1,4 @@
 import specula
-from astropy.modeling.tests.test_model_sets import xxx
 specula.init(-1, precision=1)  # Default target=-1 (CPU), float32=1
 from specula import np
 from specula.processing_objects.im_rec_calibrator import ImRecCalibrator
@@ -29,9 +28,9 @@ class TestSpecula():
         #calib_rec = False
         self._calib_rec = calib_rec
     
-        factory = startup()
+        self._factory = startup()
         telescope_pupil_diameter = 40
-        pupil_diameter_in_pixel  = 2 * factory.slm_pupil_mask.radius()
+        pupil_diameter_in_pixel  = 2 * self._factory.slm_pupil_mask.radius()
         pupil_pixel_pitch = round(telescope_pupil_diameter/pupil_diameter_in_pixel, 3)
         
         seeing = FuncGenerator(constant=0.0,
@@ -68,7 +67,8 @@ class TestSpecula():
                                             },
                                target_device_idx=target_device_idx)
     
-        subapdata = SubapData.restore_from_bronte(subaperture_set_folder() / "241202_172000.fits") #"241129_162300.fits"  #240807_152700.fits
+        subapdata = SubapData.restore_from_bronte(
+            subaperture_set_folder() / (self._factory.SUBAPS_TAG + ".fits"))#"241202_172000.fits" #"241129_162300.fits"  #240807_152700.fits
         
         slopec = ShSlopec(subapdata= subapdata)
     
@@ -98,10 +98,10 @@ class TestSpecula():
                 obsratio= 0,                    # obstruction dimension ratio w.r.t. diameter
                 height=  0)     # DM height [m]
       
-        self._bronte_factory = startup()
-        self._bronte_factory.sh_camera.setExposureTime(10)
         
-        bronte = TestbenchDeviceManager(self._bronte_factory, 
+        self._factory.sh_camera.setExposureTime(10)
+        
+        bronte = TestbenchDeviceManager(self._factory, 
                                         do_plots=True,
                                         target_device_idx=target_device_idx)
     
@@ -120,7 +120,7 @@ class TestSpecula():
         
         ampla = np.ones(152)
         ampla[0:3]=1
-        ampla[2]= 0 # Focus
+        #ampla[2]= 0 # Focus
         ampla[3:5]=0.2
         ampla[5:14]=0.15
         ampla[14:54]=0.1
@@ -134,8 +134,8 @@ class TestSpecula():
         im_calibrator = ImRecCalibrator(
                             data_dir = reconstructor_folder(),
                             nmodes=nModes,
-                            rec_tag='241211_142000__bronte_rec',
-                            im_tag='241211_142000_bronte_im',
+                            rec_tag='241212_105500_bronte_rec',
+                            im_tag='241212_105500_bronte_im',
                             target_device_idx=target_device_idx)
     
     
@@ -209,7 +209,7 @@ class TestSpecula():
                     obj.post_trigger()
             if self._calib_rec:
                 fits.writeto( 
-                    temp_folder() / f'241211_142000_frame{step}.fits',
+                    temp_folder() / f'241212_105500_frame{step}.fits',
                     self._groups[3][0].outputs['out_pixels'].pixels
                     )
             

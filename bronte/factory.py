@@ -13,14 +13,16 @@ from arte.utils.modal_decomposer import ModalDecomposer
 from arte.atmo.phase_screen_generator import PhaseScreenGenerator
 from bronte.wfs.temporal_controller import PureIntegrator
 from bronte.types.slm_pupil_mask_generator import SlmPupilMaskGenerator
+from bronte.telemetry.display_telemetry_data import DisplayTelemetryData
 
 class BronteFactory():
     SUBAPS_TAG = '241202_172000' #'241129_162300'#'240807_152700'  # '240802_122800'
     PHASE_SCREEN_TAG = '240806_124700'
     MODAL_DEC_TAG = None#'241105_170400' #None
     ELT_PUPIL_TAG = None #'EELT480pp0.0803m_obs0.283_spider2023'
-    N_ZERNIKE_MODES_TO_CORRECT = 200 #200
-    N_MODES_TO_CORRECT = 200 #200
+    N_ZERNIKE_MODES_TO_CORRECT = 3 #200
+    N_MODES_TO_CORRECT = 3 #200
+    MODAL_OFFSET_TAG = '241211_160500_modal_offset' # tip tilt offset
 
     def __init__(self):
         self._set_up_basic_logging()
@@ -75,7 +77,14 @@ class BronteFactory():
     @cached_property
     def slm_rasterizer(self):
         return SlmRasterizer(self.slm_pupil_mask)
-
+    
+    @cached_property
+    def modal_offset(self):
+        if self.MODAL_OFFSET_TAG is None:
+            return None
+        modal_offset,_ = DisplayTelemetryData.load_modal_offset(self.MODAL_OFFSET_TAG)
+        return modal_offset 
+        
     @cached_property
     def modal_decomposer(self):
         

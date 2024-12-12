@@ -23,13 +23,16 @@ class SlmRasterizer():
         
     @logEnterAndExit("Converting zernike coefficients to slm map",
                      "Zernike coefficients converted to slm map", level='debug')
-    def zernike_coefficients_to_raster(self, zernike_coefficients):
+    def zernike_coefficients_to_raster(self, zernike_coeffs):
         '''
-        Convert a ZernikeCoefficients object to a wavefront raster
-        in wf meter units.
+        Convert a ZernikeCoefficients object or an array of coefficients (in m rms)
+        to a wavefront raster in wf meter units.
         '''
+        if isinstance(zernike_coeffs, np.ndarray):
+            zernike_coeffs = self.get_zernike_coefficients_from_numpy_array(zernike_coeffs)
+        
         wfz = self._zernike_modal_decomposer.recomposeWavefrontFromModalCoefficients(
-            zernike_coefficients, self.slm_pupil_mask)
+            zernike_coeffs, self.slm_pupil_mask)
         return wfz
  
     def get_wavefront_on_pupil(self, wf):

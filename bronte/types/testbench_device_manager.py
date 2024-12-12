@@ -18,8 +18,12 @@ class TestbenchDeviceManager(BaseProcessingObj):
         self.output_frame = Pixels(*self._sh_camera.shape())
         self.outputs['out_pixels'] = self.output_frame
         self.inputs['ef'] = InputValue(type=ElectricField)
-        self._do_plots=do_plots
+        self._do_plots = do_plots
         self.first = True
+        if factory.modal_offset is None:
+            self._offset_cmd = 0.
+        else:
+            self._offset_cmd = self._get_offset_command(factory.modal_offset)
         
         if self._do_plots:
             self.fig, self.axs = plt.subplots(2, figsize=(10, 10))
@@ -29,7 +33,7 @@ class TestbenchDeviceManager(BaseProcessingObj):
         phase_screen = cpuArray(ef.phaseInNm) * 1e-9
         
         phase_screen_to_raster = self._slm_raster.get_recentered_phase_screen_on_slm_pupil_frame(phase_screen)
-        command = self._slm_raster.reshape_map2vector(phase_screen_to_raster)
+        command = self._slm_raster.reshape_map2vector(phase_screen_to_raster) + self._offset_cmd
         self._slm.set_shape(command)
         time.sleep(self.SLM_RESPONSE_TIME)
         #TODO: manage the different integration times for the each wfs group
@@ -71,3 +75,9 @@ class TestbenchDeviceManager(BaseProcessingObj):
         # Ridisegna la figura
         self.fig.canvas.draw()
         plt.pause(0.001)
+    
+    def _get_offset_command(self, modal_offset):
+        wfz_offset = self._slm_raster.zernike_coefficients_to_raster(modal_offset)
+        wf_offset = wfz_offset.toNumpyArray()
+        cmd_offset = self._slm_raster.reshape_map2vector(wf_offset)
+        return cmd_offset
