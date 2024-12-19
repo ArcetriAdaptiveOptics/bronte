@@ -73,7 +73,7 @@ class TestSpecula():
         slopec = ShSlopec(subapdata= subapdata)
     
         nslopes = subapdata.n_subaps * 2 #1510*2
-        nModes = 3#21
+        nModes = 21 #self._factory.N_MODES_TO_CORRECT # 3#21
         
         if self._calib_rec:
             recmat = Recmat(recmat=np.zeros((nModes, nslopes)))
@@ -81,11 +81,10 @@ class TestSpecula():
         else:
             #recmat = Recmat.restore(reconstructor_folder() / "241129_183600_bronte_rec.fits")
     #        recmat = Recmat.restore(reconstructor_folder() / "241202_174000_bronte_rec.fits")
-            recmat = Recmat.restore(reconstructor_folder() / "241203_140300_bronte_rec.fits")
+            recmat = Recmat.restore(reconstructor_folder() / "241218_105100_bronte_rec.fits")
             modal_offset= np.zeros(nModes)
-            modal_offset[2]=50 # Z4
-#            modal_offset[3]=0
-#            modal_offset[4]=000
+            num_of_modal_offset = len(self._factory.modal_offset)
+            modal_offset[:num_of_modal_offset] = self._factory.modal_offset
             rec = Modalrec(nModes, recmat=recmat, modal_offset=modal_offset)
     
         #int_gains = np.ones(nModes)*-0.5
@@ -134,8 +133,8 @@ class TestSpecula():
         im_calibrator = ImRecCalibrator(
                             data_dir = reconstructor_folder(),
                             nmodes=nModes,
-                            rec_tag='241212_105500_bronte_rec',
-                            im_tag='241212_105500_bronte_im',
+                            rec_tag='241218_105100_bronte_rec',
+                            im_tag='241218_105100_bronte_im',
                             target_device_idx=target_device_idx)
     
     
@@ -209,7 +208,7 @@ class TestSpecula():
                     obj.post_trigger()
             if self._calib_rec:
                 fits.writeto( 
-                    temp_folder() / f'241212_105500_frame{step}.fits',
+                    temp_folder() / f'241218_105100_frame{step}.fits',
                     self._groups[3][0].outputs['out_pixels'].pixels
                     )
             

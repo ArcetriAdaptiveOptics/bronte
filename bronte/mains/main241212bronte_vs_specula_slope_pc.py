@@ -49,7 +49,7 @@ class BronteVsSpeculaSlopePC():
     '''
     This class is meant to compare the slopes maps obtained using Bronte/Argos
     and specula slope computers to debug test_atmo.py and main240802_ao_test.
-    Note that test_atmo.py (specula) relay on a measured int and rec matrices
+    Note that test_atmo.py (specula) relies on measured int and rec matrices
     while main240802_ao_test.py (fully bronte) on synthetic ones
     
     

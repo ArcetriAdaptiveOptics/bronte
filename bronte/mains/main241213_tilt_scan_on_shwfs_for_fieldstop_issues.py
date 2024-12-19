@@ -89,17 +89,24 @@ class TiltScannerForSlopesLinearityAnalyzer():
     def _compute_bronte_slopes_cube(self):
         
         slopes_cube = np.zeros((self._Ntilts, self._nsub, 2))
-        
+        slope_map_x_cube = []
+        slope_map_y_cube = []
         for idx in np.arange(self._Ntilts):
             
             self._factory.slope_computer.set_frame(self._frame_cube[idx])
             slopes_cube[idx] = self._factory.slope_computer.slopes()
+            slope_map_x_cube.append(self._factory.slope_computer.slopes_x_map())
+            slope_map_y_cube.append(self._factory.slope_computer.slopes_y_map())
             
-        self._bronte_slopes_cube = slopes_cube  
+        self._bronte_slopes_cube = slopes_cube
+        self._bronte_slope_map_x_cube = np.array(slope_map_x_cube)
+        self._bronte_slope_map_y_cube = np.array(slope_map_y_cube)  
     
     def _compute_specula_slopes_cube(self):
         
         slopes_cube = np.zeros((self._Ntilts, self._nsub, 2))
+        slope_map_x_cube = []
+        slope_map_y_cube = []
         
         slopec = ShSlopec(subapdata=self._specula_subap)
         pix = Pixels(dimx = self._ref_frame.shape[1], dimy =self._ref_frame.shape[0] )
@@ -113,8 +120,14 @@ class TiltScannerForSlopesLinearityAnalyzer():
             s = copy.copy(slopec.slopes.slopes)
             slopes_cube[idx,:, 0] = Slopes(slopes = s).xslopes#get2d(None, pupdata=self._specula_subap)
             slopes_cube[idx,:, 1] = Slopes(slopes = s).yslopes
+            s_2d =  Slopes(slopes = s).get2d(None, pupdata=self._specula_subap)
+            slope_map_x_cube.append(s_2d[0])
+            slope_map_y_cube.append(s_2d[1])
+            
         self._specula_slopes_cube = slopes_cube
-    
+        self._specula_slope_map_x_cube = np.array(slope_map_x_cube)
+        self._specula_slope_map_y_cube = np.array(slope_map_y_cube)
+        
     def display_slopes(self, idx):
         specula_slope_x = self._specula_slopes_cube[idx, :, 0]
         specula_slope_y = self._specula_slopes_cube[idx, :, 1]
@@ -196,3 +209,43 @@ class TiltScannerForSlopesLinearityAnalyzer():
         ptv_um = np.round(2*abs(self._semi_amp_vec[idx]) /1e-6, 3)
         fig.suptitle(title + f"tilt ptv {ptv_um} um")
         fig.tight_layout()
+    
+    def display_specula_slope_maps(self, idx, title='Specula: '):
+        
+        slope_map_x = self._specula_slope_map_x_cube[idx]
+        slope_map_y = self._specula_slope_map_y_cube[idx]
+        
+        self._display_slope_maps(slope_map_x, slope_map_y, title)       
+    
+    def display_bronte_slope_maps(self, idx, title='Bronte: '):
+        
+        slope_map_x = self._bronte_slope_map_x_cube[idx]
+        slope_map_y = self._bronte_slope_map_y_cube[idx]
+        
+        self._display_slope_maps(slope_map_x, slope_map_y, title)
+        
+    def _display_slope_maps(self, slope_map_x, slope_map_y, title):
+        
+        fig, axs = plt.subplots(1, 2, sharex = True,
+                                 sharey = True)
+        
+        axs[0].set_title('Slope Map X')
+        im_map_x = axs[0].imshow(slope_map_x, cmap='jet')
+        # Use make_axes_locatable to create a colorbar of the same height
+        divider_x = make_axes_locatable(axs[0])
+        cax_x = divider_x.append_axes("right", size="5%", pad=0.15)  # Adjust size and padding
+        fig.colorbar(im_map_x, cax=cax_x, label='a.u.')
+        
+        axs[1].set_title('Slope Map Y')
+        im_map_y = axs[1].imshow(slope_map_y, cmap='jet')
+        
+        divider_y = make_axes_locatable(axs[1])
+        cax_y = divider_y.append_axes("right", size="5%", pad=0.15)
+        fig.colorbar(im_map_y, cax=cax_y, label='a.u.')
+        fig.subplots_adjust(wspace=0.5)
+        
+        fig.suptitle(title)
+        fig.tight_layout()
+    
+    
+    
