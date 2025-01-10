@@ -13,8 +13,8 @@ class SlmPupilMaskGenerator():
     #TODO: extend the class to a generic pupil in order to
     # load an user defined pupil (or a elt like one) 
     #SLM PUPIL MASK PARAMETERS IN PIXEL
-    PUPIL_CENTER = (581, 875)#YX
-    PUPIL_RADIUS = 571
+    PUPIL_CENTER = (579, 968)#YX
+    PUPIL_RADIUS = 568
     OBSTRUCTION_RADIUS = 164
     FRAME_SHAPE = (1152, 1920)
 
