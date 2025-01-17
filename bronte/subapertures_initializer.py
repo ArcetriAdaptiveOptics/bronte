@@ -4,7 +4,8 @@ import matplotlib.pyplot as plt
 
 from bronte.wfs.slope_computer import PCSlopeComputer
 from bronte.wfs.subaperture_set import ShSubapertureSet
-from arte.types.slopes import Slopes
+#from bronte.mains.main250117subaperture_set_initialiser import ShSubapertureSet
+#from arte.types.slopes import Slopes
 
 
 class SubapertureGridInitialiser():
@@ -56,6 +57,16 @@ class SubapertureGridInitialiser():
         self.show_subaperture_grid()
         plt.title(
             f"Grid Shift: Y, X = [{grid_shiftYX[0]} , {grid_shiftYX[1]}]")
+        
+    def shift_subaperture_grid_around_central_subap(self, grid_shiftYX=[0, 0], yc = 861, xc = 959):
+        '''
+        yc and xc are the coordinates of the central subaperture wrt the footprint
+        you got with a point source
+        '''
+        self._subaps.shiftSubap(self._subaps.keys(), grid_shiftYX)
+        self.show_subaperture_grid_in_central_roi(yc, xc)
+        plt.title(
+            f"Grid Shift: Y, X = [{grid_shiftYX[0]} , {grid_shiftYX[1]}]")
 
     def _shift_subaperture_grid_to_null_tilt(self):
         offset_x = 42
@@ -77,7 +88,16 @@ class SubapertureGridInitialiser():
     def remove_low_flux_subaperturers(self, threshold=None):
 
         self._sc.remove_low_flux_subaps(threshold)
-
+    
+    def show_subaperture_grid_in_central_roi(self, yc = 861, xc = 959):
+        size = 26*3 + 4
+        hsize = int(round(size*0.5))
+        grid =  self._sc.subapertures_map()[yc-hsize:yc+hsize,xc-hsize:xc+hsize] * 1000
+        frame = self._sc.frame()[yc-hsize:yc+hsize,xc-hsize:xc+hsize]
+        self._show_map(grid+frame)
+        
+        
+    
     def show_subaperture_grid(self):
 
         self._show_map(self._sc.subapertures_map()*1000+self._sc.frame())
@@ -121,7 +141,15 @@ class SubapertureGridInitialiser():
         plt.title("Slope Y")
         plt.imshow(self._sc.slopes_y_map(), vmin=vmin, vmax=vmax)
         plt.colorbar(label='Slopes units')
-
+    
+    def display_flux_and_grid_maps(self):
+        plt.subplots(1, 2, sharex=True, sharey=True)
+        plt.subplot(1,2,1)
+        plt.imshow(self._sc.subapertures_flux_map())
+        
+        plt.subplot(1,2,2)
+        plt.imshow(self._sc.subapertures_map()*1000+self._sc.frame())
+    
     @property
     def get_wf_reference(self):
 

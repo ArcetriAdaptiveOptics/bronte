@@ -5,7 +5,7 @@ from astropy.modeling import models, fitting
 class StrehlRatioComputer():
     
     RAD2ARCSEC = 180/np.pi*3600
-    PUPIL_RADIUS = 571
+    PUPIL_RADIUS = 568#571
     
     def __init__(self):
         

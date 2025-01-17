@@ -16,12 +16,12 @@ from bronte.types.slm_pupil_mask_generator import SlmPupilMaskGenerator
 from bronte.telemetry.display_telemetry_data import DisplayTelemetryData
 
 class BronteFactory():
-    SUBAPS_TAG = '241202_172000' #'241129_162300'#'240807_152700'  # '240802_122800'
+    SUBAPS_TAG = '250117_145500'#'241202_172000' #'241129_162300'#'240807_152700'  # '240802_122800'
     PHASE_SCREEN_TAG = '240806_124700'
     MODAL_DEC_TAG = None#'241105_170400' #None
     ELT_PUPIL_TAG = None #'EELT480pp0.0803m_obs0.283_spider2023'
-    N_ZERNIKE_MODES_TO_CORRECT = 3 #200
-    N_MODES_TO_CORRECT = 3 #200
+    N_ZERNIKE_MODES_TO_CORRECT = 200 #3
+    N_MODES_TO_CORRECT = 200 #3
     MODAL_OFFSET_TAG = '241211_160500_modal_offset' # tip tilt offset
 
     def __init__(self):
