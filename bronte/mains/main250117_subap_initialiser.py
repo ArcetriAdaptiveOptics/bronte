@@ -1,7 +1,8 @@
 import numpy as np 
 from astropy.io import fits
 from bronte.subapertures_initializer import SubapertureGridInitialiser
-from bronte.package_data import shframes_folder 
+from bronte.package_data import shframes_folder
+from bronte.package_data import subaperture_set_folder 
 
 def main():
     
@@ -33,3 +34,7 @@ def main():
     
     sgi.remove_low_flux_subaperturers(threshold = 9.5e4)
     sgi.display_flux_and_grid_maps()
+    
+    #sgi._subaps.save(subaperture_set_folder()/ "fname.fits", None)
+    
+    return sgi

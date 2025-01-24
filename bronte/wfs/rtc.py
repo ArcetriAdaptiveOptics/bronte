@@ -81,7 +81,7 @@ class ScaoRealTimeComputer:
         zc_filtered = self._controller.process_delta_command(zc.toNumpyArray())
         # convert modal amplitudes in SLM shape
         slm_raster = self._slm_rasterizer.zernike_coefficients_to_raster(
-            ZernikeCoefficients.fromNumpyArray(zc_filtered))
+            ZernikeCoefficients.fromNumpyArray(zc_filtered) + self.modal_offset)
         # apply on slm
         self._dm.set_shape(
             self._slm_rasterizer.reshape_map2vector(slm_raster.toNumpyArray()+self.wavefront_disturb))
