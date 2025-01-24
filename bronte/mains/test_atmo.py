@@ -81,14 +81,14 @@ class TestSpecula():
         else:
             #recmat = Recmat.restore(reconstructor_folder() / "241129_183600_bronte_rec.fits")
     #        recmat = Recmat.restore(reconstructor_folder() / "241202_174000_bronte_rec.fits")
-            recmat = Recmat.restore(reconstructor_folder() / "250123_122300_bronte_rec.fits")
+            recmat = Recmat.restore(reconstructor_folder() / "250124_144400_bronte_rec.fits")
             modal_offset= np.zeros(nModes)
             #num_of_modal_offset = len(self._factory.modal_offset)
             if self._factory.MODAL_DEC_TAG is not None:
                 modal_offset = self._factory.modal_offset[:nModes]
             rec = Modalrec(nModes, recmat=recmat, modal_offset=modal_offset)
     
-        int_gains = np.ones(nModes)*-0.5
+        int_gains = np.ones(nModes)*-0.3
         #int_gains = np.zeros(nModes); int_gains[0:3]=-0.5  
         control = IntControl(delay=2, int_gain=int_gains)
         dm = DM(type_str='zernike',
@@ -100,7 +100,7 @@ class TestSpecula():
       
         
         self._factory.sh_camera.setExposureTime(10)
-        
+       
         bronte = TestbenchDeviceManager(self._factory, 
                                         do_plots=True,
                                         target_device_idx=target_device_idx)
@@ -134,8 +134,8 @@ class TestSpecula():
         im_calibrator = ImRecCalibrator(
                             data_dir = reconstructor_folder(),
                             nmodes=nModes,
-                            rec_tag='250123_122300_bronte_rec',
-                            im_tag='250123_122300_bronte_im',
+                            rec_tag='250123_144400_bronte_rec',
+                            im_tag='250123_144400_bronte_im',
                             target_device_idx=target_device_idx)
     
     
