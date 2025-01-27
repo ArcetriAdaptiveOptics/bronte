@@ -161,7 +161,7 @@ class TestAoLoop:
         plt.plot(zc.modeIndexes(), zc.toNumpyArray(), '.-')
         plt.grid(True)
         plt.ylabel('integrated modal coefficient')
-        plt.xlim(2, 20)
+        plt.xlim(0, 20)
         plt.show(block=False)
         plt.pause(0.2)
 
@@ -171,7 +171,7 @@ class TestAoLoop:
         plt.plot(zc.modeIndexes(), zc.toNumpyArray(), '.-')
         plt.grid(True)
         plt.ylabel('delta modal coefficient')
-        plt.xlim(2, 20)
+        plt.xlim(0, 20)
         plt.show(block=False)
         plt.pause(0.2)
 

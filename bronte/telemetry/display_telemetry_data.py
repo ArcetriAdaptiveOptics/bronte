@@ -5,6 +5,7 @@ import matplotlib.pyplot as plt
 from mpl_toolkits.axes_grid1 import make_axes_locatable
 from bronte.package_data import modal_offsets_folder
 from astropy.io import fits
+from numpy import arange
 
 class DisplayTelemetryData():
     """
@@ -94,6 +95,20 @@ class DisplayTelemetryData():
         fig.colorbar(im_map_y, cax=cax_y, label='a.u.')
         fig.subplots_adjust(wspace=0.5)
         fig.tight_layout()
+        
+    def display_rms_slopes(self):
+        
+        rms_slopes_x = self._slopes_x_maps.std(axis=(1,2))
+        rms_slopes_y = self._slopes_y_maps.std(axis=(1,2))
+        
+        plt.figure()
+        plt.clf()
+        plt.plot(rms_slopes_x, label='slope-x')
+        plt.plot(rms_slopes_y, label='slope-y')
+        plt.grid(alpha=0.3, ls='--')
+        plt.legend(loc='best')
+        plt.ylabel('rms slopes')
+        plt.xlabel('step')
     
     def display_delta_modal_commads_at_step(self, step, mode_index_list = None):
         """
@@ -237,7 +252,9 @@ class DisplayTelemetryData():
                 self._zc_delta_modal_cmds,\
                 self._zc_integrated_modal_cmds,\
                 self._zc_modal_offset = TestAoLoop.load_telemetry(fname)
-    
+        
+        self._convert_slope_maps_to_masked_array()
+        
         self._subaps_tag, self._phase_screen_tag,\
             self._modal_dec_tag = tag_list[:]
         self._r0, self._wind_speed = atmospheric_param_list[:]
@@ -248,6 +265,20 @@ class DisplayTelemetryData():
         self._texp_psf_cam, self._fps_psf_cam,\
             self._texp_sh_cam, self._fps_sh_cam,\
              self._tresp_slm = hardware_param_list[:]
+             
+    def _convert_slope_maps_to_masked_array(self):
+        frame_shape = self._slopes_x_maps[0].shape
+        Nframes = self._slopes_x_maps.shape[0]
+        mask = np.zeros(frame_shape)
+        mask[self._slopes_x_maps[-1] == 0.0] = 1
+        slope_map_x_ma = np.ma.zeros(self._slopes_x_maps.shape)
+        slope_map_y_ma = np.ma.zeros(self._slopes_y_maps.shape)
+        for idx in np.arange(Nframes):
+            slope_map_x_ma[idx] = np.ma.array(self._slopes_x_maps[idx], mask = mask)
+            slope_map_y_ma[idx] = np.ma.array(self._slopes_y_maps[idx], mask = mask)
+        self._slopes_x_maps = slope_map_x_ma
+        self._slopes_y_maps = slope_map_y_ma
+        
              
     def save_integrated_coefficients_as_modal_offset(self, ftag):
         """

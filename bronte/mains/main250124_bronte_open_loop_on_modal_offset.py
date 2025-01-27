@@ -16,13 +16,17 @@ class OpenLoopRunner():
         self._tao.reset_wavefront_disturb()
         self._tao._factory.pure_integrator_controller._gain = 0
     
-    def set_modal_offset_as_numpy_array(self, modal_offset):
+    def set_modal_offset_from_numpy_array(self, modal_offset):
         self._zc_offset = ZernikeCoefficients.fromNumpyArray(modal_offset)
         self._tao._factory.rtc.set_modal_offset(self._zc_offset)
+        wf_offset = self._factory.slm_rasterizer.zernike_coefficients_to_raster(self._zc_offset)
+        cmd_offset = self._factory.slm_rasterizer.reshape_map2vector(wf_offset.toNumpyArray())
+        self._factory.deformable_mirror.set_shape(cmd_offset)
     
     def run(self, steps = 30):
         if self._zc_offset is None:
-            self.set_modal_offset_as_numpy_array(np.array([0.,0.,0.]))
+            self.set_modal_offset_from_numpy_array(np.array([0.,0.,0.]))
+       
         self._tao.loop(steps)
         
     def save_telemetry(self, ftag):

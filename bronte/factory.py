@@ -20,9 +20,9 @@ class BronteFactory():
     PHASE_SCREEN_TAG = '240806_124700'
     MODAL_DEC_TAG = None#'241105_170400' #None
     ELT_PUPIL_TAG = None#'EELT480pp0.0803m_obs0.283_spider2023'
-    N_ZERNIKE_MODES_TO_CORRECT = 200 #3
+    N_ZERNIKE_MODES_TO_CORRECT = 200#3
     N_MODES_TO_CORRECT = 200 #3
-    MODAL_OFFSET_TAG = None #'250120_143700'#'241211_160500_modal_offset' # tip tilt offset
+    MODAL_OFFSET_TAG = None #'250127_120700' #'250120_143700'#'241211_160500_modal_offset' # tip tilt offset
 
     def __init__(self):
         self._set_up_basic_logging()
