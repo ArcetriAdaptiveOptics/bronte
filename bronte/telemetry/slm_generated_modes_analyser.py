@@ -30,10 +30,11 @@ class SlmGeneratedModesAnalyser():
         
         plt.figure()
         plt.clf()
-        plt.plot(time , amps, 'b.-', label='-dcms (+1um rms Z3) - modal_offset')
+        plt.plot(time , amps, 'b.-', label='(-dcms) - modal_offset')
         plt.ylabel('Zernike coefficient [m] rms wavefront')
         plt.xlabel('time [s]')
         plt.legend(loc='best')
+        plt.title('Z%d'%j_noll_index)
     
     def display_difference_with_modal_offset(self):
         
