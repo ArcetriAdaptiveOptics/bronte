@@ -85,29 +85,26 @@ class DisplayTelemetryData():
         # Use make_axes_locatable to create a colorbar of the same height
         divider_x = make_axes_locatable(axs[0])
         cax_x = divider_x.append_axes("right", size="5%", pad=0.15)  # Adjust size and padding
-        fig.colorbar(im_map_x, cax=cax_x, label='a.u.')
+        fig.colorbar(im_map_x, cax=cax_x, label='rad')
         
         axs[1].set_title('Slope Map Y')
         im_map_y = axs[1].imshow(slope_map_y)
         
         divider_y = make_axes_locatable(axs[1])
         cax_y = divider_y.append_axes("right", size="5%", pad=0.15)
-        fig.colorbar(im_map_y, cax=cax_y, label='a.u.')
+        fig.colorbar(im_map_y, cax=cax_y, label='rad')
         fig.subplots_adjust(wspace=0.5)
         fig.tight_layout()
         
     def display_rms_slopes(self):
         
-        rms_slopes_x = self._slopes_x_maps.std(axis=(1,2))
-        rms_slopes_y = self._slopes_y_maps.std(axis=(1,2))
-        
         plt.figure()
         plt.clf()
-        plt.plot(rms_slopes_x, label='slope-x')
-        plt.plot(rms_slopes_y, label='slope-y')
+        plt.plot(self._rms_slopes_x, label='slope-x')
+        plt.plot(self._rms_slopes_y, label='slope-y')
         plt.grid(alpha=0.3, ls='--')
         plt.legend(loc='best')
-        plt.ylabel('rms slopes')
+        plt.ylabel('rms slopes [rad]')
         plt.xlabel('step')
     
     def display_delta_modal_commads_at_step(self, step, mode_index_list = None):
@@ -160,6 +157,32 @@ class DisplayTelemetryData():
         plt.grid(alpha=0.3, ls='--')
         plt.legend(loc='best')
     
+    def show_psd_of_residual_slopes(self, loop_time_step_in_sec=0.703):
+        
+        fft_x = np.fft.fft(self._rms_slopes_x - np.mean(self._rms_slopes_x))
+        fft_y = np.fft.fft(self._rms_slopes_y - np.mean(self._rms_slopes_y))
+        freqs = np.fft.fftfreq(len(self._rms_slopes_x), d = loop_time_step_in_sec)
+        psd_x = np.abs(fft_x)**2
+        psd_y = np.abs(fft_y)**2
+        
+        plt.figure()
+        plt.loglog(freqs[:len(freqs)//2], psd_x[:len(freqs)//2], label='PSD Slope-X')
+        plt.loglog(freqs[:len(freqs)//2], psd_y[:len(freqs)//2], label='PSD Slope-Y')
+        plt.xlabel("Frequency [Hz]")
+        plt.ylabel("Power Spectral Density " +r"$[rad^2/Hz]$")
+        plt.legend()
+        plt.grid()
+        
+        
+        
+    def get_rms_slopes_x(self):
+        
+        return self._rms_slopes_x
+
+    def get_rms_slopes_y(self):
+        
+        return self._rms_slopes_y
+        
     def get_slopes_x_at_step(self, step):
         """
         Returns the slope map (2D) in the X axis at a specific step of the loop.
@@ -254,6 +277,7 @@ class DisplayTelemetryData():
                 self._zc_modal_offset = TestAoLoop.load_telemetry(fname)
         
         self._convert_slope_maps_to_masked_array()
+        self._compute_rms_slopes()
         
         self._subaps_tag, self._phase_screen_tag,\
             self._modal_dec_tag = tag_list[:]
@@ -279,6 +303,9 @@ class DisplayTelemetryData():
         self._slopes_x_maps = slope_map_x_ma
         self._slopes_y_maps = slope_map_y_ma
         
+    def _compute_rms_slopes(self):
+        self._rms_slopes_x = np.sqrt(np.mean(self._slopes_x_maps**2, axis=(1,2)))
+        self._rms_slopes_y = np.sqrt(np.mean(self._slopes_y_maps**2, axis=(1,2)))
              
     def save_integrated_coefficients_as_modal_offset(self, ftag):
         """

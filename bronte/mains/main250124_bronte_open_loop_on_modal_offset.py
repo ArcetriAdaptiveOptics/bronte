@@ -31,4 +31,5 @@ class OpenLoopRunner():
         
     def save_telemetry(self, ftag):
         
+        self._tao._delete_short_exp_psf()
         self._tao.save_telemetry(ftag)

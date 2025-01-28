@@ -21,9 +21,9 @@ class ScaoRealTimeComputer:
         self.reset_wavefront_disturb()
         self._initialize_telemetry_buffers()
 
-        self.pupil_radius = 5.25e-3
-        # geometric factor for 10.5mm pupil and lab setup at 240731
-        self._slope_unit_2_rad = 6.23e-3
+        self.pupil_radius = self._slm_rasterizer.slm_pupil_mask.radius() * 9.2e-6
+        
+        self._slope_unit_2_rad = self._get_geometrical_factor_for_slopes_conversion()#6.23e-3
 
         self._subap_mask, self._zernike_mask = self._sc._compute_masks()
 
@@ -34,7 +34,14 @@ class ScaoRealTimeComputer:
 
     def _update_telemetry_buffers(self, zc):
         self._delta_modal_command_buffer.store(zc.toNumpyArray())
-
+    
+    def _get_geometrical_factor_for_slopes_conversion(self):
+        f_la = 8.31477e-3
+        d_la = 144e-6
+        relay_mag = 150e-3/250e-3
+        alpha = relay_mag * 0.5*d_la/f_la
+        return alpha
+    
     @logEnterAndExit("Computing Zernike coefficients...", "Zernike coefficients computed", level='debug')
     def _compute_zernike_coefficients(self):
         # create Slopes object in rad

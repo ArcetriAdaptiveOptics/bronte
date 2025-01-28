@@ -194,6 +194,9 @@ class TestAoLoop:
         plt.show(block=False)
         plt.pause(0.2)
         
+    def _delete_short_exp_psf(self):
+        self._short_exp_psf_list = np.zeros(3)
+        
     def save_telemetry(self, fname):
         
         psf_camera_texp = self._factory.psf_camera.exposureTime()
