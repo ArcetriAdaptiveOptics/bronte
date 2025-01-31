@@ -5,7 +5,7 @@ import matplotlib.pyplot as plt
 from mpl_toolkits.axes_grid1 import make_axes_locatable
 from bronte.package_data import modal_offsets_folder
 from astropy.io import fits
-from numpy import arange
+
 
 class DisplayTelemetryData():
     """
@@ -340,3 +340,31 @@ class DisplayTelemetryData():
         modal_offset = hduList[0].data
         
         return modal_offset, telemetry_data_tag
+    
+    def _display_slopes_maps(self, sl_x, sl_y, roi_str = None):
+      
+        if roi_str is None:
+            slope_map_x = sl_x
+            slope_map_y = sl_y
+        else:
+            slope_map_x  = self._get_roi(sl_x, roi_str)
+            slope_map_y  = self._get_roi(sl_y, roi_str)
+        
+        fig, axs = plt.subplots(1, 2, sharex = True,
+                                 sharey = True)
+        
+        axs[0].set_title('Slope Map X')
+        im_map_x = axs[0].imshow(slope_map_x)
+        # Use make_axes_locatable to create a colorbar of the same height
+        divider_x = make_axes_locatable(axs[0])
+        cax_x = divider_x.append_axes("right", size="5%", pad=0.15)  # Adjust size and padding
+        fig.colorbar(im_map_x, cax=cax_x, label='rad')
+        
+        axs[1].set_title('Slope Map Y')
+        im_map_y = axs[1].imshow(slope_map_y)
+        
+        divider_y = make_axes_locatable(axs[1])
+        cax_y = divider_y.append_axes("right", size="5%", pad=0.15)
+        fig.colorbar(im_map_y, cax=cax_y, label='rad')
+        fig.subplots_adjust(wspace=0.5)
+        fig.tight_layout()

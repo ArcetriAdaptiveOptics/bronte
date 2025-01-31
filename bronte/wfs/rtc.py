@@ -1,7 +1,6 @@
 import numpy as np
-from arte.types.mask import BaseMask, CircularMask
+from arte.types.mask import BaseMask
 from arte.types.slopes import Slopes
-from arte.utils.rebin import rebin
 from arte.types.zernike_coefficients import ZernikeCoefficients
 import logging
 from arte.utils.decorator import logEnterAndExit
