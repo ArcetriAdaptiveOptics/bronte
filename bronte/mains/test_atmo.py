@@ -33,7 +33,7 @@ class TestSpecula():
         pupil_diameter_in_pixel  = 2 * self._factory.slm_pupil_mask.radius()
         pupil_pixel_pitch = round(telescope_pupil_diameter/pupil_diameter_in_pixel, 3)
         
-        seeing = FuncGenerator(constant=0.0,
+        seeing = FuncGenerator(constant=0.3,
                                target_device_idx=target_device_idx)
         wind_speed = FuncGenerator(constant=[25.5, 5.5],
                                    target_device_idx=target_device_idx) 
@@ -81,10 +81,10 @@ class TestSpecula():
         else:
             #recmat = Recmat.restore(reconstructor_folder() / "241129_183600_bronte_rec.fits")
     #        recmat = Recmat.restore(reconstructor_folder() / "241202_174000_bronte_rec.fits")
-            recmat = Recmat.restore(reconstructor_folder() / "250124_144400_bronte_rec.fits")
+            recmat = Recmat.restore(reconstructor_folder() / "250127_155400_bronte_rec.fits")
             modal_offset= np.zeros(nModes)
             #num_of_modal_offset = len(self._factory.modal_offset)
-            if self._factory.MODAL_DEC_TAG is not None:
+            if self._factory.MODAL_OFFSET_TAG is not None:
                 modal_offset = self._factory.modal_offset[:nModes]
             rec = Modalrec(nModes, recmat=recmat, modal_offset=modal_offset)
     
@@ -99,7 +99,7 @@ class TestSpecula():
                 height=  0)     # DM height [m]
       
         
-        self._factory.sh_camera.setExposureTime(10)
+        self._factory.sh_camera.setExposureTime(8)
        
         bronte = TestbenchDeviceManager(self._factory, 
                                         do_plots=True,

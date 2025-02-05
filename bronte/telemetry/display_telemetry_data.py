@@ -85,14 +85,14 @@ class DisplayTelemetryData():
         # Use make_axes_locatable to create a colorbar of the same height
         divider_x = make_axes_locatable(axs[0])
         cax_x = divider_x.append_axes("right", size="5%", pad=0.15)  # Adjust size and padding
-        fig.colorbar(im_map_x, cax=cax_x, label='rad')
+        fig.colorbar(im_map_x, cax=cax_x, label='au')
         
         axs[1].set_title('Slope Map Y')
         im_map_y = axs[1].imshow(slope_map_y)
         
         divider_y = make_axes_locatable(axs[1])
         cax_y = divider_y.append_axes("right", size="5%", pad=0.15)
-        fig.colorbar(im_map_y, cax=cax_y, label='rad')
+        fig.colorbar(im_map_y, cax=cax_y, label='au')
         fig.subplots_adjust(wspace=0.5)
         fig.tight_layout()
         
