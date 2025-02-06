@@ -44,7 +44,8 @@ class ScaoRealTimeComputer:
     
     @logEnterAndExit("Computing Zernike coefficients...", "Zernike coefficients computed", level='debug')
     def _compute_zernike_coefficients(self):
-        # create Slopes object in m ptv
+        # create Slopes object 
+        #TODO: check for the correct scale factor for the slopes to get them in rad
         sl = Slopes(self._sc.slopes()[:, 0]*self._slope_unit_2_rad,
                     self._sc.slopes()[:, 1]*self._slope_unit_2_rad,
                     self._subap_mask)
@@ -87,7 +88,7 @@ class ScaoRealTimeComputer:
         zc_filtered = self._controller.process_delta_command(zc.toNumpyArray())
         # convert modal amplitudes in SLM shape
         slm_raster = self._slm_rasterizer.zernike_coefficients_to_raster(
-            ZernikeCoefficients.fromNumpyArray(zc_filtered) + self.modal_offset)
+            ZernikeCoefficients.fromNumpyArray(zc_filtered))# + self.modal_offset)
         # apply on slm
         self._dm.set_shape(
             self._slm_rasterizer.reshape_map2vector(slm_raster.toNumpyArray()+self.wavefront_disturb))

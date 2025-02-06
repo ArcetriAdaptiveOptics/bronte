@@ -22,7 +22,7 @@ class BronteFactory():
     ELT_PUPIL_TAG = None#'EELT480pp0.0803m_obs0.283_spider2023'
     N_ZERNIKE_MODES_TO_CORRECT = 200#3
     N_MODES_TO_CORRECT = 200 #3
-    MODAL_OFFSET_TAG = '250203_134800'
+    MODAL_OFFSET_TAG = None#'250203_134800'
 
     def __init__(self):
         self._set_up_basic_logging()

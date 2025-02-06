@@ -29,7 +29,6 @@ class SpeculaScaoFactory():
     ELT_PUPIL_TAG = None    #'EELT480pp0.0803m_obs0.283_spider2023'
     MODAL_OFFSET_TAG = '250203_134800'
     REC_MAT_TAG = '250127_155400'
-    INT_MAT_TAG = None
     
     #AO PARAMETERS
     N_MODES_TO_CORRECT = 200 

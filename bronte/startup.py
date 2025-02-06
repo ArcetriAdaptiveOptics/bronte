@@ -7,7 +7,7 @@ def startup():
     from bronte.package_data import set_data_root_dir
     set_data_root_dir(EB_ROOT)
     #set_data_root_dir(LB_ROOT)
-    from bronte import factory
+    from bronte.factories import factory
     return factory.BronteFactory()
 
 def specula_startup():
@@ -18,5 +18,5 @@ def specula_startup():
     from bronte.package_data import set_data_root_dir
     set_data_root_dir(EB_ROOT)
     #set_data_root_dir(LB_ROOT)
-    from bronte import specula_scao_factory
+    from bronte.factories import specula_scao_factory
     return specula_scao_factory.SpeculaScaoFactory()
