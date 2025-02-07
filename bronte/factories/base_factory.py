@@ -14,8 +14,6 @@ class BaseFactory():
     def __init__(self):
         self._target_device_idx= -1
         self._set_up_basic_logging()
-        self._pupil_diameter_in_pixel  = 2 * self.slm_pupil_mask.radius()
-        self._pupil_pixel_pitch = round(self.TELESCOPE_PUPIL_DIAMETER/self._pupil_diameter_in_pixel, 3)
            
     def _set_up_basic_logging(self):
         import importlib

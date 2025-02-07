@@ -12,23 +12,19 @@ from specula.processing_objects.modalrec import Modalrec
 from specula.data_objects.subap_data import SubapData
 from specula.data_objects.recmat import Recmat
 
-from pysilico import camera
-from plico_dm import deformableMirror
-from functools import cached_property
 
+from functools import cached_property
+from bronte.factories.base_factory import BaseFactory
 from bronte import package_data
-from bronte.wfs.slm_rasterizer import SlmRasterizer
-from bronte.types.slm_pupil_mask_generator import SlmPupilMaskGenerator
 from bronte.telemetry.display_telemetry_data import DisplayTelemetryData
 
 
-class SpeculaScaoFactory():
+class SpeculaScaoFactory(BaseFactory):
     
     #FILE TAGS
     SUBAPS_TAG = '250120_122000'
-    ELT_PUPIL_TAG = None    #'EELT480pp0.0803m_obs0.283_spider2023'
-    MODAL_OFFSET_TAG = '250203_134800'
-    REC_MAT_TAG = '250127_155400'
+    MODAL_OFFSET_TAG = None #'250203_134800'
+    REC_MAT_TAG = '250207_120300' #'250127_155400'
     
     #AO PARAMETERS
     N_MODES_TO_CORRECT = 200 
@@ -40,38 +36,9 @@ class SpeculaScaoFactory():
     
     
     def __init__(self):
-        self._target_device_idx= -1
-        self._set_up_basic_logging()
+        super().__init__()
         self._pupil_diameter_in_pixel  = 2 * self.slm_pupil_mask.radius()
         self._pupil_pixel_pitch = round(self.TELESCOPE_PUPIL_DIAMETER/self._pupil_diameter_in_pixel, 3)
-        
-        
-    def _set_up_basic_logging(self):
-        import importlib
-        import logging
-        importlib.reload(logging)
-        FORMAT = '%(asctime)s:%(levelname)s:%(name)s  %(message)s'
-        logging.basicConfig(level=logging.DEBUG, format=FORMAT)
-
-    def _create_slm_pupil_mask(self):
-        spm = SlmPupilMaskGenerator()
-        if self.ELT_PUPIL_TAG is not None:
-            return spm.elt_pupil_mask(
-                package_data.elt_pupil_folder()/(self.ELT_PUPIL_TAG + '.fits'))
-        else:
-            return spm.circular_pupil_mask()
-
-    @cached_property
-    def sh_camera(self):
-        return camera('193.206.155.69', 7110)
-
-    @cached_property
-    def psf_camera(self):
-        return camera('193.206.155.69', 7100)
-
-    @cached_property
-    def deformable_mirror(self):
-        return deformableMirror('193.206.155.69', 7010)
 
     @cached_property
     def subapertures_set(self):
@@ -80,12 +47,35 @@ class SpeculaScaoFactory():
         return subapdata
     
     @cached_property
-    def slm_pupil_mask(self):
-        return self._create_slm_pupil_mask()
+    def slope_computer(self):
+        return ShSlopec(subapdata= self.subapertures_set)
     
     @cached_property
-    def slm_rasterizer(self):
-        return SlmRasterizer(self.slm_pupil_mask)
+    def reconstructor(self):
+        recmat = Recmat.restore(package_data.reconstructor_folder() / (self.REC_MAT_TAG + "_bronte_rec.fits"))
+        modal_offset= np.zeros(self.N_MODES_TO_CORRECT)
+       
+        if self.MODAL_OFFSET_TAG is not None:
+            modal_offset = self.modal_offset[:self.N_MODES_TO_CORRECT]
+            
+        return Modalrec(self.N_MODES_TO_CORRECT, recmat=recmat, modal_offset=modal_offset)
+    
+    @cached_property
+    def integrator_controller(self):
+        int_gains = np.ones(self.N_MODES_TO_CORRECT)* self.INT_GAIN
+        #int_gains = np.zeros(nModes); int_gains[0:3]=-0.5  
+        return IntControl(delay = self.INT_DELAY, int_gain = int_gains)
+    
+    @cached_property
+    def virtual_deformable_mirror(self):
+        
+        virtual_dm = DM(type_str='zernike',
+                pixel_pitch = self._pupil_pixel_pitch,
+                nmodes = self.N_MODES_TO_CORRECT,
+                npixels = self._pupil_diameter_in_pixel,                    # linear dimension of DM phase array
+                obsratio = 0,                    # obstruction dimension ratio w.r.t. diameter
+                height =  0)     # DM height [m]
+        return virtual_dm
     
     @cached_property
     def modal_offset(self):
@@ -148,34 +138,5 @@ class SpeculaScaoFactory():
                                target_device_idx=self._target_device_idx)
         return prop
 
-    @cached_property
-    def slope_computer(self):
-        return ShSlopec(subapdata= self.subapertures_set)
-    
-    @cached_property
-    def reconstructor(self):
-        recmat = Recmat.restore(package_data.reconstructor_folder() / (self.REC_MAT_TAG + "_bronte_rec.fits"))
-        modal_offset= np.zeros(self.N_MODES_TO_CORRECT)
-       
-        if self.MODAL_OFFSET_TAG is not None:
-            modal_offset = self.modal_offset[:self.N_MODES_TO_CORRECT]
-            
-        return Modalrec(self.N_MODES_TO_CORRECT, recmat=recmat, modal_offset=modal_offset)
-    
-    @cached_property
-    def integrator_controller(self):
-        int_gains = np.ones(self.N_MODES_TO_CORRECT)* self.INT_GAIN
-        #int_gains = np.zeros(nModes); int_gains[0:3]=-0.5  
-        return IntControl(delay = self.INT_DELAY, int_gain = int_gains)
-    
-    @cached_property
-    def virtual_deformable_mirror(self):
-        
-        virtual_dm = DM(type_str='zernike',
-                pixel_pitch = self._pupil_pixel_pitch,
-                nmodes = self.N_MODES_TO_CORRECT,
-                npixels = self._pupil_diameter_in_pixel,                    # linear dimension of DM phase array
-                obsratio = 0,                    # obstruction dimension ratio w.r.t. diameter
-                height =  0)     # DM height [m]
-        return virtual_dm
+   
         

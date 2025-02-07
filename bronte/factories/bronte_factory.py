@@ -1,38 +1,26 @@
-from pysilico import camera
-from plico_dm import deformableMirror
 from functools import cached_property
-
 from bronte.utils.objects_io import load_object
 from bronte import package_data
 from bronte.wfs.rtc import ScaoRealTimeComputer
-from bronte.wfs.slm_rasterizer import SlmRasterizer
 from bronte.wfs.slope_computer import PCSlopeComputer
 from bronte.wfs.subaperture_set import ShSubapertureSet
-
 from arte.utils.modal_decomposer import ModalDecomposer
 from arte.atmo.phase_screen_generator import PhaseScreenGenerator
 from bronte.wfs.temporal_controller import PureIntegrator
-from bronte.types.slm_pupil_mask_generator import SlmPupilMaskGenerator
 from bronte.telemetry.display_telemetry_data import DisplayTelemetryData
+from bronte.factories.base_factory import BaseFactory
 
-class BronteFactory():
-    SUBAPS_TAG = '250120_122000'#'250117_145500'#'241202_172000' 
+class BronteFactory(BaseFactory):
+    
+    SUBAPS_TAG = '250120_122000' 
     PHASE_SCREEN_TAG = '240806_124700'
-    MODAL_DEC_TAG = None#'241105_170400' #None
-    ELT_PUPIL_TAG = None#'EELT480pp0.0803m_obs0.283_spider2023'
-    N_ZERNIKE_MODES_TO_CORRECT = 200#3
-    N_MODES_TO_CORRECT = 200 #3
-    MODAL_OFFSET_TAG = None#'250203_134800'
+    MODAL_DEC_TAG = None 
+    #N_ZERNIKE_MODES_TO_CORRECT = 200
+    N_MODES_TO_CORRECT = 200
+    MODAL_OFFSET_TAG = None #'250203_134800'
 
     def __init__(self):
-        self._set_up_basic_logging()
-        
-    def _set_up_basic_logging(self):
-        import importlib
-        import logging
-        importlib.reload(logging)
-        FORMAT = '%(asctime)s:%(levelname)s:%(name)s  %(message)s'
-        logging.basicConfig(level=logging.DEBUG, format=FORMAT)
+        super().__init__()
 
     def _create_phase_screen_generator(self):
         self._r0 = 0.3
@@ -41,26 +29,6 @@ class BronteFactory():
         psg.rescale_to(self._r0)
         return psg
     
-    def _create_slm_pupil_mask(self):
-        spm = SlmPupilMaskGenerator()
-        if self.ELT_PUPIL_TAG is not None:
-            return spm.elt_pupil_mask(
-                package_data.elt_pupil_folder()/(self.ELT_PUPIL_TAG + '.fits'))
-        else:
-            return spm.circular_pupil_mask()
-    
-    @cached_property
-    def sh_camera(self):
-        return camera('193.206.155.69', 7110)
-
-    @cached_property
-    def psf_camera(self):
-        return camera('193.206.155.69', 7100)
-
-    @cached_property
-    def deformable_mirror(self):
-        return deformableMirror('193.206.155.69', 7010)
-
     @cached_property
     def subapertures_set(self):
         return ShSubapertureSet.restore(
@@ -69,14 +37,6 @@ class BronteFactory():
     @cached_property
     def slope_computer(self):
         return PCSlopeComputer(self.subapertures_set)
-    
-    @cached_property
-    def slm_pupil_mask(self):
-        return self._create_slm_pupil_mask()
-    
-    @cached_property
-    def slm_rasterizer(self):
-        return SlmRasterizer(self.slm_pupil_mask)
     
     @cached_property
     def modal_offset(self):

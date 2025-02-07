@@ -33,8 +33,8 @@ class TestbenchDeviceManager(BaseProcessingObj):
         phase_screen = cpuArray(ef.phaseInNm) * 1e-9
         
         phase_screen_to_raster = self._slm_raster.get_recentered_phase_screen_on_slm_pupil_frame(phase_screen)
-        command = self._slm_raster.reshape_map2vector(phase_screen_to_raster) + self._offset_cmd
-        self._slm.set_shape(command)
+        self._command = self._slm_raster.reshape_map2vector(phase_screen_to_raster) + self._offset_cmd
+        self._slm.set_shape(self._command)
         time.sleep(self.SLM_RESPONSE_TIME)
         #TODO: manage the different integration times for the each wfs group
         # how to reproduce faint source? shall we play with the texp of the hardware?

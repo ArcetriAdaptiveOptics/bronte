@@ -1,6 +1,7 @@
 import specula
 specula.init(-1, precision=1)  # Default target=-1 (CPU), float32=1
 from specula import np
+from specula.base_value import BaseValue
 from specula.processing_objects.im_rec_calibrator import ImRecCalibrator
 from specula.processing_objects.func_generator import FuncGenerator
 from bronte.types.testbench_device_manager import TestbenchDeviceManager
@@ -10,13 +11,15 @@ from specula.data_objects.layer import Layer
 from specula.data_objects.subap_data import SubapData
 from specula.processing_objects.sh_slopec import ShSlopec
 from specula.processing_objects.dm import DM
+from specula.data_objects.recmat import Recmat
+from specula.processing_objects.modalrec import Modalrec
 from bronte.startup import startup
 from bronte.utils.noll_to_radial_order import from_noll_to_radial_order
 from bronte.package_data import subaperture_set_folder, reconstructor_folder
 
-class ControlMatrixCalibrator():
+class TestCalibration():
     
-    def __init__(self, ftag, target_device_idx=-1, xp=np):
+    def __init__(self, amp_in_nm = 1000, rec_tag ='250207_150800', target_device_idx=-1, xp=np):
         
         self._factory = startup()
         self._factory.sh_camera.setExposureTime(8)
@@ -25,16 +28,10 @@ class ControlMatrixCalibrator():
         pupil_diameter_in_pixel  = 2 * self._factory.slm_pupil_mask.radius()
         pupil_pixel_pitch = round(telescope_pupil_diameter/pupil_diameter_in_pixel, 3)
 
-        
-        on_axis_source = Source(polar_coordinate=[0.0, 0.0], magnitude=8, wavelengthInNm=750,)
+        self._n_steps = 1
 
 
-        self._prop = AtmoPropagation(pixel_pupil=pupil_diameter_in_pixel,              # Linear dimension of pupil phase array
-                               pixel_pitch= pupil_pixel_pitch,         # Linear dimension of pupil phase array
-                               source_dict = {'on_axis_source': on_axis_source,
-                                            },
-                               target_device_idx=target_device_idx)
-        
+
         subapdata = SubapData.restore_from_bronte(
             subaperture_set_folder() / (self._factory.SUBAPS_TAG + ".fits"))
         
@@ -53,55 +50,31 @@ class ControlMatrixCalibrator():
                                         do_plots=True,
                                         target_device_idx=target_device_idx)
         
-        #ampla = np.ones(nModes)
-        # ampla[0:3]=1
-        # ampla[3:5]=0.2
-        # ampla[5:14]=0.15
-        # ampla[14:54]=0.1
-        # ampla[54:]=0.08
-        # ampl_vect = ampla[0:nModes]*1000
-        j_noll_vector = np.arange(nModes) + 2
-        radial_order = from_noll_to_radial_order(j_noll_vector)
-        self._ampl_vect = 3000 /(radial_order**2) # in nm
-        
-        self._n_steps = nModes * 2
-        self._pp = FuncGenerator(func_type= 'PUSHPULL',
-                           nmodes=nModes,
-                           vect_amplitude = self._ampl_vect,#in nm
-                           target_device_idx=target_device_idx)
-    
-        self._im_calibrator = ImRecCalibrator(
-                            data_dir = reconstructor_folder(),
-                            nmodes=nModes,
-                            rec_tag= ftag + '_bronte_rec',
-                            im_tag= ftag + '_bronte_im',
-                            target_device_idx=target_device_idx)
-        
-        self._empty_layer = Layer(pupil_diameter_in_pixel, pupil_diameter_in_pixel, pupil_pixel_pitch, height=0)
-        self._empty_layer.generation_time = 0
-        
+        recmat = Recmat.restore(reconstructor_folder() / (rec_tag + "_bronte_rec.fits"))
+        self._rec = Modalrec(nModes, recmat=recmat)
+        self._cmd = BaseValue(value=np.zeros(nModes))
+        self._cmd.generation_time = 0
+        self._cmd.value[1] = amp_in_nm
         self._set_inputs()
         self._define_groups()
+        
+        
     
     def _set_inputs(self):
         
-        self._im_calibrator.inputs['in_slopes'].set(self._slopec.outputs['out_slopes'])
-        self._im_calibrator.inputs['in_commands'].set(self._pp.output)
-        self._bench_devices.inputs['ef'].set(self._prop.outputs['out_on_axis_source_ef'])
+        self._bench_devices.inputs['ef'].set(self._dm.outputs['out_layer'])
         self._slopec.inputs['in_pixels'].set(self._bench_devices.outputs['out_pixels'])
-        self._dm.inputs['in_command'].set(self._pp.output)
-        self._prop.inputs['layer_list'].set([self._empty_layer, self._dm.outputs['out_layer']])
-    
+        self._rec.inputs['in_slopes'].set(self._slopec.outputs['out_slopes'])
+        self._dm.inputs['in_command'].set(self._cmd)
+        
     def _define_groups(self):
         
-        group1 = [self._pp]
-        group2 = [self._dm]
-        group3 = [self._prop]
-        group4 = [self._bench_devices]
-        group5 = [self._slopec]
-        group6 = [self._im_calibrator]
+        group1 = [self._dm]
+        group2 = [self._bench_devices]
+        group3 = [self._slopec]
+        group4 = [self._rec]
         
-        self._groups = [group1, group2, group3, group4, group5, group6]
+        self._groups = [group1, group2, group3, group4]
     
     def run(self):
         time_step = 0.01
@@ -124,3 +97,56 @@ class ControlMatrixCalibrator():
         for group in self._groups:
             for obj in group:
                 obj.finalize()
+                
+def main():
+    
+    # remain to choose the proper reconstructor in the factory
+    rec_tag = '250207_150800' #pp=3um/n*n
+    amp = 0 # flat of the calibration not the WFC
+    tc = TestCalibration(amp, rec_tag)
+    tc.run()
+    modes_zero = tc._rec.outputs['out_modes'].value
+    
+    amp = 100 # 100 nm rms of tilt
+    tc = TestCalibration(amp, rec_tag)
+    tc.run()
+    modes_100 = tc._rec.outputs['out_modes'].value
+    
+    amp = 1000 # 1000 nm rms of tilt
+    tc = TestCalibration(amp, rec_tag)
+    tc.run()
+    modes_1000 = tc._rec.outputs['out_modes'].value
+    
+    import matplotlib.pyplot as plt
+    plt.figure()
+    plt.clf()
+    plt.title('Calibration pp=3um/n^2')
+    plt.plot(modes_100, 'o-', label = 'tilt 100 nm rms wf')
+    plt.plot(modes_zero, 'o-', label = 'zero')
+    plt.plot(modes_1000, 'o-', label = 'tilt 100 nm rms wf')
+    plt.legend(loc='best')
+    
+    
+    rec_tag = '250207_124200' #pp=1um/n*n
+    amp = 0 # flat of the calibration not the WFC
+    tc = TestCalibration(amp, rec_tag)
+    tc.run()
+    modes_zero = tc._rec.outputs['out_modes'].value
+    
+    amp = 100 # 100 nm rms of tilt
+    tc = TestCalibration(amp, rec_tag)
+    tc.run()
+    modes_100 = tc._rec.outputs['out_modes'].value
+    
+    amp = 1000 # 1000 nm rms of tilt
+    tc = TestCalibration(amp, rec_tag)
+    tc.run()
+    modes_1000 = tc._rec.outputs['out_modes'].value
+    
+    plt.figure()
+    plt.clf()
+    plt.title('Calibration pp=1um/n^2')
+    plt.plot(modes_100, 'o-', label = 'tilt 100 nm rms wf')
+    plt.plot(modes_zero, 'o-', label = 'zero')
+    plt.plot(modes_1000, 'o-', label = 'tilt 100 nm rms wf')
+    plt.legend(loc='best')
