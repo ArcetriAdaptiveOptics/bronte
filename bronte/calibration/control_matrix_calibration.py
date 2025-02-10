@@ -62,7 +62,7 @@ class ControlMatrixCalibrator():
         # ampl_vect = ampla[0:nModes]*1000
         j_noll_vector = np.arange(nModes) + 2
         radial_order = from_noll_to_radial_order(j_noll_vector)
-        self._ampl_vect = 3000 /(radial_order**2) # in nm
+        self._ampl_vect = 8000 /(radial_order**2) # in nm
         
         self._n_steps = nModes * 2
         self._pp = FuncGenerator(func_type= 'PUSHPULL',
