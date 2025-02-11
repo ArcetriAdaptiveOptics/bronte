@@ -14,6 +14,7 @@ class TestbenchDeviceManager(BaseProcessingObj):
         super().__init__(target_device_idx, precision)
         self._slm = factory.deformable_mirror
         self._sh_camera = factory.sh_camera
+        self._sh_camera_bkg = factory.sh_camera_master_bkg
         self._slm_raster = factory.slm_rasterizer
         self.output_frame = Pixels(*self._sh_camera.shape())
         self.outputs['out_pixels'] = self.output_frame
@@ -39,7 +40,10 @@ class TestbenchDeviceManager(BaseProcessingObj):
         #TODO: manage the different integration times for the each wfs group
         # how to reproduce faint source? shall we play with the texp of the hardware?
         #TODO: load dark and bkg for sh frame reduction
-        sh_camera_frame = self._sh_camera.getFutureFrames(1, 1).toNumpyArray()        
+        sh_camera_frame = self._sh_camera.getFutureFrames(1, 1).toNumpyArray()
+        if self._sh_camera_bkg is not None:
+            sh_camera_frame = sh_camera_frame.astype(float) - self._sh_camera_bkg.astype(float)
+            sh_camera_frame[sh_camera_frame < 0.] = 0.     
         self.output_frame.pixels = sh_camera_frame
         self.output_frame.generation_time = self.current_time
 

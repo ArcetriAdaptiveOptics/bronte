@@ -48,3 +48,6 @@ def modal_offsets_folder():
 
 def temp_folder():
     return data_root_dir() / "temp_trash"
+
+def other_folder():
+    return data_root_dir() / "other_data"

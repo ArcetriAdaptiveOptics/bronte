@@ -5,11 +5,12 @@ from functools import cached_property
 from bronte import package_data
 from bronte.wfs.slm_rasterizer import SlmRasterizer
 from bronte.types.slm_pupil_mask_generator import SlmPupilMaskGenerator
-
+from bronte.utils.camera_master_bkg import CameraMasterMeasurer
 
 class BaseFactory():
     
     ELT_PUPIL_TAG = None    #'EELT480pp0.0803m_obs0.283_spider2023'
+    SHWFS_BKG_TAG = '250211_135800'
     
     def __init__(self):
         self._target_device_idx= -1
@@ -49,3 +50,11 @@ class BaseFactory():
     @cached_property
     def slm_rasterizer(self):
         return SlmRasterizer(self.slm_pupil_mask)
+    
+    @cached_property
+    def sh_camera_master_bkg(self):
+        master_bkg = None
+        if self.SHWFS_BKG_TAG is not None:
+            master_bkg, texp = CameraMasterMeasurer.load_master(self.SHWFS_BKG_TAG)
+            self.sh_camera.setExposureTime(texp)
+        return master_bkg
