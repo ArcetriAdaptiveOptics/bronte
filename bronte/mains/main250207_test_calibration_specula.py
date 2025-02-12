@@ -1,105 +1,18 @@
-import specula
-specula.init(-1, precision=1)  # Default target=-1 (CPU), float32=1
-from specula import np
-from specula.base_value import BaseValue
-from bronte.types.testbench_device_manager import TestbenchDeviceManager
-from specula.data_objects.subap_data import SubapData
-from specula.processing_objects.sh_slopec import ShSlopec
-from specula.processing_objects.dm import DM
-from specula.data_objects.recmat import Recmat
-from specula.processing_objects.modalrec import Modalrec
-from bronte.startup import startup
+# import specula
+# specula.init(-1, precision=1)  # Default target=-1 (CPU), float32=1
+# from specula import np
+import numpy as np 
+from bronte.wfs.specula_zernike_mode_measurer import ZernikeModesMeasurer
 from bronte.utils.noll_to_radial_order import from_noll_to_radial_order
-from bronte.package_data import subaperture_set_folder, reconstructor_folder, other_folder
+from bronte.package_data import other_folder
 import matplotlib.pyplot as plt
 from astropy.io import fits
+from bronte.startup import startup
 
-class TestCalibration():
-    
-    def __init__(self, amp_vect_in_nm = np.array([0, 1000]), rec_tag ='250207_150800', target_device_idx=-1, xp=np):
-        
-        self._factory = startup()
-        self._factory.sh_camera.setExposureTime(8)
-        
-        telescope_pupil_diameter = 40
-        pupil_diameter_in_pixel  = 2 * self._factory.slm_pupil_mask.radius()
-        pupil_pixel_pitch = round(telescope_pupil_diameter/pupil_diameter_in_pixel, 3)
-
-        self._n_steps = 1
-
-
-
-        subapdata = SubapData.restore_from_bronte(
-            subaperture_set_folder() / (self._factory.SUBAPS_TAG + ".fits"))
-        
-        self._slopec = ShSlopec(subapdata= subapdata)
-        
-        nModes =self._factory.N_MODES_TO_CORRECT
-        
-        self._dm = DM(type_str='zernike',
-                pixel_pitch=pupil_pixel_pitch,
-                nmodes=nModes,
-                npixels= pupil_diameter_in_pixel,                    # linear dimension of DM phase array
-                obsratio= 0,                    # obstruction dimension ratio w.r.t. diameter
-                height=  0)     # DM height [m]
-        
-        self._bench_devices = TestbenchDeviceManager(self._factory, 
-                                        do_plots=True,
-                                        target_device_idx=target_device_idx)
-        
-        recmat = Recmat.restore(reconstructor_folder() / (rec_tag + "_bronte_rec.fits"))
-        self._rec = Modalrec(nModes, recmat=recmat)
-        self._cmd = BaseValue(value=np.zeros(nModes))
-        self._cmd.generation_time = 0
-        self._cmd.value = amp_vect_in_nm
-        self._set_inputs()
-        self._define_groups()
-        
-        
-    
-    def _set_inputs(self):
-        
-        self._bench_devices.inputs['ef'].set(self._dm.outputs['out_layer'])
-        self._slopec.inputs['in_pixels'].set(self._bench_devices.outputs['out_pixels'])
-        self._rec.inputs['in_slopes'].set(self._slopec.outputs['out_slopes'])
-        self._dm.inputs['in_command'].set(self._cmd)
-        
-    def _define_groups(self):
-        
-        group1 = [self._dm]
-        group2 = [self._bench_devices]
-        group3 = [self._slopec]
-        group4 = [self._rec]
-        
-        self._groups = [group1, group2, group3, group4]
-    
-    def run(self):
-        time_step = 0.01
-        
-        for group in self._groups:
-            for obj in group:
-                obj.loop_dt = time_step * 1e9
-                obj.run_check(time_step)
-    
-        for step in range(self._n_steps):
-            t = 0 + step * time_step
-            print('T=',t)
-            for group in self._groups:
-                for obj in group:
-                    obj.check_ready(t*1e9)
-                    print('trigger', obj)
-                    obj.trigger()
-                    obj.post_trigger()
-
-        for group in self._groups:
-            for obj in group:
-                obj.finalize()
-
-
-def get_modes_from_test_calib(amp, rec_tag):
-    tc = TestCalibration(amp, rec_tag)
-    tc.run()
-    return 2*tc._rec.outputs['out_modes'].value
+def get_modes_from_test_calib(factory, amp, rec_tag):
+    zmm = ZernikeModesMeasurer(factory, amp, rec_tag)
+    zmm.run()
+    return 2*zmm._rec.outputs['out_modes'].value
     
 def do_plot(modes_zero, modes_100, modes_1000, str_title):
     
@@ -114,42 +27,42 @@ def do_plot(modes_zero, modes_100, modes_1000, str_title):
     plt.legend(loc='best')
     plt.grid('--',alpha=0.3)
            
-
 def main250207(ftag):
     
-    
+    bf = startup()
+    bf.N_MODES_TO_CORRECT = 200
     rec_tag8 = '250211_154500' #pp=8um/n*n
     amp = np.zeros(200) # flat of the calibration not the WFC
-    modes_zero_pp8 = get_modes_from_test_calib(amp, rec_tag8)
+    modes_zero_pp8 = get_modes_from_test_calib(bf, amp, rec_tag8)
     amp = np.zeros(200) 
     amp[1] = 100 # 100 nm rms of tilt
-    modes_100_pp8 = get_modes_from_test_calib(amp, rec_tag8)
+    modes_100_pp8 = get_modes_from_test_calib(bf, amp, rec_tag8)
     amp = np.zeros(200) 
     amp[1] = 1000 # 1000 nm rms of tilt
-    modes_1000_pp8 = get_modes_from_test_calib(amp, rec_tag8)
+    modes_1000_pp8 = get_modes_from_test_calib(bf, amp, rec_tag8)
     do_plot(modes_zero_pp8, modes_100_pp8, modes_1000_pp8, 'Calibration pp=8um/n^2')
     
     
     rec_tag3 = '250211_155500' #pp=3um/n*n
     amp = np.zeros(200) # flat of the calibration not the WFC
-    modes_zero_pp3 = get_modes_from_test_calib(amp, rec_tag3)
+    modes_zero_pp3 = get_modes_from_test_calib(bf, amp, rec_tag3)
     amp = np.zeros(200) 
     amp[1] = 100 # 100 nm rms of tilt
-    modes_100_pp3 = get_modes_from_test_calib(amp, rec_tag3)
+    modes_100_pp3 = get_modes_from_test_calib(bf, amp, rec_tag3)
     amp = np.zeros(200) 
     amp[1] = 1000 # 1000 nm rms of tilt
-    modes_1000_pp3 = get_modes_from_test_calib(amp, rec_tag3)
+    modes_1000_pp3 = get_modes_from_test_calib(bf, amp, rec_tag3)
     do_plot(modes_zero_pp3, modes_100_pp3, modes_1000_pp3, 'Calibration pp=3um/n^2')
     
     rec_tag1 = '250211_160100' #pp=1um/n*n
     amp = np.zeros(200) # flat of the calibration not the WFC
-    modes_zero_pp1 = get_modes_from_test_calib(amp, rec_tag1)
+    modes_zero_pp1 = get_modes_from_test_calib(bf, amp, rec_tag1)
     amp = np.zeros(200) 
     amp[1] = 100 # 100 nm rms of tilt# 100 nm rms of tilt
-    modes_100_pp1 = get_modes_from_test_calib(amp, rec_tag1)
+    modes_100_pp1 = get_modes_from_test_calib(bf, amp, rec_tag1)
     amp = np.zeros(200) 
     amp[1] = 1000 # 100 nm rms of tilt# 1000 nm rms of tilt
-    modes_1000_pp1 = get_modes_from_test_calib(amp, rec_tag1)
+    modes_1000_pp1 = get_modes_from_test_calib(bf, amp, rec_tag1)
     do_plot(modes_zero_pp1, modes_100_pp1, modes_1000_pp1, 'Calibration pp=1um/n^2')
     
     print('\n + Calibration 8um/n^2:')
@@ -182,14 +95,16 @@ def main250207(ftag):
     
 def main250210_tt(ftag):
     
+    bf = startup()
+    bf.N_MODES_TO_CORRECT = 2
     rec_tag = '250211_140400'# # pp=8 um rms for tip-tilt
     amp = np.zeros(2)
-    modes_zero_tt = get_modes_from_test_calib(amp, rec_tag)
+    modes_zero_tt = get_modes_from_test_calib(bf, amp, rec_tag)
     amp[0]= 8000 # 8000 nm rms of tip
-    modes_8000_tip = get_modes_from_test_calib(amp, rec_tag)
+    modes_8000_tip = get_modes_from_test_calib(bf, amp, rec_tag)
     amp = np.zeros(2)
     amp[1]= 8000 # 8000 nm rms of tilt
-    modes_8000_tilt = get_modes_from_test_calib(amp, rec_tag)
+    modes_8000_tilt = get_modes_from_test_calib(bf, amp, rec_tag)
    
     j_vect = np.array([2,3])
     plt.figure()
@@ -225,19 +140,22 @@ def load_data_from_main250210_tt(ftag):
     
 def main250210_z11(ftag):
     
-    rec_tag = '250211_154500'#'250211_143700' # 10 modes pp=8um rms/n^2
+    bf = startup()
+    rec_tag = '250211_160100'#'250211_143700' # 10 modes pp=8um rms/n^2
+    bf.N_MODES_TO_CORRECT = 200
+    pp = 1000
     Nmodes2check = 10
     rec_mode_list = []
     amp = np.zeros(Nmodes2check)
-    modes_zero = get_modes_from_test_calib(amp, rec_tag)
+    modes_zero = get_modes_from_test_calib(bf, amp, rec_tag)
     j_vect  = np.arange(2,len(modes_zero)+2)
     n_vect = from_noll_to_radial_order(j_vect)
-    pp_per_mode = 8000/n_vect**2
+    pp_per_mode = pp/n_vect**2
     
     for idx in range(Nmodes2check):
         amp = np.zeros(Nmodes2check)
         amp[idx] = pp_per_mode[idx] 
-        rec_mode = get_modes_from_test_calib(amp, rec_tag)
+        rec_mode = get_modes_from_test_calib(bf, amp, rec_tag)
         rec_mode_list.append(rec_mode)
         
     plt.figure()
