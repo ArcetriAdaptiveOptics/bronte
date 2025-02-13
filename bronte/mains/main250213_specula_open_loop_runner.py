@@ -91,3 +91,9 @@ def display_results(ftag):
     plt.xlabel('Noll index')
     plt.ylabel('Error on reconstracted modes [nm rms wf]')
     plt.legend(loc='best')
+    
+    err = rec_modes.std(axis=0)
+    var = err**2
+    tot_err = np.sqrt(var.sum())
+    
+    print(tot_err)
