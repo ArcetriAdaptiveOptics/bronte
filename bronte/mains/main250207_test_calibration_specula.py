@@ -141,7 +141,7 @@ def load_data_from_main250210_tt(ftag):
 def main250210_z11(ftag):
     
     bf = startup()
-    rec_tag = '250211_160100'#'250211_143700' # 10 modes pp=8um rms/n^2
+    rec_tag = '250211_154500'#'250211_143700' # 10 modes pp=8um rms/n^2
     bf.N_MODES_TO_CORRECT = 200
     pp = 1000
     Nmodes2check = 10
@@ -211,7 +211,8 @@ def load_data_from_main250210_z11(ftag):
         modes_zero = hduList[0].data
         
         rec_mode_list = []
-        for idx in range(len(modes_zero)):
+        Nmodes2check = 10
+        for idx in range(Nmodes2check-1):
             rec_mode_list.append(hduList[idx+1].data)
     
         return modes_zero, np.array(rec_mode_list), rec_tag
