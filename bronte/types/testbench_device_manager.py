@@ -4,6 +4,7 @@ from specula.data_objects.pixels import Pixels
 from specula.connections import InputValue
 from specula.data_objects.ef import ElectricField
 import time
+from bronte.utils.data_cube_cleaner import DataCubeCleaner
 import matplotlib.pyplot as plt
 
 class TestbenchDeviceManager(BaseProcessingObj):
@@ -40,10 +41,16 @@ class TestbenchDeviceManager(BaseProcessingObj):
         #TODO: manage the different integration times for the each wfs group
         # how to reproduce faint source? shall we play with the texp of the hardware?
         #TODO: load dark and bkg for sh frame reduction
-        sh_camera_frame = self._sh_camera.getFutureFrames(1, 1).toNumpyArray()
+        sh_camera_frame = self._sh_camera.getFutureFrames(100).toNumpyArray()
+        #sh_camera_frame = self._sh_camera.getFutureFrames(1,1).toNumpyArray()
         if self._sh_camera_bkg is not None:
-            sh_camera_frame = sh_camera_frame.astype(float) - self._sh_camera_bkg.astype(float)
-            sh_camera_frame[sh_camera_frame < 0.] = 0.     
+            sh_camera_frame = DataCubeCleaner.get_master_from_rawCube(
+                sh_camera_frame, self._sh_camera_bkg)
+        # sh_camera_frame = sh_camera_frame.astype(float) - self._sh_camera_bkg.astype(float)
+        # sh_camera_frame[sh_camera_frame < 0.] = 0.
+        # else:
+        #     sh_camera_frame = sh_camera_frame.mean(axis=-1)  
+              
         self.output_frame.pixels = sh_camera_frame
         self.output_frame.generation_time = self.current_time
 

@@ -13,7 +13,7 @@ from bronte.package_data import subaperture_set_folder, reconstructor_folder
 
 class ZernikeModesMeasurer():
     '''
-    The ZernikeModesMeasurer class applies a disturbance in the testbench, expressed as a
+    The ZernikeModesMeasurer class applies a wavefront distrub in the testbench, expressed as a
     Zernike mode combination, and measures the reconstructed modes.
     '''
     
@@ -115,7 +115,13 @@ class ZernikeModesMeasurer():
                 print('trigger', obj)
                 obj.trigger()
                 obj.post_trigger()
-
+    
+    def get_reconstructed_modes(self):
+        '''
+        Returns the reconstructed modes as a numpy array
+        '''
+        rec_modes = self._rec.outputs['out_modes'].value
+        return rec_modes
     # def finalize_groups(self):
     #
     #     for group in self._groups:

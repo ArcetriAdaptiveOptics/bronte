@@ -6,9 +6,19 @@ from astropy.io import fits
 from bronte.package_data import other_folder
 
 def main(zc_vect_in_nm = np.array([5000, 0, 0]), Nsteps=10, ftag = None):
+    '''
+    Performs an open loop on an inpunt disturb expressed as a vector of
+    zernike coefficients. 
     
+    Parameters:
+    - zc_vect_in_nm (numpy array): vector of zernike coefficients in nm of the disturb
+        to inject into the testbench
+    - Nsteps (int): Number of steps of the loop
+    - ftag (string): file tag of applied and reference commands and of the 
+        reconstructed modes to be saved. If None, the data wont be saved
+    '''
     bf = startup()
-    rec_tag = '250211_154500'
+    rec_tag = '250214_164100' #'250211_154500'#
     zmm = ZernikeModesMeasurer(bf, rec_tag,do_plots=False)
     
     ref_cmd = np.zeros(3) 
@@ -23,14 +33,6 @@ def main(zc_vect_in_nm = np.array([5000, 0, 0]), Nsteps=10, ftag = None):
         
         zmm.run(zc_vect_in_nm)
         rec_modes[idx] = 2*zmm._rec.outputs['out_modes'].value - ref_modes
-        
-    # plt.figure()
-    # plt.clf()
-    # for idx in range(Nsteps):
-    #     plt.plot(j_vect, rec_modes[idx],'.-')
-    # plt.grid('--', alpha=0.3)
-    # plt.xlabel('Noll index')
-    # plt.ylabel('Rec modes '+r'$C_j - C_{ref}$' +' [nm rms wf]')
     
     plt.figure()
     plt.clf()

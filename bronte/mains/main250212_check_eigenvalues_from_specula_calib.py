@@ -6,10 +6,16 @@ from specula.data_objects.intmat import Intmat
 from bronte.package_data import reconstructor_folder
 import matplotlib.pyplot as plt
 
-def show_eigenmodes(intmat_tag = '250211_143700', do_plot=True):
-    
+
+def load_intmat(intmat_tag):
     file_name = reconstructor_folder() / (intmat_tag + '_bronte_im.fits')
     int_mat = Intmat.restore(file_name)
+    return int_mat
+
+def show_eigenmodes(intmat_tag = '250211_143700', do_plot=True):
+    
+    #file_name = reconstructor_folder() / (intmat_tag + '_bronte_im.fits')
+    int_mat = load_intmat(intmat_tag)
     im_mat = int_mat._intmat
     u,s,vh = np.linalg.svd(im_mat)
     if do_plot is True:
