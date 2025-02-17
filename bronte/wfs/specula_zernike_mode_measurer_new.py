@@ -35,7 +35,7 @@ class ZernikeModesMeasurer():
         subapdata = SubapData.restore_from_bronte(
             subaperture_set_folder() / (self._factory.SUBAPS_TAG + ".fits"))
         
-        self._slopec = ShSlopec(subapdata= subapdata)
+        self._slopec = ShSlopec(subapdata= subapdata, thr_value = self._factory.SH_PIX_THR)
         
         nModes =self._factory.N_MODES_TO_CORRECT
         

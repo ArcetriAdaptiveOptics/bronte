@@ -33,7 +33,7 @@ class SpeculaScaoFactory(BaseFactory):
     SEEING = 0.3                    # arcsec
     INT_GAIN = -0.3
     INT_DELAY = 2                   # frames or ms
-    
+    SH_PIX_THR = 200                # threshold in ADU for pixels in subapertures
     
     def __init__(self):
         super().__init__()

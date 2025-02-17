@@ -18,6 +18,7 @@ class BronteFactory(BaseFactory):
     #N_ZERNIKE_MODES_TO_CORRECT = 200
     N_MODES_TO_CORRECT = 10
     MODAL_OFFSET_TAG = None #'250203_134800'
+    SH_PIX_THR = 200
 
     def __init__(self):
         super().__init__()

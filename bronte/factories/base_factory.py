@@ -11,6 +11,7 @@ class BaseFactory():
     
     ELT_PUPIL_TAG = None    #'EELT480pp0.0803m_obs0.283_spider2023'
     SHWFS_BKG_TAG = '250211_135800'
+    SH_FRAMES2AVERAGE  = 1
     
     def __init__(self):
         self._target_device_idx= -1

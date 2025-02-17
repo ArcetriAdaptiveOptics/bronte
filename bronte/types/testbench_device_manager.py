@@ -20,6 +20,7 @@ class TestbenchDeviceManager(BaseProcessingObj):
         self.output_frame = Pixels(*self._sh_camera.shape())
         self.outputs['out_pixels'] = self.output_frame
         self.inputs['ef'] = InputValue(type=ElectricField)
+        self._Nframes = factory.SH_FRAMES2AVERAGE
         self._do_plots = do_plots
         self.first = True
         if factory.modal_offset is None:
@@ -38,18 +39,25 @@ class TestbenchDeviceManager(BaseProcessingObj):
         self._command = self._slm_raster.reshape_map2vector(phase_screen_to_raster) + self._offset_cmd
         self._slm.set_shape(self._command)
         time.sleep(self.SLM_RESPONSE_TIME)
+        
         #TODO: manage the different integration times for the each wfs group
         # how to reproduce faint source? shall we play with the texp of the hardware?
         #TODO: load dark and bkg for sh frame reduction
-        sh_camera_frame = self._sh_camera.getFutureFrames(100).toNumpyArray()
-        #sh_camera_frame = self._sh_camera.getFutureFrames(1,1).toNumpyArray()
-        if self._sh_camera_bkg is not None:
-            sh_camera_frame = DataCubeCleaner.get_master_from_rawCube(
-                sh_camera_frame, self._sh_camera_bkg)
-        # sh_camera_frame = sh_camera_frame.astype(float) - self._sh_camera_bkg.astype(float)
-        # sh_camera_frame[sh_camera_frame < 0.] = 0.
-        # else:
-        #     sh_camera_frame = sh_camera_frame.mean(axis=-1)  
+        
+        sh_camera_frame = self._sh_camera.getFutureFrames(self._Nframes).toNumpyArray()
+        
+        if self._Nframes > 1:
+            if self._sh_camera_bkg is not None:
+                sh_camera_frame = DataCubeCleaner.get_master_from_rawCube(
+                    sh_camera_frame, self._sh_camera_bkg)
+            else:
+                sh_camera_frame = sh_camera_frame.mean(axis=-1) 
+        else:
+            if self._sh_camera_bkg is not None:
+                sh_camera_frame = sh_camera_frame.astype(float) - self._sh_camera_bkg.astype(float)
+                sh_camera_frame[sh_camera_frame < 0.] = 0.
+            else:
+                pass
               
         self.output_frame.pixels = sh_camera_frame
         self.output_frame.generation_time = self.current_time

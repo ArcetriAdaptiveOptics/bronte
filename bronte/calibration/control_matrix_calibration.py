@@ -20,7 +20,7 @@ class ControlMatrixCalibrator():
         
         self._factory = startup()
         self._factory.sh_camera.setExposureTime(8)
-        
+        thr_shwfs_pix = self._factory.SH_PIX_THR
         telescope_pupil_diameter = 40
         pupil_diameter_in_pixel  = 2 * self._factory.slm_pupil_mask.radius()
         pupil_pixel_pitch = round(telescope_pupil_diameter/pupil_diameter_in_pixel, 3)
@@ -38,7 +38,7 @@ class ControlMatrixCalibrator():
         subapdata = SubapData.restore_from_bronte(
             subaperture_set_folder() / (self._factory.SUBAPS_TAG + ".fits"))
         
-        self._slopec = ShSlopec(subapdata= subapdata)
+        self._slopec = ShSlopec(subapdata= subapdata, thr_value =  thr_shwfs_pix)
         
         nModes =self._factory.N_MODES_TO_CORRECT
         

@@ -18,8 +18,9 @@ def main(zc_vect_in_nm = np.array([5000, 0, 0]), Nsteps=10, ftag = None):
         reconstructed modes to be saved. If None, the data wont be saved
     '''
     bf = startup()
-    rec_tag = '250214_164100' #'250211_154500'#
-    zmm = ZernikeModesMeasurer(bf, rec_tag,do_plots=False)
+    bf.SH_FRAMES2AVERAGE = 1
+    rec_tag = '250217_124500'#'250214_164100' #'250211_154500'#
+    zmm = ZernikeModesMeasurer(bf, rec_tag, do_plots=False)
     
     ref_cmd = np.zeros(3) 
     zmm.run(ref_cmd)

@@ -159,20 +159,21 @@ def load_data_from_main250210_tt(ftag):
         modes_8000_tilt = hduList[2].data
         return modes_zero_tt, modes_8000_tip, modes_8000_tilt, rec_tag
     
-def main250210_z11(ftag=None):
+def main250210_z11(amp_in_nm =1000, ftag=None):
     '''
     Tests a reconstructor by applying an amplitude
     that scales with the radial order of the zernike
     and displays the reconstructed modes also in a map(up to z11).
     
     Parameter:
+    amp_in_nm(float), amplitude of the command to be applied in nm rms
     ftag(string), file tag of the reconstructed modes to be saved. If None,
     the data wont be saved 
     '''
     bf = startup()
-    rec_tag = '250211_154500'#'250211_143700' # 10 modes pp=8um rms/n^2
-    bf.N_MODES_TO_CORRECT = 200
-    pp = 1000
+    rec_tag = '250217_124500'#'250211_154500'#'250211_143700' # 10 modes pp=8um rms/n^2
+    bf.N_MODES_TO_CORRECT = 10
+    pp = amp_in_nm
     Nmodes2check = 10
     rec_mode_list = []
     zmm = ZernikeModesMeasurer(bf, rec_tag)
@@ -180,7 +181,7 @@ def main250210_z11(ftag=None):
     modes_zero = get_modes_from_test_calib(zmm, amp)
     j_vect  = np.arange(2,len(modes_zero)+2)
     n_vect = from_noll_to_radial_order(j_vect)
-    pp_per_mode = pp/n_vect**2
+    pp_per_mode = pp*np.ones(len(j_vect))#/n_vect**2
     
     for idx in range(Nmodes2check):
         amp = np.zeros(Nmodes2check)
