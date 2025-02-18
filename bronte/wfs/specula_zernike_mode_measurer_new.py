@@ -78,8 +78,8 @@ class ZernikeModesMeasurer():
         Defines execution sequence by grouping objects into stages:
         1. Group 1: Deformable mirror.
         2. Group 2: Testbench device manager.
-        3. Group 3: Slope computation.
-        4. Group 4: Modal reconstruction.
+        3. Group 3: Slope computer.
+        4. Group 4: Modal reconstructor.
         '''
         
         group1 = [self._dm]

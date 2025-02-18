@@ -42,10 +42,14 @@ def main_plot_all():
     intmat_tag_200modespp1 = '250211_160100'
     intmat_tag_10modespp8 = '250211_143700'
     intmat_tag_2modespp8 = '250211_140400'
+    intmat_tag_200modespp5 = '250218_085300'
+    intmat_tag_200modespp2 = '250218_125600'
     
     s200pp8 = show_eigenmodes(intmat_tag_200modespp8, do_plot=False)
     s200pp3 = show_eigenmodes(intmat_tag_200modespp3, do_plot=False)
     s200pp1 = show_eigenmodes(intmat_tag_200modespp1, do_plot=False)
+    s200pp5 = show_eigenmodes(intmat_tag_200modespp5, do_plot=False)
+    s200pp2 = show_eigenmodes(intmat_tag_200modespp2, do_plot=False)
     show_eigenmodes(intmat_tag_10modespp8, do_plot=False)
     show_eigenmodes(intmat_tag_2modespp8, do_plot=False)
     
@@ -56,6 +60,8 @@ def main_plot_all():
     plt.semilogy(j_vect, s200pp8, '.-', label=intmat_tag_200modespp8+' (pp=8um rms/n^2)')
     plt.semilogy(j_vect, s200pp3, '.-', label=intmat_tag_200modespp3+' (pp=3um rms/n^2)')
     plt.semilogy(j_vect, s200pp1, '.-', label=intmat_tag_200modespp1+' (pp=1um rms/n^2)')
+    plt.semilogy(j_vect, s200pp5, '.-', label=intmat_tag_200modespp1+' (pp=5um rms/n^2)')
+    plt.semilogy(j_vect, s200pp5, '.-', label=intmat_tag_200modespp1+' (pp=2um rms/n)')
     plt.xlabel('index')
     plt.ylabel('Eigenvalues '+'$\lambda_i$')
     plt.grid('--', alpha=0.3)
@@ -67,6 +73,8 @@ def main_plot_all():
     plt.semilogy(j_vect, (s200pp8-s200pp8.min())/(s200pp8.max()-s200pp8.min()), '.-', label=intmat_tag_200modespp8+' (pp=8um rms/n^2)')
     plt.semilogy(j_vect, (s200pp3-s200pp3.min())/(s200pp3.max()-s200pp3.min()), '.-', label=intmat_tag_200modespp3+' (pp=3um rms/n^2)')
     plt.semilogy(j_vect, (s200pp1-s200pp1.min())/(s200pp1.max()-s200pp1.min()), '.-', label=intmat_tag_200modespp1+' (pp=1um rms/n^2)')
+    plt.semilogy(j_vect, (s200pp5-s200pp5.min())/(s200pp5.max()-s200pp5.min()), '.-', label=intmat_tag_200modespp5+' (pp=5um rms/n^2)')
+    plt.semilogy(j_vect, (s200pp2-s200pp2.min())/(s200pp2.max()-s200pp2.min()), '.-', label=intmat_tag_200modespp5+' (pp=2um rms/n)')
     plt.xlabel('index')
     plt.ylabel('Normalized Eigenvalues\t'+r'$\frac{\lambda_i-\lambda_{min}}{\lambda_{max}-\lambda_{min}}$')
     plt.title('Interaction Matrix SVD')

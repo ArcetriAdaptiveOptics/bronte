@@ -5,7 +5,7 @@ import matplotlib.pyplot as plt
 from astropy.io import fits
 from bronte.package_data import other_folder
 
-def main(zc_vect_in_nm = np.array([5000, 0, 0]), Nsteps=10, ftag = None):
+def main(zc_vect_in_nm = np.array([2000, 0, 0]), Nsteps=100, ftag = None):
     '''
     Performs an open loop on an inpunt disturb expressed as a vector of
     zernike coefficients. 
@@ -19,7 +19,7 @@ def main(zc_vect_in_nm = np.array([5000, 0, 0]), Nsteps=10, ftag = None):
     '''
     bf = startup()
     bf.SH_FRAMES2AVERAGE = 1
-    rec_tag = '250217_124500'#'250214_164100' #'250211_154500'#
+    rec_tag = '250218_085300'#'250217_124500'#'250214_164100' #'250211_154500'#
     zmm = ZernikeModesMeasurer(bf, rec_tag, do_plots=False)
     
     ref_cmd = np.zeros(3) 
@@ -99,4 +99,6 @@ def display_results(ftag):
     var = err**2
     tot_err = np.sqrt(var.sum())
     
-    print(tot_err)
+    zernike_var = (rec_modes.mean(axis=0))**2
+    tot_wf_err_rec = np.sqrt(zernike_var.sum())
+    print(tot_wf_err_rec)

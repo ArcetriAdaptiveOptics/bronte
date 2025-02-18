@@ -171,17 +171,17 @@ def main250210_z11(amp_in_nm =1000, ftag=None):
     the data wont be saved 
     '''
     bf = startup()
-    rec_tag = '250217_124500'#'250211_154500'#'250211_143700' # 10 modes pp=8um rms/n^2
-    bf.N_MODES_TO_CORRECT = 10
+    rec_tag = '250218_085300'#'250217_124500'#'250211_154500'#'250211_143700' # 10 modes pp=8um rms/n^2
+    bf.N_MODES_TO_CORRECT = 200
     pp = amp_in_nm
-    Nmodes2check = 10
+    Nmodes2check = 200
     rec_mode_list = []
     zmm = ZernikeModesMeasurer(bf, rec_tag)
     amp = np.zeros(Nmodes2check)
     modes_zero = get_modes_from_test_calib(zmm, amp)
     j_vect  = np.arange(2,len(modes_zero)+2)
     n_vect = from_noll_to_radial_order(j_vect)
-    pp_per_mode = pp*np.ones(len(j_vect))#/n_vect**2
+    pp_per_mode = pp*np.ones(len(j_vect))/n_vect#**2
     
     for idx in range(Nmodes2check):
         amp = np.zeros(Nmodes2check)
@@ -208,7 +208,7 @@ def main250210_z11(amp_in_nm =1000, ftag=None):
         ca[idx] -= modes_zero 
     plt.figure()
     plt.clf()
-    plt.imshow(ca[:10,:10])
+    plt.imshow(ca[:Nmodes2check,:Nmodes2check])
     plt.colorbar(label='nm rms wf')
     plt.xlabel('Reconstructed mode index')
     plt.ylabel('Applied mode index')
