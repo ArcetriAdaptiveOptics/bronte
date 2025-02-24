@@ -48,7 +48,7 @@ class SpeculaScaoFactory(BaseFactory):
     
     @cached_property
     def slope_computer(self):
-        return ShSlopec(subapdata= self.subapertures_set)
+        return ShSlopec(subapdata= self.subapertures_set, thr_value =  self.SH_PIX_THR)
     
     @cached_property
     def reconstructor(self):
