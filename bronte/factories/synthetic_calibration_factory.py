@@ -77,7 +77,7 @@ class SyntheticCalibrationFactory(SyntheticBaseFactory):
         ccd_pixel_size = 5.5e-6 
         RAD2ARCSEC = 180/np.pi*3600
         pixel_scale_in_arcsec = RAD2ARCSEC * ccd_pixel_size/f_la 
-        pixel_scale_in_arcsec = 0.1
+        #pixel_scale_in_arcsec = 0.1
         subap_fov = pixel_scale_in_arcsec * self._subap_size_in_px
         eff_subap_on_diameter = 42
         print(subap_fov)

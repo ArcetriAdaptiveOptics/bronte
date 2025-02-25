@@ -20,7 +20,7 @@ class MeasuredCalibrationFactory(BaseFactory):
     SUBAPS_TAG = '250120_122000'
     N_MODES_TO_CORRECT = 2 
     TELESCOPE_PUPIL_DIAMETER = 40   # m
-    SH_PIX_THR = 20 # in ADU
+    SH_PIX_THR = 200 # in ADU
     PP_AMP_IN_NM = 2000
     
     def __init__(self):
