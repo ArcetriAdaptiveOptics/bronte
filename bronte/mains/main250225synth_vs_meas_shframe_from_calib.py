@@ -67,10 +67,21 @@ def main():
     
     psf_residual_airy = best_fit_airy(x,y)-single_subap
     
+    # plt.figure()
+    # plt.clf()
+    # plt.imshow(psf_residual_airy);
+    # plt.colorbar()
+    
+    sing_meas_subap = norm_meas_wgrd[yc-hsize:yc+hsize,xc-hsize:xc+hsize+2]
+    
     plt.figure()
     plt.clf()
-    plt.imshow(psf_residual_airy);
-    plt.colorbar()
+    plt.plot(sing_meas_subap[12,:],label='meas')
+    plt.plot(single_subap[10,:], label='synth')
+    plt.ylabel('Normalized intensity')
+    plt.legend(loc='best')
+    plt.grid('--',alpha=0.3)
+    
     
     print(best_fit_airy.parameters)
     return best_fit_airy

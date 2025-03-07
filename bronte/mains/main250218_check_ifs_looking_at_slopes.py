@@ -40,11 +40,15 @@ class DisplaySlopeMapsFromIfs():
         for idx in range(n_modes):
             ifs = self._intmat._intmat[idx]
             slope_map = Slopes(slopes=ifs).get2d(None, self._subapdata)
-            slope_maps_x.append(slope_map[0])
-            slope_maps_y.append(slope_map[1])
+            slope_mask = np.zeros(slope_map[0].shape)
+            slope_mask[slope_map[0] == 0.] = 1
+            slope_maps_x.append(np.ma.array(data = slope_map[0], mask = slope_mask))
+            slope_maps_y.append(np.ma.array(data = slope_map[1], mask = slope_mask))
         
-        self._slope_maps_y = np.array(slope_maps_y)
-        self._slope_maps_x = np.array(slope_maps_x)
+        self._slope_maps_y = np.ma.array(slope_maps_y)
+        self._slope_maps_x = np.ma.array(slope_maps_x)
+        
+        
         
     def get_slope_maps(self):
         return self._slope_maps_x, self._slope_maps_y
@@ -58,14 +62,14 @@ class DisplaySlopeMapsFromIfs():
                                      sharey = True)
             
             axs[0].set_title('Slope Map X')
-            im_map_x = axs[0].imshow(slope_map_x, cmap='jet')
+            im_map_x = axs[0].imshow(slope_map_x)
             # Use make_axes_locatable to create a colorbar of the same height
             divider_x = make_axes_locatable(axs[0])
             cax_x = divider_x.append_axes("right", size="5%", pad=0.15)  # Adjust size and padding
             fig.colorbar(im_map_x, cax=cax_x, label='a.u.')
             
             axs[1].set_title('Slope Map Y')
-            im_map_y = axs[1].imshow(slope_map_y, cmap='jet')
+            im_map_y = axs[1].imshow(slope_map_y)
             
             divider_y = make_axes_locatable(axs[1])
             cax_y = divider_y.append_axes("right", size="5%", pad=0.15)

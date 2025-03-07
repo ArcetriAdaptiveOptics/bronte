@@ -29,7 +29,7 @@ def _do_plot(eigen_values, title):
     plt.figure()
     plt.clf()
     plt.semilogy(j_vect, eigen_values, '.-', label=r'$\lambda_i$')
-    plt.xlabel('Noll mode index')
+    plt.xlabel('mode index')
     plt.ylabel('Eigenvalues')
     plt.grid('--', alpha=0.3)
     plt.legend(loc='best')

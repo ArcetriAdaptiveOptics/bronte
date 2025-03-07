@@ -20,7 +20,7 @@ from bronte.utils.noll_to_radial_order import from_noll_to_radial_order
 class SyntheticCalibrationFactory(SyntheticBaseFactory):
     
     SUBAPS_TAG = '250120_122000'
-    N_MODES_TO_CORRECT = 2 
+    N_MODES_TO_CORRECT = 200 
     TELESCOPE_PUPIL_DIAMETER = 40   # m
     SH_PIX_THR = 0
     PP_AMP_IN_NM = 2000
