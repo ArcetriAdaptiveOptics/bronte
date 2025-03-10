@@ -1,7 +1,7 @@
 import specula
 specula.init(-1, precision=1)  # Default target=-1 (CPU), float32=1
 from specula import np
-from specula.data_objects.subap_data import SubapData
+#from specula.data_objects.subap_data import SubapData
 from specula.data_objects.slopes import Slopes
 from bronte.mains.main250212_check_eigenvalues_from_specula_calib import load_intmat
 from bronte.startup import specula_startup
@@ -36,12 +36,15 @@ class DisplaySlopeMapsFromIfs():
         
         slope_maps_x = []
         slope_maps_y = []
+        idl_slope_mask = self._subapdata.single_mask()
+        slope_mask = np.ones(idl_slope_mask.shape) - idl_slope_mask
+       # slope_mask[idl_slope_mask == 1.] = 0
         
         for idx in range(n_modes):
             ifs = self._intmat._intmat[idx]
             slope_map = Slopes(slopes=ifs).get2d(None, self._subapdata)
-            slope_mask = np.zeros(slope_map[0].shape)
-            slope_mask[slope_map[0] == 0.] = 1
+            # slope_mask = np.zeros(slope_map[0].shape)
+            # slope_mask[slope_map[0] == 0.] = 1
             slope_maps_x.append(np.ma.array(data = slope_map[0], mask = slope_mask))
             slope_maps_y.append(np.ma.array(data = slope_map[1], mask = slope_mask))
         

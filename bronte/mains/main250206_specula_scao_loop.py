@@ -5,6 +5,7 @@ from specula import np
 from bronte.startup import specula_startup
 from bronte.types.testbench_device_manager import TestbenchDeviceManager
 from specula.display.modes_display import ModesDisplay
+from specula.display.slopec_display import SlopecDisplay
 from bronte.package_data import subaperture_set_folder, reconstructor_folder,\
     phase_screen_folder, telemetry_folder
 from astropy.io import fits
@@ -69,8 +70,11 @@ class SpeculaScaoLoop():
         self._control.inputs['delta_comm'].set(self._rec.out_modes)
         self._dm.inputs['in_command'].set(self._control.out_comm)
         
-        self._disp = ModesDisplay()
-        self._disp.inputs['modes'].set(self._rec.out_modes)
+        self._modes_disp = ModesDisplay()
+        self._modes_disp.inputs['modes'].set(self._rec.out_modes)
+        self._slopes_disp = SlopecDisplay()
+        self._slopes_disp.inputs['slopes'].set(self._slopec.outputs['out_slopes'])
+        self._slopes_disp.inputs['subapdata'].set(self._factory.subapertures_set)
     
     def _define_groups(self):
         
@@ -80,15 +84,13 @@ class SpeculaScaoLoop():
         group4 = [self._bench_devices]
         group5 = [self._slopec]
         group6 = [self._rec]
-        group7 = [self._control, self._disp]
+        group7 = [self._control, self._modes_disp, self._slopes_disp]
         group8 = [self._dm]
 
         self._groups = [group1, group2, group3, group4, group5, group6, group7, group8]
     
     def _initialize_telemetry(self):
         
-        #self._slopes_x_maps_list = []
-        #self._slopes_y_maps_list = []
         #self._short_exp_psf_list = []
         self._slopes_vector_list = []
         self._zc_delta_modal_command_list = []
@@ -97,7 +99,7 @@ class SpeculaScaoLoop():
     def _update_telemetry(self):
         
         specula_slopes = self._groups[4][0].outputs['out_slopes']
-        self._slopes_vector_list.append(specula_slopes.slopes)        
+        self._slopes_vector_list.append(specula_slopes.slopes.copy())        
         # self._short_exp_psf_list.append(self._short_exp)
         specula_delta_commands_in_nm = self._groups[5][0].out_modes.value
         self._zc_delta_modal_command_list.append(
@@ -111,6 +113,7 @@ class SpeculaScaoLoop():
     def run(self, Nsteps = 30):
         
         self._n_steps = Nsteps
+        # time step of the simulatated loop isnt it QM
         time_step = 0.01
         
         for group in self._groups:

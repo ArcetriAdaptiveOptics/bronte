@@ -1,6 +1,7 @@
 import specula
 specula.init(-1, precision=1)  # Default target=-1 (CPU), float32=1
 from specula import np
+from specula.display.slopec_display import SlopecDisplay
 from bronte.startup import measured_calibration_startup
 
 class MeasuredControlMatrixCalibrator():
@@ -32,6 +33,11 @@ class MeasuredControlMatrixCalibrator():
         self._dm.inputs['in_command'].set(self._pp.output)
         self._prop.inputs['layer_list'].set([self._empty_layer, self._dm.outputs['out_layer']])
     
+        self._slopes_disp = SlopecDisplay()
+        self._slopes_disp.inputs['slopes'].set(self._slopec.outputs['out_slopes'])
+        # self._slopes_disp.inputs['pupdata'].set()
+        self._slopes_disp.inputs['subapdata'].set(self._factory.subapertures_set)
+    
     def _define_groups(self):
         
         group1 = [self._pp]
@@ -40,8 +46,9 @@ class MeasuredControlMatrixCalibrator():
         group4 = [self._bench_devices]
         group5 = [self._slopec]
         group6 = [self._im_calibrator]
+        group7 = [self._slopes_disp]
         
-        self._groups = [group1, group2, group3, group4, group5, group6]
+        self._groups = [group1, group2, group3, group4, group5, group6, group7]
     
     def run(self):
         

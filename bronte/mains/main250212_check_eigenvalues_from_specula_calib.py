@@ -3,6 +3,7 @@ specula.init(-1, precision=1)  # Default target=-1 (CPU), float32=1
 from specula import np
 
 from specula.data_objects.intmat import Intmat
+
 from bronte.package_data import reconstructor_folder
 import matplotlib.pyplot as plt
 
