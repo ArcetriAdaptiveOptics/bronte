@@ -6,11 +6,8 @@ from bronte.startup import specula_startup
 from bronte.types.testbench_device_manager import TestbenchDeviceManager
 from specula.display.modes_display import ModesDisplay
 from specula.display.slopec_display import SlopecDisplay
-from bronte.package_data import subaperture_set_folder, reconstructor_folder,\
-    phase_screen_folder, telemetry_folder
+from bronte.package_data import telemetry_folder
 from astropy.io import fits
-
-
 
 
 class SpeculaScaoLoop():
@@ -113,16 +110,16 @@ class SpeculaScaoLoop():
     def run(self, Nsteps = 30):
         
         self._n_steps = Nsteps
-        # time step of the simulatated loop isnt it QM
-        time_step = 0.01
+        # time step of the simulated loop isnt it QM
+        self.time_step = self._factory.TIME_STEP_IN_SEC
         
         for group in self._groups:
             for obj in group:
-                obj.loop_dt = time_step * 1e9
-                obj.run_check(time_step)
+                obj.loop_dt = self.time_step * 1e9
+                obj.run_check(self.time_step)
     
         for step in range(self._n_steps):
-            t = 0 + step * time_step
+            t = 0 + step * self.time_step
             print('T=',t)
             for group in self._groups:
                 for obj in group:
@@ -160,29 +157,34 @@ class SpeculaScaoLoop():
         else:
             hdr['OFF_TAG'] = 'NA'
         
-        # #ATMO PARAMETERS
-        hdr['R0_IN_M'] = self._factory.SEEING
+        # ATMO PARAMETERS
+        hdr['SEEING'] = self._factory.SEEING
         hdr['L0_IN_M'] = self._factory.OUTER_SCALE_L0
         hdr['D_IN_M'] = self._factory.TELESCOPE_PUPIL_DIAMETER
-        #
-        # #LOOP PARAMETERS
+        hdr['WIND_SP'] = str(self._factory.WIND_SPEED_LIST)
+        hdr['WIND_DIR'] = str(self._factory.WIND_DIR_LIST)
+        hdr['CN2_W'] = str(self._factory.Cn2_WEIGHTS_LIST)
+        hdr['NGS_POS'] = str(self._factory.ONAXIS_SOURCE_COORD)
+        hdr['NGS_MAG'] = self._factory.ONAXIS_SOURCE_MAG
+        hdr['NGS_WL'] = self._factory.ONAXIS_SOURCE_WL_IN_NM
+        hdr['LGS_POS'] = str(self._factory.LGS_COORD)
+        hdr['LGS_MAG'] = self._factory.LGS_MAG
+        hdr['LGS_ALT'] = self._factory.LGS_HEIGHT_IN_M
+        hdr['LGS_WL'] = self._factory.LGS_WL_IN_NM
+        
+        # LOOP PARAMETERS
+        hdr['TSTEP_S'] = self.time_step
         hdr['INT_GAIN'] = self._factory.INT_GAIN
         hdr['INT_DEL'] = self._factory.INT_DELAY
         hdr['N_STEPS'] = self._n_steps
         hdr['N_MODES'] = self._factory.N_MODES_TO_CORRECT
-        
-        #
-        # #HARDWARE PARAMETERS
-        #
         hdr['SHPX_THR'] = self._factory.SH_PIX_THR
         hdr['PC_TEXP'] = psf_camera_texp # in ms
         hdr['PC_FPS'] = psf_camera_fps
         hdr['SH_TEXP'] = shwfs_texp # in ms
         hdr['SH_FPS'] = shwfs_fps
-        #hdr['SLM_RT'] = self.SLM_RESPONSE_TIME # in sec
-        #
+        
         fits.writeto(file_name, np.array(self._slopes_vector_list), hdr)
-        #MODAL COMMANDS
         fits.append(file_name, np.array(self._zc_delta_modal_command_list))
         fits.append(file_name, np.array(self._zc_integrated_modal_command_list))
 

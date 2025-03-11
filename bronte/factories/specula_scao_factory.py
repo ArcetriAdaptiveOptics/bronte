@@ -23,17 +23,33 @@ class SpeculaScaoFactory(BaseFactory):
     
     #FILE TAGS
     SUBAPS_TAG = '250120_122000'
-    MODAL_OFFSET_TAG = None #'250203_134800'
+    MODAL_OFFSET_TAG = None 
     REC_MAT_TAG = '250307_140600'#'250207_120300' #'250127_155400'
     
-    #AO PARAMETERS
-    N_MODES_TO_CORRECT = 200 
+    #ATMO PARAMETERS
     TELESCOPE_PUPIL_DIAMETER = 40   # m
     OUTER_SCALE_L0 = 23             # m
     SEEING = 0.3                    # arcsec
+    WIND_SPEED_LIST = [25.5, 5.5]   #in m/s
+    WIND_DIR_LIST = [0, 0]
+    LAYER_HEIGHTS_LIST = [300.000,  20500.0] # in m
+    Cn2_WEIGHTS_LIST = [1 - 0.119977, 0.119977] # sum must be=1
+    
+    #SOURCE PARAMETERS
+    ONAXIS_SOURCE_COORD = [0.0, 0.0]
+    ONAXIS_SOURCE_MAG = 8
+    ONAXIS_SOURCE_WL_IN_NM = 750 
+    LGS_COORD = [45.0, 0.0]
+    LGS_HEIGHT_IN_M = 90000
+    LGS_MAG = 5
+    LGS_WL_IN_NM = 589
+    
+    #AO PARAMETERS
+    N_MODES_TO_CORRECT = 200 
     INT_GAIN = -0.3
     INT_DELAY = 2                   # frames or ms
     SH_PIX_THR = 200                # threshold in ADU for pixels in subapertures
+    TIME_STEP_IN_SEC = 0.01          # time step of the simulated loop in sec
     
     def __init__(self):
         super().__init__()
@@ -87,8 +103,16 @@ class SpeculaScaoFactory(BaseFactory):
     @cached_property
     def source_dict(self):
         
-        on_axis_source = Source(polar_coordinate=[0.0, 0.0], magnitude=8, wavelengthInNm=750,)
-        lgs1_source = Source(polar_coordinate=[45.0, 0.0], height=90000, magnitude=5, wavelengthInNm=589)
+        on_axis_source = Source(
+            polar_coordinate = self.ONAXIS_SOURCE_COORD,
+            magnitude = self.ONAXIS_SOURCE_MAG,
+            wavelengthInNm = self.ONAXIS_SOURCE_WL_IN_NM,)
+        
+        lgs1_source = Source(
+            polar_coordinate = self.LGS_COORD,
+            height = self.LGS_HEIGHT_IN_M,
+            magnitude = self.LGS_MAG,
+            wavelengthInNm = self.LGS_WL_IN_NM)
         
         source_dict = {'on_axis_source': on_axis_source,
                        'lgs1_source': lgs1_source}
@@ -103,28 +127,27 @@ class SpeculaScaoFactory(BaseFactory):
     
     @cached_property
     def wind_speed(self):
-        wind_speed = FuncGenerator(constant=[25.5, 5.5],
+        
+        wind_speed = FuncGenerator(constant = self.WIND_SPEED_LIST,
                                    target_device_idx=self._target_device_idx)
         return wind_speed
     
     @cached_property
     def wind_direction(self):
-        wind_direction = FuncGenerator(constant=[0, 0],
+    
+        wind_direction = FuncGenerator(constant = self.WIND_DIR_LIST,
                                        target_device_idx=self._target_device_idx)
         return wind_direction
     
     @cached_property
     def atmo_evolution(self):
-        
-        layer_heights_list = [300.000,  20500.0]
-        Cn2_weights_list = [1 - 0.119977, 0.119977]
-        
+
         atmo = AtmoEvolution(pixel_pupil = self._pupil_diameter_in_pixel,              # Linear dimension of pupil phase array
                              pixel_pitch = self._pupil_pixel_pitch,         # Linear dimension of pupil phase array
                              data_dir = package_data.phase_screen_folder(),      # Data directory for phasescreens
                              L0 = self.OUTER_SCALE_L0,                        # [m] Outer scale
-                             heights = layer_heights_list, # [m] layer heights at 0 zenith angle
-                             Cn2 = Cn2_weights_list, # Cn2 weights (total must be eq 1)
+                             heights = self.LAYER_HEIGHTS_LIST, # [m] layer heights at 0 zenith angle
+                             Cn2 = self.Cn2_WEIGHTS_LIST, # Cn2 weights (total must be eq 1)
                              source_dict = self.source_dict,
                              target_device_idx=self._target_device_idx,
                             )

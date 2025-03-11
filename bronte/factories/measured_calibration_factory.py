@@ -22,6 +22,7 @@ class MeasuredCalibrationFactory(BaseFactory):
     TELESCOPE_PUPIL_DIAMETER = 40   # m
     SH_PIX_THR = 200 # in ADU
     PP_AMP_IN_NM = 2000
+    TIME_STEP_IN_SEC = self._sh_texp*1e-3
     
     def __init__(self):
         

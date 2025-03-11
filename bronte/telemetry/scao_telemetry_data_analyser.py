@@ -14,6 +14,8 @@ from mpl_toolkits.axes_grid1 import make_axes_locatable
 
 class ScaoTelemetryDataAnalyser():
     
+    ARCSEC2RAD = np.pi/(180*60*60)
+    
     def __init__(self, ftag):
         
         self._telemetry_tag = ftag
@@ -49,31 +51,32 @@ class ScaoTelemetryDataAnalyser():
         self._rms_slopes_x = np.sqrt(np.mean(slope_map_cube_x**2, axis=(1,2)))
         self._rms_slopes_y = np.sqrt(np.mean(slope_map_cube_y**2, axis=(1,2)))
     
-    def _get_total_wavefront_error_reconstruction(self):
-        
-        var = self._integ_cmds[-1]**2
-        tot_wf_err_in_m = np.sqrt(var.sum())
-        return tot_wf_err_in_m
-        
-    def _get_residual_wavefront_after_perfect_compensation(self):
-        
-        J = self.corrected_modes + self._first_idx_mode + 1
-        #extend to vonkartmann
-        var_J_in_rad2 = 0.2944*J**(-np.sqrt(3)*0.5)*(self.telescope_pupil_diameter/self.r0)**(5./3)
-        return var_J_in_rad2
-    
-    def _get_seeing_limited_total_variance(self):
-        
-        var_sl_in_rad2 = 1.0299*(self.telescope_pupil_diameter/self.r0)**(5./3)
-        return var_sl_in_rad2
+    # def _get_total_wavefront_error_reconstruction(self):
+    #
+    #     var = self._integ_cmds[-1]**2
+    #     tot_wf_err_in_m = np.sqrt(var.sum())
+    #     return tot_wf_err_in_m
+    #
+    # def _get_residual_wavefront_after_perfect_compensation(self):
+    #
+    #     J = self.corrected_modes + self._first_idx_mode + 1
+    #     #extend to vonkartmann
+    #     var_J_in_rad2 = 0.2944*J**(-np.sqrt(3)*0.5)*(self.telescope_pupil_diameter/self.r0)**(5./3)
+    #     return var_J_in_rad2
+    #
+    # def _get_seeing_limited_total_variance(self):
+    #
+    #     var_sl_in_rad2 = 1.0299*(self.telescope_pupil_diameter/self.r0)**(5./3)
+    #     return var_sl_in_rad2
     
     def _load_data_from_header(self):
         
-        self.r0 = self._hdr['R0_IN_M']
+        self.seeing = self._hdr['SEEING'] #arcsec
         self.L0 = self._hdr['L0_IN_M']
         self.telescope_pupil_diameter = self._hdr['D_IN_M']
         self.integ_gain = self._hdr['INT_GAIN']
         self.integ_delay = self._hdr['INT_DEL']
+        self.loop_time_step = self._hdr['TSTEP_S']#time step of the loop in sec
         self.Nstep = self._hdr['N_STEPS']
         self.corrected_modes = self._hdr['N_MODES']
         
@@ -87,6 +90,8 @@ class ScaoTelemetryDataAnalyser():
         self._subapdata = self._load_subaperture_set(self._hdr['SUB_TAG'])
         self._intmat = self._load_intmat(self._hdr['REC_TAG'])
         self._recmat = self._load_recmat(self._hdr['REC_TAG'])
+        
+        self.r0 = 500e-9/(self.seeing*self.ARCSEC2RAD)
 
     @staticmethod    
     def _load_intmat(intmat_tag):
@@ -198,3 +203,24 @@ class ScaoTelemetryDataAnalyser():
         plt.legend(loc = 'best')
         plt.ylabel('rms slopes [au]')
         plt.xlabel('step')
+        
+    def show_modal_plot(self):
+        '''
+        displays the temporal standard deviation of the modal coefficients
+        '''
+        filtered_cmd_std = self._integ_cmds.std(axis=0)
+        delta_cmd_std = self._delta_cmds.std(axis=0)
+        
+        open_loop_cmd_std = filtered_cmd_std + delta_cmd_std
+        mode_index_list = np.arange(self._first_idx_mode,
+                                         self.corrected_modes + self._first_idx_mode)
+        plt.figure()
+        plt.clf()
+        plt.loglog(mode_index_list, open_loop_cmd_std, 'r-', label = 'OL')
+        plt.loglog(mode_index_list, delta_cmd_std, label=r'$\Delta c$')
+        plt.xlabel('j Noll index')
+        plt.ylabel('modal std '+ r'$\sigma_{std}$' + ' [m rms wf]')
+        plt.legend(loc='best')
+        plt.grid('--', alpha=0.3)
+        
+        

@@ -57,5 +57,6 @@ class BaseFactory():
         master_bkg = None
         if self.SHWFS_BKG_TAG is not None:
             master_bkg, texp = CameraMasterMeasurer.load_master(self.SHWFS_BKG_TAG)
+            self._sh_texp = texp
             self.sh_camera.setExposureTime(texp)
         return master_bkg

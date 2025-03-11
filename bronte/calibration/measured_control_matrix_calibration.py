@@ -52,7 +52,7 @@ class MeasuredControlMatrixCalibrator():
     
     def run(self):
         
-        time_step = 0.01
+        time_step = self._factory.TIME_STEP_IN_SEC
         n_steps = 2*self._Nmodes
         for group in self._groups:
             for obj in group:
