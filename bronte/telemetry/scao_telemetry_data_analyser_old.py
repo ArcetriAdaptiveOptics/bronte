@@ -71,12 +71,12 @@ class ScaoTelemetryDataAnalyser():
     
     def _load_data_from_header(self):
         
-        self.seeing = self._hdr['SEEING'] #arcsec
+        self.seeing = self._hdr['R0_IN_M'] #arcsec
         self.L0 = self._hdr['L0_IN_M']
         self.telescope_pupil_diameter = self._hdr['D_IN_M']
         self.integ_gain = self._hdr['INT_GAIN']
         self.integ_delay = self._hdr['INT_DEL']
-        self.loop_time_step = self._hdr['TSTEP_S']#time step of the loop in sec
+        #self.loop_time_step = self._hdr['TSTEP_S']#time step of the loop in sec
         self.Nstep = self._hdr['N_STEPS']
         self.corrected_modes = self._hdr['N_MODES']
         

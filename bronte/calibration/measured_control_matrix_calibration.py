@@ -35,7 +35,6 @@ class MeasuredControlMatrixCalibrator():
     
         self._slopes_disp = SlopecDisplay()
         self._slopes_disp.inputs['slopes'].set(self._slopec.outputs['out_slopes'])
-        # self._slopes_disp.inputs['pupdata'].set()
         self._slopes_disp.inputs['subapdata'].set(self._factory.subapertures_set)
     
     def _define_groups(self):
