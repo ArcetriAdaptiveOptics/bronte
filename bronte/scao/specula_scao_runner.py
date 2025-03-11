@@ -1,7 +1,6 @@
 import specula
 specula.init(-1, precision=1)  # Default target=-1 (CPU), float32=1
 from specula import np
-#from bronte.startup import specula_startup
 from bronte.types.testbench_device_manager import TestbenchDeviceManager
 from specula.display.modes_display import ModesDisplay
 from specula.display.slopec_display import SlopecDisplay
@@ -135,6 +134,7 @@ class SpeculaScaoRunner():
     def save_telemetry(self, fname):
         
         #TODO: raise exeption for ZMQ timeout error
+        
         psf_camera_texp = self._factory.psf_camera.exposureTime()
         psf_camera_fps = self._factory.psf_camera.getFrameRate()
         shwfs_texp = self._factory.sh_camera.exposureTime()

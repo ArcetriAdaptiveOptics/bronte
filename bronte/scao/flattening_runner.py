@@ -1,8 +1,8 @@
 import specula
 specula.init(-1, precision=1)  # Default target=-1 (CPU), float32=1
 from specula import np
-#from bronte.startup import specula_startup
-from bronte.types.testbench_device_manager import TestbenchDeviceManager
+from bronte.types.slm_device_manager import SlmDeviceManager
+from bronte.types.shwfs_device_manager import ShwfsDeviceManager
 from specula.display.modes_display import ModesDisplay
 from specula.display.slopec_display import SlopecDisplay
 from bronte.package_data import telemetry_folder
@@ -40,17 +40,17 @@ class FlatteningRunner():
     def _setup_bench_devices(self):
         
         self._factory.sh_camera.setExposureTime(self._factory._sh_texp)
-        self._bench_devices = TestbenchDeviceManager(self._factory, 
-                                do_plots=True,
-                                target_device_idx= self._target_device_idx)        
+        self._shwfs_device = ShwfsDeviceManager(self._factory)
+        self._slm_device = SlmDeviceManager(self._factory)
+    
     
     def _set_inputs(self):
         
-        self._bench_devices.inputs['ef'].set(self._dm.outputs['out_layer'])
-        self._slopec.inputs['in_pixels'].set(self._bench_devices.outputs['out_pixels'])
+        self._slopec.inputs['in_pixels'].set(self._shwfs_device.outputs['out_pixels'])
         self._rec.inputs['in_slopes'].set(self._slopec.outputs['out_slopes'])
         self._control.inputs['delta_comm'].set(self._rec.out_modes)
         self._dm.inputs['in_command'].set(self._control.out_comm)
+        self._slm_device.inputs['ef'].set(self._dm.outputs['out_layer'])
         
         self._modes_disp = ModesDisplay()
         self._modes_disp.inputs['modes'].set(self._rec.out_modes)
@@ -60,13 +60,14 @@ class FlatteningRunner():
         
     def _define_groups(self):
         
-        group1 = [self._bench_devices]
+        group1 = [self._shwfs_device]
         group2 = [self._slopec]
         group3 = [self._rec]
         group4 = [self._control, self._modes_disp, self._slopes_disp]
         group5 = [self._dm]
+        group6 = [self._slm_device]
 
-        self._groups = [group1, group2, group3, group4, group5]
+        self._groups = [group1, group2, group3, group4, group5, group6]
     
     def _initialize_telemetry(self):
         

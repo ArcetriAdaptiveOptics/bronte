@@ -66,6 +66,7 @@ class MeasuredCalibrationFactory(BaseFactory):
     
     @cached_property
     def testbench_devices(self):
+        self.sh_camera.setExposureTime(self._sh_texp)
         tbd = TestbenchDeviceManager(
             factory = self,
             target_device_idx = self._target_device_idx)

@@ -1,5 +1,6 @@
 from specula import np, cpuArray
 from specula.base_processing_obj import BaseProcessingObj
+# from specula.data_objects.pixels import Pixels
 from specula.connections import InputValue
 from specula.data_objects.ef import ElectricField
 import time
@@ -23,7 +24,7 @@ class SlmDeviceManager(BaseProcessingObj):
             self._offset_cmd = self._get_offset_command(factory.modal_offset)
         
         if self._do_plots:
-            self.fig, self.axs = plt.subplots(1, figsize=(10, 10))
+            self.fig, self.axs = plt.subplots(2, figsize=(10, 10))
 
     def trigger_code(self):
         
@@ -41,7 +42,7 @@ class SlmDeviceManager(BaseProcessingObj):
     def run_check(self, time_step):
         return True
     
-
+    #TODO: adjust plot
     def _plot(self, phase_screen_to_raster):
         if self.first:
             # Prima chiamata: crea le immagini e le colorbar
