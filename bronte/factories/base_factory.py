@@ -11,12 +11,14 @@ class BaseFactory():
     
     ELT_PUPIL_TAG = None    #'EELT480pp0.0803m_obs0.283_spider2023'
     SHWFS_BKG_TAG = '250211_135800'
+    #PSFCAM_BKG_TAG = None
     SH_FRAMES2AVERAGE  = 1
     
     def __init__(self):
         self._target_device_idx= -1
         self._set_up_basic_logging()
-        self.sh_camera_master_bkg
+        self._load_sh_camera_master_bkg()
+        self._load_psf_camera_master_bkg()
            
     def _set_up_basic_logging(self):
         import importlib
@@ -32,7 +34,20 @@ class BaseFactory():
                 package_data.elt_pupil_folder()/(self.ELT_PUPIL_TAG + '.fits'))
         else:
             return spm.circular_pupil_mask()
-
+    
+    def _load_sh_camera_master_bkg(self):
+        self._sh_master_bkg = None
+        if self.SHWFS_BKG_TAG is not None:
+            self._sh_master_bkg, self._sh_texp = CameraMasterMeasurer.load_master(self.SHWFS_BKG_TAG)
+            self.sh_camera.setExposureTime(self._sh_texp)
+    
+    def _load_psf_camera_master_bkg(self):
+        pass
+        # self._psfcam_master_bkg = None
+        # if self.PSFCAM_BKG_TAG is not None:
+        #     self._psfcam_master_bkg, self._sh_texp = CameraMasterMeasurer.load_master(self.PSFCAM_BKG_TAG)
+        #     self.psf_camera.setExposureTime(self._sh_texp)
+    
     @cached_property
     def sh_camera(self):
         return camera('193.206.155.69', 7110)
@@ -53,11 +68,6 @@ class BaseFactory():
     def slm_rasterizer(self):
         return SlmRasterizer(self.slm_pupil_mask)
     
-    @cached_property
+    @property
     def sh_camera_master_bkg(self):
-        master_bkg = None
-        if self.SHWFS_BKG_TAG is not None:
-            master_bkg, texp = CameraMasterMeasurer.load_master(self.SHWFS_BKG_TAG)
-            self._sh_texp = texp
-            self.sh_camera.setExposureTime(texp)
-        return master_bkg
+        return self._sh_master_bkg

@@ -22,14 +22,15 @@ class MeasuredCalibrationFactory(BaseFactory):
     TELESCOPE_PUPIL_DIAMETER = 40   # m
     SH_PIX_THR = 200 # in ADU
     PP_AMP_IN_NM = 2000
-    TIME_STEP_IN_SEC = self._sh_texp*1e-3
+    TIME_STEP_IN_SEC = None 
     
     def __init__(self):
         
         super().__init__()
         self._pupil_diameter_in_pixel  = 2 * self.slm_pupil_mask.radius()
         self._pupil_pixel_pitch = round(self.TELESCOPE_PUPIL_DIAMETER/self._pupil_diameter_in_pixel, 3)
-          
+        self.TIME_STEP_IN_SEC = self._sh_texp
+        
     @cached_property
     def source_dict(self):
         on_axis_source = Source(polar_coordinate=[0.0, 0.0], magnitude=8, wavelengthInNm=750,)
