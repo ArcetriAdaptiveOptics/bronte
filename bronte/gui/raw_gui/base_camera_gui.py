@@ -15,12 +15,12 @@ class BaseRealTimeCameraDisplay(QtWidgets.QMainWindow):
         self._load_camera(camera_name, camera_port)
         self._load_camera_master_bkg()
         
-        # Creazione dell'applicazione Qt
+        # builds the Qt application
         self.app = QtWidgets.QApplication.instance()
         if self.app is None:
             self.app = QtWidgets.QApplication([])
 
-        # Imposta la finestra principale
+        # sets the main window
         self.setWindowTitle(wtitle)
         self.central_widget = QtWidgets.QWidget()
         self.setCentralWidget(self.central_widget)
@@ -30,34 +30,32 @@ class BaseRealTimeCameraDisplay(QtWidgets.QMainWindow):
         self.graphics_widget = pg.GraphicsLayoutWidget()
         self.layout.addWidget(self.graphics_widget)
 
-        # Creazione del plot
+        # generate the plot
         self.plot_item = self.graphics_widget.addPlot(title=ptitle)
         self.image_item = pg.ImageItem()
         self.plot_item.addItem(self.image_item)
 
-        # Abilita zoom e pan con il mouse
+        # Enable mouse zoom and pan
         self.plot_item.setMouseEnabled(True, True)
         self.plot_item.setAspectLocked(True)
 
-        # Creazione della colorbar
+        # generate the colorbar
         self.colorbar = pg.HistogramLUTItem()
         self.colorbar.setImageItem(self.image_item)
         self.graphics_widget.addItem(self.colorbar)
 
-        # Lista di colormap disponibili
+        # List of available colormaps
         self.colormaps = ["viridis", "plasma", "inferno", "magma", "cividis"]
-        self.current_colormap_index = 0  # Indice della colormap attuale
+        self.current_colormap_index = 0  
 
-        # Imposta la colormap iniziale
+        # set a default colormap
         self.set_colormap(self.colormaps[self.current_colormap_index])
 
-        # Timer per aggiornare il plot
+        # Timer to update the plot
         self.timer = QtCore.QTimer()
         self.timer.timeout.connect(self.update_plot)
-        self.timer.start(update_interval)  # Aggiorna ogni 'update_interval' ms
+        self.timer.start(update_interval)  # update every 'update_interval' ms
         
-        # Mostra la finestra
-        #self.show()
     
     def _load_camera(self, name, port):
         self._camera = camera(name, port)
@@ -71,35 +69,35 @@ class BaseRealTimeCameraDisplay(QtWidgets.QMainWindow):
         return ima
     
     def set_colormap(self, colormap_name):
-        """Cambia la colormap del plot"""
+        """Changes the colormap"""
         colormap = pg.colormap.get(colormap_name)
         self.colorbar.gradient.setColorMap(colormap)
 
     def update_plot(self):
-        """Aggiorna il plot con un nuovo array 2D"""
+        """updates the display with a new image"""
         self._ima = self._get_frame2display()
         self.image_item.setImage(self._ima.T, autoLevels=False)
         self.colorbar.setLevels(np.min(self._ima), np.max(self._ima))
         QtWidgets.QApplication.processEvents()  # Mantiene la UI reattiva
         
     # def open_1d_plot(self):
-    #     """Apre una nuova finestra con il grafico 1D."""
+    #     """opens a new window with a 1D plot."""
     #     if self.plot_1d_window is None or not self.plot_1d_window.isVisible():
     #         self.plot_1d_window = RealtimePlotter1D()
     #         self.plot_1d_window.show()
     
     def keyPressEvent(self, event):
-        """Cambia la colormap premendo il tasto 'C'"""
+        """Changes colormap pressing 'C'"""
         if event.key() == QtCore.Qt.Key_C:
             self.current_colormap_index = (self.current_colormap_index + 1) % len(self.colormaps)
             new_colormap = self.colormaps[self.current_colormap_index]
             self.set_colormap(new_colormap)
 
     def start(self):
-        """Avvia l'interfaccia grafica"""
+        """Starts the GUI"""
         self.app.exec_()
     
     def closeEvent(self, event):
-        """Chiude la finestra e ferma il timer"""
+        """Closes the window and stops the timer"""
         self.timer.stop()
         event.accept()
