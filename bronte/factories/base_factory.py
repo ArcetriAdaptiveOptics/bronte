@@ -11,7 +11,7 @@ class BaseFactory():
     
     ELT_PUPIL_TAG = None    #'EELT480pp0.0803m_obs0.283_spider2023'
     SHWFS_BKG_TAG = '250211_135800'
-    #PSFCAM_BKG_TAG = None
+    PSFCAM_BKG_TAG = '250314_151800'
     SH_FRAMES2AVERAGE  = 1
     
     def __init__(self):
@@ -42,11 +42,10 @@ class BaseFactory():
             self.sh_camera.setExposureTime(self._sh_texp)
     
     def _load_psf_camera_master_bkg(self):
-        pass
-        # self._psfcam_master_bkg = None
-        # if self.PSFCAM_BKG_TAG is not None:
-        #     self._psfcam_master_bkg, self._sh_texp = CameraMasterMeasurer.load_master(self.PSFCAM_BKG_TAG)
-        #     self.psf_camera.setExposureTime(self._sh_texp)
+        self._psfcam_master_bkg = None
+        if self.PSFCAM_BKG_TAG is not None:
+            self._psfcam_master_bkg, self._pc_texp = CameraMasterMeasurer.load_master(self.PSFCAM_BKG_TAG, 'psf_bkg')
+            self.psf_camera.setExposureTime(self._pc_texp)
     
     @cached_property
     def sh_camera(self):

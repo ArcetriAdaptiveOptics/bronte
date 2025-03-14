@@ -1,5 +1,5 @@
 from guietta import Gui, PG, ___, III, _, M, Ax, Quit, G
-from bronte.gui.camera_gui_factory import CameraGuiFactory
+from bronte.gui.guietta_gui.camera_gui_factory import CameraGuiFactory
 
 class MasterGuiFactory():
     

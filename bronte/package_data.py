@@ -43,6 +43,9 @@ def telemetry_folder():
 def shframes_folder(): 
     return data_root_dir() / "shwfs_frames"
 
+def psf_camera_folder():
+    return data_root_dir() / "psf_camera_frames"
+
 def modal_offsets_folder():
     return data_root_dir() / "modal_offsets"
 

@@ -5,22 +5,68 @@ from pyqtgraph.Qt import QtWidgets, QtCore
 
 def main():
     
-    bf = startup.startup()
+    #bf = startup.startup()
     plotter = RealtimePlotter()
     
     for idx in range(100):
-        ima = bf.psf_camera.getFutureFrames(1).toNumpyArray()
+        #ima = bf.psf_camera.getFutureFrames(1).toNumpyArray()
+        ima = np.random.rand(200,300)
+        #ima[:,:150] = idx*ima[:,:150]
         plotter.do_plot(ima)
         
     plotter.start()
     plotter.close()
     plotter.app.quit()
     QtWidgets.QApplication.quit()
+    
+def main2():
+    plotter = RealtimePlotter()
+    #bf = startup.startup()
+    def update_plot():
+        for idx in range(100):
+            ima = np.random.rand(200,300)
+            plotter.do_plot(ima)
+            #QtCore.QThread.msleep(100)  # Pausa tra gli aggiornamenti
+        plotter.close()
+        QtWidgets.QApplication.quit()
 
+    # Esegui il ciclo di aggiornamento in un thread separato
+    QtCore.QTimer.singleShot(0, update_plot)
+
+    plotter.start()  
+
+def main3():
+    app = QtWidgets.QApplication.instance()
+    if app is None:
+        app = QtWidgets.QApplication([])
+
+    # Crea due finestre separate
+    plotter1 = RealtimePlotter('Titolo 1')
+    plotter2 = RealtimePlotter('Titolo 2')
+
+    def update_plot():
+        for idx in range(100):
+            ima1 = np.random.rand(200, 300)
+            ima2 = np.random.rand(200, 300)
+            plotter1.do_plot(ima1)
+            plotter2.do_plot(ima2*0)
+            QtCore.QThread.msleep(100)
+
+        # Chiudi entrambe le finestre al termine
+        plotter1.close()
+        plotter2.close()
+        QtWidgets.QApplication.quit()
+
+    # Avvia il timer per aggiornare i plot
+    QtCore.QTimer.singleShot(0, update_plot)
+
+    # Avvia l'evento loop di Qt (solo una volta)
+    app.exec_()
+ 
 
 class RealtimePlotter(QtWidgets.QMainWindow):
     
-    def __init__(self):
+    def __init__(self, title="Plot 2D in Tempo Reale"):
         super().__init__()
         
         # Creazione dell'applicazione Qt
@@ -29,7 +75,7 @@ class RealtimePlotter(QtWidgets.QMainWindow):
             self.app = QtWidgets.QApplication([])
 
         # Imposta la finestra principale
-        self.setWindowTitle("Plot 2D in Tempo Reale")
+        self.setWindowTitle(title)
         self.central_widget = QtWidgets.QWidget()
         self.setCentralWidget(self.central_widget)
         self.layout = QtWidgets.QVBoxLayout(self.central_widget)
@@ -71,6 +117,7 @@ class RealtimePlotter(QtWidgets.QMainWindow):
         """Aggiorna il plot con un nuovo array 2D"""
         self.image_item.setImage(array_2d.T, autoLevels=False)
         self.colorbar.setLevels(np.min(array_2d), np.max(array_2d))
+        #QtCore.QThread.msleep(100)  
         QtWidgets.QApplication.processEvents()  # Mantiene la UI reattiva
         
     def keyPressEvent(self, event):

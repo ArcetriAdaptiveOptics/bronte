@@ -1,6 +1,6 @@
 import numpy as np 
 from astropy.io import fits
-from bronte.package_data import shframes_folder
+from bronte.package_data import shframes_folder, psf_camera_folder
 
 class CameraMasterMeasurer():
     
@@ -21,15 +21,22 @@ class CameraMasterMeasurer():
     def get_master(self):
         return self._master_frame
     
-    def save_master(self):
-        file_name = shframes_folder() / (self._ftag + '.fits')
+    def save_master(self, detector = 'shwfs'):
+        if detector is 'shwfs':
+            file_name = shframes_folder() / (self._ftag + '.fits')
+        else:
+            file_name = psf_camera_folder()/ (self._ftag + '.fits')
         hdr = fits.Header()
         hdr['TEXP_MS'] = self._texp
         fits.writeto(file_name, self._master_frame, hdr)
     
     @staticmethod
-    def load_master(ftag):
-        file_name = shframes_folder() / (ftag + '.fits')
+    def load_master(ftag, detector = 'shwfs'):
+        if detector is 'shwfs':
+            file_name = shframes_folder() / (ftag + '.fits')
+        else:
+            file_name = psf_camera_folder()/ (ftag + '.fits')
+            
         header = fits.getheader(file_name)
         hduList = fits.open(file_name)
         texp = header['TEXP_MS']

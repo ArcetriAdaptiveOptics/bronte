@@ -5,7 +5,7 @@ from astropy.modeling import models, fitting
 class StrehlRatioComputer():
     
     RAD2ARCSEC = 180/np.pi*3600
-    PUPIL_RADIUS = 568#571
+    PUPIL_RADIUS = 568
     
     def __init__(self):
         
@@ -16,7 +16,6 @@ class StrehlRatioComputer():
         self._pixel_scale_in_arcsec = self._ccd_pixel_size/self._telescope_focal_length * self.RAD2ARCSEC
         self._dl_size_in_arcsec = self._wl / self._pupil_diameter * self.RAD2ARCSEC 
         self._dl_size_in_pixels = self._dl_size_in_arcsec / self._pixel_scale_in_arcsec
-        
         self._compute_dl_psf()
         
     def _compute_dl_psf(self):
@@ -68,7 +67,6 @@ class StrehlRatioComputer():
         self._fitted_dl_max_au = best_fit_airy.parameters[0]
         self._fitted_dl_fwhm_in_pixel  = 1.028 * best_fit_airy.parameters[-1]/(1.22)
     
-    #TODO: estimate better the max of the dl psf and add FWHM estimations
     def get_SR_from_image(self, image, enable_display = False):
         
         hsize = int(np.round(image.shape[0]*0.5))
@@ -78,8 +76,6 @@ class StrehlRatioComputer():
         normalized_dl_psf_roi = normalized_dl_psf[center-hsize:center+hsize,
                                                   center-hsize:center+hsize]
         #TODO: estimate the measured psf maximum in a better way, moffat maybe 
-        #sr = image.max()/normalized_dl_psf_roi.max()
-        
         sr = image.max()/(self._fitted_dl_max_au * total_measured_flux/self._total_dl_flux)
         
         if enable_display is True:
