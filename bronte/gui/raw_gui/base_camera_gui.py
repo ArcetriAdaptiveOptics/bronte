@@ -65,16 +65,23 @@ class BaseRealTimeCameraDisplay(QtWidgets.QMainWindow):
     
     def _get_frame_from_camera(self):
         
-        return self._camera.getFutureFrames(1).toNumpyArray()
-    
-    def _get_frame2display(self):
-        
-        frame = self._get_frame_from_camera()
+        frame = self._camera.getFutureFrames(1).toNumpyArray()
         if frame.size == 0:
             raise ValueError("Warning: Image to display not Acquired!")
+        return frame
+    
+    def _get_bkg_subtracted_frame(self, raw_frame):
         
-        frame2display = frame - self._master_bkg
-        frame2display[ frame2display < 0] = 0
+        bkg_sub_frame = raw_frame - self._master_bkg
+        bkg_sub_frame [ bkg_sub_frame  < 0] = 0
+        
+        return bkg_sub_frame
+    
+    def get_frame2display(self):
+
+        frame = self._get_frame_from_camera()
+        frame2display = self._get_bkg_subtracted_frame(frame)
+        
         return frame2display
     
     def set_colormap(self, colormap_name):
@@ -84,7 +91,7 @@ class BaseRealTimeCameraDisplay(QtWidgets.QMainWindow):
 
     def update_plot(self):
         """updates the display with a new image"""
-        self._ima = self._get_frame2display()
+        self._ima = self.get_frame2display()
         self.image_item.setImage(self._ima.T, autoLevels=False)
         self.colorbar.setLevels(np.min(self._ima), np.max(self._ima))
         QtWidgets.QApplication.processEvents()  # Mantiene la UI reattiva

@@ -22,7 +22,7 @@ class RealtimePsfDisplay(BaseRealTimeCameraDisplay):
         
         super().__init__(psf_cam_name, psf_cam_port, wtitle, ptitle, update_interval)
     
-        # add button for Strehl windoe
+        # add button for Strehl window
         self.button_strehl = QtWidgets.QPushButton("Open Strehl Ratio Window")
         self.button_strehl.clicked.connect(self.open_strehl_plot)
         self.layout.addWidget(self.button_strehl)
