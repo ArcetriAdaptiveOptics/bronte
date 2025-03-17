@@ -30,7 +30,7 @@ class SpeculaScaoFactory(BaseFactory):
     TELESCOPE_PUPIL_DIAMETER = 40   # m
     OUTER_SCALE_L0 = 23             # m
     SEEING = 0.3                    # arcsec
-    WIND_SPEED_LIST = [25.5, 5.5]   #in m/s
+    WIND_SPEED_LIST = [10.0, 5.5]#[25.5, 5.5]   #in m/s
     WIND_DIR_LIST = [0, 0]
     LAYER_HEIGHTS_LIST = [300.000,  20500.0] # in m
     Cn2_WEIGHTS_LIST = [1 - 0.119977, 0.119977] # sum must be=1

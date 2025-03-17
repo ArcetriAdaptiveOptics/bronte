@@ -63,10 +63,19 @@ class BaseRealTimeCameraDisplay(QtWidgets.QMainWindow):
     def _load_camera_master_bkg(self):
         self._master_bkg = 0
     
+    def _get_frame_from_camera(self):
+        
+        return self._camera.getFutureFrames(1).toNumpyArray()
+    
     def _get_frame2display(self):
-        ima = self._camera.getFutureFrames(1).toNumpyArray() - self._master_bkg
-        ima[ima < 0] = 0
-        return ima
+        
+        frame = self._get_frame_from_camera()
+        if frame.size == 0:
+            raise ValueError("Warning: Image to display not Acquired!")
+        
+        frame2display = frame - self._master_bkg
+        frame2display[ frame2display < 0] = 0
+        return frame2display
     
     def set_colormap(self, colormap_name):
         """Changes the colormap"""

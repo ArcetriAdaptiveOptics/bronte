@@ -4,6 +4,7 @@ from PyQt5 import QtWidgets, QtCore
 import pyqtgraph as pg
 import time  # Import necessario per gestire il tempo reale
 from bronte.utils.raw_strehl_ratio_computer import StrehlRatioComputer
+from _ast import Or
 
 
 class StrehlRatioPlotter(QtWidgets.QMainWindow):
@@ -14,7 +15,8 @@ class StrehlRatioPlotter(QtWidgets.QMainWindow):
         self.setWindowTitle(title)
         self._gui_master = gui_master
         self._sr_pc = StrehlRatioComputer()
-        self._roi_hsize = 20 
+        # TODO: Select a proper dimension for the roi image where to compute SR
+        self._roi_hsize = int(3.5*self._sr_pc._dl_size_in_pixels)#20
         # Layout principale
         self.central_widget = QtWidgets.QWidget()
         self.setCentralWidget(self.central_widget)
@@ -45,13 +47,23 @@ class StrehlRatioPlotter(QtWidgets.QMainWindow):
         
         ymax = np.where(image == image.max())[0][0]
         xmax = np.where(image == image.max())[1][0]
+    
+        if(self._gui_master.FRAME_SHAPE[0]//2 - self._roi_hsize < 0 or 
+            self._gui_master.FRAME_SHAPE[0]//2 +  self._roi_hsize > self._gui_master.FRAME_SHAPE[0] or 
+            self._gui_master.FRAME_SHAPE[1]//2 - self._roi_hsize < 0 or 
+            self._gui_master.FRAME_SHAPE[1]//2 +  self._roi_hsize > self._gui_master.FRAME_SHAPE[1]):
+            raise ValueError("Warning: ROI extraction out of bounds!")
+        
         roi_image = image[ymax - self._roi_hsize : ymax+ self._roi_hsize +1,
                           xmax - self._roi_hsize : xmax + self._roi_hsize + 1]
+
         return roi_image
     
     def get_strehl_ratio(self):
         """Restituisce un valore scalare simulato di Strehl Ratio."""
         roi_ima = self._get_roi(self._gui_master._ima)
+        if roi_ima.size == 0:
+            raise ValueError("Warning: ROI image is empty!")
         return self._sr_pc.get_SR_from_image(roi_ima, enable_display = False)
 
     def update_plot(self):
