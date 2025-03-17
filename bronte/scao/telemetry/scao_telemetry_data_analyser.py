@@ -5,24 +5,27 @@ from specula.data_objects.slopes import Slopes
 from specula.data_objects.intmat import Intmat
 from specula.data_objects.recmat import Recmat
 from specula.data_objects.subap_data import SubapData
-from bronte.package_data import reconstructor_folder, subaperture_set_folder
+from bronte.package_data import reconstructor_folder, subaperture_set_folder, modal_offsets_folder
 from bronte.scao.specula_scao_runner import SpeculaScaoRunner
-
+from bronte.startup import set_data_dir
 from functools import cached_property
 import matplotlib.pyplot as plt
 from mpl_toolkits.axes_grid1 import make_axes_locatable
+from astropy.io import fits
 
 class ScaoTelemetryDataAnalyser():
     
     ARCSEC2RAD = np.pi/(180*60*60)
     
     def __init__(self, ftag):
-        
+        set_data_dir()
         self._telemetry_tag = ftag
         self._hdr, self._slopes_vect, self._delta_cmds, self._integ_cmds = SpeculaScaoRunner.load_telemetry(ftag)
         self._load_data_from_header()
         self._first_idx_mode = 2 # j noll index mode
-    
+        self._compute_rms_slopes()
+        
+        
     def get_slope_map_cubes(self):
         return self._compute_slope_maps
     
@@ -71,9 +74,9 @@ class ScaoTelemetryDataAnalyser():
     
     def _load_data_from_header(self):
         
-        self.seeing = self._hdr['SEEING'] #arcsec
-        self.L0 = self._hdr['L0_IN_M']
-        self.telescope_pupil_diameter = self._hdr['D_IN_M']
+        self.seeing = self._hdr.get('SEEING', 'NA')#arcsec
+        self.L0 = self._hdr.get('L0_IN_M', 'NA')
+        self.telescope_pupil_diameter = self._hdr.get('D_IN_M', 'NA')
         self.integ_gain = self._hdr['INT_GAIN']
         self.integ_delay = self._hdr['INT_DEL']
         self.loop_time_step = self._hdr['TSTEP_S']#time step of the loop in sec
@@ -91,7 +94,10 @@ class ScaoTelemetryDataAnalyser():
         self._intmat = self._load_intmat(self._hdr['REC_TAG'])
         self._recmat = self._load_recmat(self._hdr['REC_TAG'])
         
-        self.r0 = 500e-9/(self.seeing*self.ARCSEC2RAD)
+        if self.seeing == 'NA':
+            self.r0 = 0
+        else:
+            self.r0 = 500e-9/(self.seeing*self.ARCSEC2RAD)
 
     @staticmethod    
     def _load_intmat(intmat_tag):
@@ -222,4 +228,32 @@ class ScaoTelemetryDataAnalyser():
         plt.ylabel('modal std '+ r'$\sigma_{std}$' + ' [m rms wf]')
         plt.legend(loc='best')
         plt.grid('--', alpha=0.3)
+    
+    def save_coeff_as_modal_offset(self, coeff_vector, ftag):
         
+        file_name = modal_offsets_folder() / (ftag + '.fits')
+        modal_offset = coeff_vector
+        hdr = fits.Header()
+        hdr['TEL_TAG'] = self._telemetry_tag
+        fits.writeto(file_name, modal_offset, hdr)
+        
+    @staticmethod
+    def load_modal_offset(ftag):
+        """
+        Returns modal offsets from a file.
+
+        Args:
+            ftag (str): File tag for the modal offset file to be loaded.
+
+        Returns:
+            tuple: A tuple containing the modal offset array and the telemetry data file tag, from which are derived.
+        """
+        file_name = modal_offsets_folder() / (ftag + '.fits')
+        
+        header = fits.getheader(file_name)
+        hduList = fits.open(file_name)
+        
+        telemetry_data_tag = header['TEL_TAG']
+        modal_offset = hduList[0].data
+        
+        return modal_offset, telemetry_data_tag

@@ -193,7 +193,9 @@ class SpeculaScaoRunner():
     def load_telemetry(fname):
 
         file_name = telemetry_folder() / (fname + '.fits')
+        
         header = fits.getheader(file_name)
+       
         hduList = fits.open(file_name)
 
         

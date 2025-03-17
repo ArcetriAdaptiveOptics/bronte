@@ -4,7 +4,7 @@ from PyQt5 import QtWidgets, QtCore
 import pyqtgraph as pg
 import time  # Import necessario per gestire il tempo reale
 from bronte.utils.raw_strehl_ratio_computer import StrehlRatioComputer
-from _ast import Or
+
 
 
 class StrehlRatioPlotter(QtWidgets.QMainWindow):
@@ -25,7 +25,7 @@ class StrehlRatioPlotter(QtWidgets.QMainWindow):
         # Creazione del plot
         self.plot_widget = pg.PlotWidget(title="Strehl Ratio")
         self.layout.addWidget(self.plot_widget)
-        self.curve = self.plot_widget.plot(pen="b")  # Linea blu
+        self.curve = self.plot_widget.plot(pen="y")  # Linea blu
 
         # Configura asse X come tempo relativo
         self.plot_widget.setLabel("bottom", "Time", units="s")
