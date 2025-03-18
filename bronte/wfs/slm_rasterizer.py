@@ -3,6 +3,7 @@ from arte.utils.zernike_decomposer import ZernikeModalDecomposer
 import logging
 from arte.utils.decorator import logEnterAndExit
 from arte.types.zernike_coefficients import ZernikeCoefficients
+from functools import cached_property
 
 
 
@@ -42,21 +43,33 @@ class SlmRasterizer():
         wf_on_pupil.fill_value = 0
         return wf_on_pupil
     
-    def load_a_tilt_under_masked_pupil(self, wf, c2_m_rms = 30e-6):
+    @cached_property
+    def _get_tilt_over_slm_full_frame(self, c2_m_rms = 30e-6):
+        
+        c2 = c2_m_rms * 0.5 * self.slm_pupil_mask.shape()[1]/self.slm_pupil_mask.radius()
+        tilt_profile = np.linspace(-2*c2, 2*c2, self.slm_pupil_mask.shape()[1])
+        tilt_over_the_full_frame = self.reshape_vector2map(np.tile(tilt_profile, self.slm_pupil_mask.shape()[0]))
+        return np.ma.array(data = tilt_over_the_full_frame, mask = self.slm_pupil_mask)
+    
+    @logEnterAndExit("Loading a huge Tilt under Wavefront Mask",
+                     "Huge Tilt loaded on Wavefront Mask", level='debug') 
+    def load_a_tilt_under_pupil_mask(self, wf):
         '''
         it returns a masked array where on the masked points is set a tilt
         c2_m_rms over cmask, then is extended to the full screen with the same slope
         '''
-        c2 = c2_m_rms * 0.5 * self.slm_pupil_mask.shape()[1]/self.slm_pupil_mask.radius()
-        tilt_profile = np.linspace(-2*c2, 2*c2, self.slm_pupil_mask.shape()[1])
-        tilt_over_the_full_frame = self.reshape_vector2map(np.tile(tilt_profile, self.slm_pupil_mask.shape()[0]))
+        tilt_over_the_full_frame = self._get_tilt_over_slm_full_frame
         wf2raster = wf.copy()
         wf2raster[wf.mask == True] = tilt_over_the_full_frame[wf.mask == True]
         return wf2raster
     
+    @logEnterAndExit("Reshaping Wavefront map to vector",
+                     "Wavefront map reshaped to vector", level='debug') 
     def reshape_map2vector(self, array2d, length=2211840, method='C'):
         return np.reshape(array2d, (length,), method)
-
+    
+    @logEnterAndExit("Reshaping Wavefront vector to map",
+                     "Wavefront vector reshaped to map", level='debug')
     def reshape_vector2map(self, vector, shape=[1152, 1920], method='C'):
         return np.reshape(vector, (shape[0], shape[1]), method)
     
@@ -74,6 +87,13 @@ class SlmRasterizer():
         phase_screen_mask = self.slm_pupil_mask.mask()
         
         return np.ma.array(phase_on_slm_pupil_frame, mask = phase_screen_mask)
-        
     
+    @logEnterAndExit("Converting zernike coefficients to slm command",
+                     "Zernike coefficients converted to slm command", level='debug') 
+    def m2c(self, zernike_coeffs, applyTiltUnderMask = False):
+        wf2raster = self.zernike_coefficients_to_raster(zernike_coeffs).toNumpyArray()
+        if applyTiltUnderMask is True:
+            wf2raster = self.load_a_tilt_under_pupil_mask(wf2raster)
+        command_vector = self.reshape_map2vector(wf2raster)
+        return command_vector
 

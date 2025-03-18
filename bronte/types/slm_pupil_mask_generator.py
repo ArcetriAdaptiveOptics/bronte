@@ -14,14 +14,18 @@ class SlmPupilMaskGenerator():
     # load an user defined pupil (or a elt like one) 
     #SLM PUPIL MASK PARAMETERS IN PIXEL
     PUPIL_CENTER = (579, 968)#YX
-    PUPIL_RADIUS = 568
+    PUPIL_RADIUS = 568 
     OBSTRUCTION_RADIUS = 164
     FRAME_SHAPE = (1152, 1920)
 
     
-    def __init__(self):
+    def __init__(self, pupil_radius = None, pupil_center = None):
+        
         self._logger = logging.getLogger("PupilMask")
-    
+        if pupil_radius is not None:
+            self.PUPIL_RADIUS = pupil_radius
+        if pupil_center is not None:
+            self.PUPIL_CENTER = pupil_center
     #@cached_property
     def circular_pupil_mask(self):
         cmask = CircularMask(
