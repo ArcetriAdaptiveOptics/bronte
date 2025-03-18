@@ -10,9 +10,9 @@ from astropy.io import fits
 
 class SpeculaScaoRunner():
     
-    def __init__(self, factory, xp=np):
+    def __init__(self, scao_factory, xp=np):
         
-        self._factory = factory 
+        self._factory = scao_factory 
         self._target_device_idx = self._factory._target_device_idx
         self._setup_atmosphere()
         self._load_slope_computer()

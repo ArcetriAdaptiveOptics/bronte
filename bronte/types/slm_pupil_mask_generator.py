@@ -26,7 +26,7 @@ class SlmPupilMaskGenerator():
             self.PUPIL_RADIUS = pupil_radius
         if pupil_center is not None:
             self.PUPIL_CENTER = pupil_center
-    #@cached_property
+    
     def circular_pupil_mask(self):
         cmask = CircularMask(
             frameShape = self.FRAME_SHAPE,
@@ -34,7 +34,7 @@ class SlmPupilMaskGenerator():
             maskCenter = self.PUPIL_CENTER)
         return cmask
     
-    #@cached_property
+    
     def annular_pupil_mask(self):
         
         amask = AnnularMask(
@@ -44,7 +44,7 @@ class SlmPupilMaskGenerator():
             inRadius= self.OBSTRUCTION_RADIUS)
         return amask
     
-    #@cached_property
+    
     def custom_elt_like_pupil_mask(self):
         # CUSTOM ELT LIKE PUPIL PARAMETERS SCALED TO SLM
         SPIDER_DIM = 6

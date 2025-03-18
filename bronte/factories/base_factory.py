@@ -72,3 +72,7 @@ class BaseFactory():
     @property
     def sh_camera_master_bkg(self):
         return self._sh_master_bkg
+    
+    @property
+    def pc_camera_master_bkg(self):
+        return self._psfcam_master_bkg
