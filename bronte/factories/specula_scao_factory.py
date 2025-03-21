@@ -12,7 +12,6 @@ from specula.processing_objects.modalrec import Modalrec
 from specula.data_objects.subap_data import SubapData
 from specula.data_objects.recmat import Recmat
 
-
 from functools import cached_property
 from bronte.factories.base_factory import BaseFactory
 from bronte import package_data

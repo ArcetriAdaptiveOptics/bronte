@@ -6,8 +6,12 @@ from bronte.startup import measured_calibration_startup, set_data_dir
 from bronte.package_data import reconstructor_folder
 from astropy.io import fits
 from plico.rpc.zmq_remote_procedure_call import ZmqRpcTimeoutError
+import time
+
 
 class MeasuredControlMatrixCalibrator():
+    
+    CALIBRATION_TYPE = 'MEASURED'
     
     def __init__(self, ftag, pp_amp_in_nm = None, xp=np):
         self._ftag = ftag
@@ -55,6 +59,8 @@ class MeasuredControlMatrixCalibrator():
     
     def run(self):
         
+        self.save_calib_config()
+        
         self.time_step = self._factory.TIME_STEP_IN_SEC
         n_steps = 2*self._Nmodes
         for group in self._groups:
@@ -76,18 +82,19 @@ class MeasuredControlMatrixCalibrator():
             for obj in group:
                 obj.finalize()
         
-        self.save_calib_config()
+        
                 
     def save_calib_config(self):
         
-        def retry_on_timeout(func, max_retries = 50):
+        def retry_on_timeout(func, max_retries = 50, delay = 0.3):
             '''Retries a function call if ZmqRpcTimeoutError occurs.'''
             for attempt in range(max_retries):
                 try:
                     return func()
                 except ZmqRpcTimeoutError:
                     print(f"Timeout error, retrying {attempt + 1}/{max_retries}...")
-                    raise ZmqRpcTimeoutError("Max retries reached")
+                    time.sleep(delay)
+            raise ZmqRpcTimeoutError("Max retries reached")
                 
         psf_camera_texp = retry_on_timeout(lambda: self._factory.psf_camera.exposureTime())
         psf_camera_fps = retry_on_timeout(lambda: self._factory.psf_camera.getFrameRate())
@@ -97,7 +104,9 @@ class MeasuredControlMatrixCalibrator():
         fname = self._ftag + '_bronte_calib_config'
         file_name = reconstructor_folder() / (fname + '.fits')
         hdr = fits.Header()
-
+        
+        hdr['CALIB_TY'] = self.CALIBRATION_TYPE
+        
         # GENERATED FILE TAG AND DEPENDENCY
         hdr['SUB_TAG'] = self._factory.SUBAPS_TAG
         hdr['REC_TAG'] = self._ftag 

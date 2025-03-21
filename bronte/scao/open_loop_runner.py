@@ -2,12 +2,15 @@ from bronte.scao.flattening_runner import FlatteningRunner
 
 class OpenLoopRunner():
     
+    LOOP_TYPE = 'OPEN'
+    
     def __init__(self, flattening_factory):
         
         self._factory = flattening_factory
         self._factory.INT_GAIN = 0
         self._factory.INT_DELAY = 0
         self._fr = FlatteningRunner(self._factory)
+        self._fr.LOOP_TYPE = self.LOOP_TYPE
         
          
     def run(self, Nsteps = 30):

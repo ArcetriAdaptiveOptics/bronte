@@ -9,8 +9,11 @@ from specula.display.slopec_display import SlopecDisplay
 from bronte.package_data import telemetry_folder
 from astropy.io import fits
 from plico.rpc.zmq_remote_procedure_call import ZmqRpcTimeoutError
+import time
 
 class FlatteningRunner():
+    
+    LOOP_TYPE = 'FLATTENING'
     
     def __init__(self, flattening_factory, xp=np):
         
@@ -117,14 +120,15 @@ class FlatteningRunner():
     
     def save_telemetry(self, fname):
         
-        def retry_on_timeout(self, func, max_retries = 10):
+        def retry_on_timeout(func, max_retries = 50, delay = 0.3):
             '''Retries a function call if ZmqRpcTimeoutError occurs.'''
             for attempt in range(max_retries):
                 try:
                     return func()
                 except ZmqRpcTimeoutError:
                     print(f"Timeout error, retrying {attempt + 1}/{max_retries}...")
-                    raise ZmqRpcTimeoutError("Max retries reached")
+                    time.sleep(delay)
+            raise ZmqRpcTimeoutError("Max retries reached")
                 
         psf_camera_texp = retry_on_timeout(self._factory.psf_camera.exposureTime())
         psf_camera_fps = retry_on_timeout(self._factory.psf_camera.getFrameRate())
@@ -133,7 +137,9 @@ class FlatteningRunner():
         
         file_name = telemetry_folder() / (fname + '.fits')
         hdr = fits.Header()
-
+        
+        hdr['LOOP'] = self.LOOP_TYPE
+        
         # FILE TAG DEPENDENCY
         hdr['SUB_TAG'] = self._factory.SUBAPS_TAG
         hdr['REC_TAG'] = self._factory.REC_MAT_TAG
@@ -180,7 +186,6 @@ class FlatteningRunner():
         zc_delta_modal_commands = hduList[1].data
         zc_integrated_modal_commands  = hduList[2].data
         
-
         return  header, slopes_vect, zc_delta_modal_commands, zc_integrated_modal_commands
 
 
