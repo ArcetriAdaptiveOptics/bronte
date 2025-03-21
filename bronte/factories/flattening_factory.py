@@ -26,6 +26,7 @@ class SpeculaFlatteningFactory(BaseFactory):
     REC_MAT_TAG = '250307_140600'
     
     #AO PARAMETERS
+    MODAL_BASE_TYPE = 'Zernike'
     N_MODES_TO_CORRECT = 200 
     INT_GAIN = -0.3
     INT_DELAY = 2                   # frames or ms

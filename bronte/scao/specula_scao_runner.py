@@ -1,12 +1,13 @@
 import specula
 specula.init(-1, precision=1)  # Default target=-1 (CPU), float32=1
 from specula import np
+from bronte.startup import set_data_dir
 from bronte.types.testbench_device_manager import TestbenchDeviceManager
 from specula.display.modes_display import ModesDisplay
 from specula.display.slopec_display import SlopecDisplay
 from bronte.package_data import telemetry_folder
 from astropy.io import fits
-
+from plico.rpc.zmq_remote_procedure_call import ZmqRpcTimeoutError
 
 class SpeculaScaoRunner():
     
@@ -133,17 +134,25 @@ class SpeculaScaoRunner():
     
     def save_telemetry(self, fname):
         
-        #TODO: raise exeption for ZMQ timeout error
+        def retry_on_timeout(func, max_retries = 50):
+            '''Retries a function call if ZmqRpcTimeoutError occurs.'''
+            for attempt in range(max_retries):
+                try:
+                    return func()
+                except ZmqRpcTimeoutError:
+                    print(f"Timeout error, retrying {attempt + 1}/{max_retries}...")
+                    raise ZmqRpcTimeoutError("Max retries reached")
         
-        psf_camera_texp = self._factory.psf_camera.exposureTime()
-        psf_camera_fps = self._factory.psf_camera.getFrameRate()
-        shwfs_texp = self._factory.sh_camera.exposureTime()
-        shwfs_fps = self._factory.sh_camera.getFrameRate()
-        
+        psf_camera_texp = retry_on_timeout(lambda: self._factory.psf_camera.exposureTime())
+        psf_camera_fps = retry_on_timeout(lambda: self._factory.psf_camera.getFrameRate())
+        shwfs_texp = retry_on_timeout(lambda: self._factory.sh_camera.exposureTime())
+        shwfs_fps = retry_on_timeout(lambda: self._factory.sh_camera.getFrameRate())
+    
+        set_data_dir()
         file_name = telemetry_folder() / (fname + '.fits')
         hdr = fits.Header()
 
-        # #FILE TAG DEPENDENCY
+        # FILE TAG DEPENDENCY
         hdr['SUB_TAG'] = self._factory.SUBAPS_TAG
         hdr['REC_TAG'] = self._factory.REC_MAT_TAG
         
@@ -173,12 +182,16 @@ class SpeculaScaoRunner():
         hdr['LGS_WL'] = self._factory.LGS_WL_IN_NM
         
         # LOOP PARAMETERS
-        hdr['TSTEP_S'] = self.time_step
+        hdr['TSTEP_S'] = self.time_step # in seconds
         hdr['INT_GAIN'] = self._factory.INT_GAIN
-        hdr['INT_DEL'] = self._factory.INT_DELAY
+        hdr['INT_DEL'] = self._factory.INT_DELAY # in frames
         hdr['N_STEPS'] = self._n_steps
         hdr['N_MODES'] = self._factory.N_MODES_TO_CORRECT
-        hdr['SHPX_THR'] = self._factory.SH_PIX_THR
+        
+        #HARDWARE PARAMETERS
+        hdr['SLM_RAD'] = self._factory.SLM_PUPIL_RADIUS # in pixels
+        hdr['SLM_YX'] = str(self._factory.SLM_PUPIL_CENTER) # YX pixel coordinates
+        hdr['SHPX_THR'] = self._factory.SH_PIX_THR # in ADU
         hdr['PC_TEXP'] = psf_camera_texp # in ms
         hdr['PC_FPS'] = psf_camera_fps
         hdr['SH_TEXP'] = shwfs_texp # in ms
@@ -191,19 +204,23 @@ class SpeculaScaoRunner():
         
     @staticmethod
     def load_telemetry(fname):
-
-        file_name = telemetry_folder() / (fname + '.fits')
         
+        file_name = telemetry_folder() / (fname + '.fits')
         header = fits.getheader(file_name)
-       
         hduList = fits.open(file_name)
 
-        
         slopes_vect = hduList[0].data
-        #MODAL COMMANDS
         zc_delta_modal_commands = hduList[1].data
         zc_integrated_modal_commands  = hduList[2].data
         
 
         return  header, slopes_vect, zc_delta_modal_commands, zc_integrated_modal_commands
 
+    def retry_on_timeout(self, func, max_retries = 10):
+        '''Retries a function call if ZmqRpcTimeoutError occurs.'''
+        for attempt in range(max_retries):
+            try:
+                return func()
+            except ZmqRpcTimeoutError:
+                print(f"Timeout error, retrying {attempt + 1}/{max_retries}...")
+                raise ZmqRpcTimeoutError("Max retries reached")

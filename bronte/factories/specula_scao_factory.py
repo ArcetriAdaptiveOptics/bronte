@@ -28,7 +28,7 @@ class SpeculaScaoFactory(BaseFactory):
     
     #ATMO PARAMETERS
     TELESCOPE_PUPIL_DIAMETER = 40   # m
-    OUTER_SCALE_L0 = 99999#23             # m
+    OUTER_SCALE_L0 = 23             # m
     SEEING = 0.3                    # arcsec
     WIND_SPEED_LIST = [10.0, 5.5]#[25.5, 5.5]   #in m/s
     WIND_DIR_LIST = [0, 0]
@@ -45,6 +45,7 @@ class SpeculaScaoFactory(BaseFactory):
     LGS_WL_IN_NM = 589
     
     #AO PARAMETERS
+    MODAL_BASE_TYPE = 'Zernike'
     N_MODES_TO_CORRECT = 200 
     INT_GAIN = -0.3
     INT_DELAY = 2                   # frames or ms

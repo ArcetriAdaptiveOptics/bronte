@@ -18,11 +18,15 @@ from bronte.types.testbench_device_manager import TestbenchDeviceManager
 class MeasuredCalibrationFactory(BaseFactory):
     
     SUBAPS_TAG = '250120_122000'
+    MODAL_BASE_TYPE = 'Zernike'
     N_MODES_TO_CORRECT = 200
     TELESCOPE_PUPIL_DIAMETER = 40   # m
     SH_PIX_THR = 200 # in ADU
     PP_AMP_IN_NM = 2000
     TIME_STEP_IN_SEC = None 
+    SOURCE_COORD = [0.0, 0.0]
+    SOURCE_MAG = 8
+    SOURCE_WL_IN_NM = 750 
     
     def __init__(self):
         
@@ -33,7 +37,10 @@ class MeasuredCalibrationFactory(BaseFactory):
         
     @cached_property
     def source_dict(self):
-        on_axis_source = Source(polar_coordinate=[0.0, 0.0], magnitude=8, wavelengthInNm=750,)
+        on_axis_source = Source(
+            polar_coordinate = self.SOURCE_COORD,
+            magnitude = self.SOURCE_MAG,
+            wavelengthInNm = self.SOURCE_WL_IN_NM,)
         source_dict = {'on_axis_source': on_axis_source}
         return source_dict
     
@@ -78,11 +85,11 @@ class MeasuredCalibrationFactory(BaseFactory):
         
         j_noll_vector = np.arange(self.N_MODES_TO_CORRECT) + 2
         radial_order = from_noll_to_radial_order(j_noll_vector)
-        ampl_vect = self.PP_AMP_IN_NM /(radial_order) # in nm
+        self._pp_ampl_vect = self.PP_AMP_IN_NM /(radial_order) # in nm
         #ampl_vect = np.ones(self.N_MODES_TO_CORRECT)*500
         pp = FuncGenerator(func_type = 'PUSHPULL',
                    nmodes = self.N_MODES_TO_CORRECT,
-                   vect_amplitude = ampl_vect,#in nm
+                   vect_amplitude = self._pp_ampl_vect,#in nm
                    target_device_idx = self._target_device_idx)
         return pp
     
