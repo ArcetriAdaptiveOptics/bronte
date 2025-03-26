@@ -19,6 +19,7 @@ class BaseFactory():
     def __init__(self):
         self._target_device_idx= -1
         self._set_up_basic_logging()
+        
         self._load_sh_camera_master_bkg()
         self._load_psf_camera_master_bkg()
            

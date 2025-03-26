@@ -120,7 +120,7 @@ class FlatteningRunner():
     
     def save_telemetry(self, fname):
         
-        def retry_on_timeout(func, max_retries = 50, delay = 0.3):
+        def retry_on_timeout(func, max_retries = 5000, delay = 0.001):
             '''Retries a function call if ZmqRpcTimeoutError occurs.'''
             for attempt in range(max_retries):
                 try:
