@@ -5,8 +5,9 @@ from specula.data_objects.slopes import Slopes
 from specula.data_objects.intmat import Intmat
 from specula.data_objects.recmat import Recmat
 from specula.data_objects.subap_data import SubapData
-from bronte.package_data import reconstructor_folder, subaperture_set_folder, modal_offsets_folder
+from bronte.package_data import reconstructor_folder, subaperture_set_folder, modal_offsets_folder, phase_screen_folder
 from bronte.scao.specula_scao_runner import SpeculaScaoRunner
+from bronte.scao.phase_screen.phase_screen_generator import PhaseScreenGenerator
 from bronte.startup import set_data_dir
 from functools import cached_property
 import matplotlib.pyplot as plt
@@ -24,6 +25,8 @@ class ScaoTelemetryDataAnalyser():
         self._load_data_from_header()
         self._first_idx_mode = 2 # j noll index mode
         self._compute_rms_slopes()
+        self._ol_cmds = None
+        self._compute_pseudo_open_loop_modal_cmds()
         
         
     def get_slope_map_cubes(self):
@@ -71,7 +74,16 @@ class ScaoTelemetryDataAnalyser():
     #
     #     var_sl_in_rad2 = 1.0299*(self.telescope_pupil_diameter/self.r0)**(5./3)
     #     return var_sl_in_rad2
-    
+    def _compute_pseudo_open_loop_modal_cmds(self):
+        
+        
+        pol_modal_cmd_list = []
+        for idx in range(self.Nstep-self.integ_delay):
+            pol_modal_cmd = self._integ_cmds[idx] + self._delta_cmds[idx+self.integ_delay]
+            pol_modal_cmd_list.append(pol_modal_cmd)
+            
+        self._pol_modal_cmds = np.array(pol_modal_cmd_list)
+        
     def _load_data_from_header(self):
         
         self.seeing = self._hdr.get('SEEING', 'NA')#arcsec
@@ -214,18 +226,20 @@ class ScaoTelemetryDataAnalyser():
         '''
         displays the temporal standard deviation of the modal coefficients
         '''
-        filtered_cmd_std = self._integ_cmds.std(axis=0)
+
         delta_cmd_std = self._delta_cmds.std(axis=0)
-        
-        open_loop_cmd_std = filtered_cmd_std + delta_cmd_std
+        pseudo_open_loop_cmd_std = self._pol_modal_cmds.std(axis=0)
         mode_index_list = np.arange(self._first_idx_mode,
                                          self.corrected_modes + self._first_idx_mode)
         plt.figure()
         plt.clf()
-        plt.loglog(mode_index_list, open_loop_cmd_std, 'r-', label = 'OL')
-        plt.loglog(mode_index_list, delta_cmd_std, label=r'$\Delta c$')
+        plt.loglog(mode_index_list, pseudo_open_loop_cmd_std, 'r-', label = 'P-OL')
+        plt.loglog(mode_index_list, delta_cmd_std, label='CL')
+        if self._ol_cmds is not None:
+            ol_cmd_std = self._ol_cmds.std(axis=0)
+            plt.loglog(mode_index_list, ol_cmd_std[:self.corrected_modes],'g--', label='OL')
         plt.xlabel('j Noll index')
-        plt.ylabel('modal std '+ r'$\sigma_{std}$' + ' [m rms wf]')
+        plt.ylabel('modal temporal std '+ r'$\sigma_{std}$' + ' [m rms wf]')
         plt.legend(loc='best')
         plt.grid('--', alpha=0.3)
     
@@ -237,6 +251,18 @@ class ScaoTelemetryDataAnalyser():
         hdr['TEL_TAG'] = self._telemetry_tag
         fits.writeto(file_name, modal_offset, hdr)
         
+    def load_turbulent_coefficients(self, ftag):
+        hdr, self._ol_cmds = PhaseScreenGenerator.load_phase_screen_fits_data(ftag)
+        self._check_headers(hdr)
+        
+    #TODO: check if the parameters are the same
+    def _check_headers(self, hdr):
+        '''
+        Checks if the configuration parameters of the scao telemetry loop and
+        the loaded open loop turbulet coefficients are the same
+        '''
+        pass
+    
     @staticmethod
     def load_modal_offset(ftag):
         """

@@ -19,7 +19,7 @@ class MeasuredCalibrationFactory(BaseFactory):
     
     SUBAPS_TAG = '250120_122000'
     MODAL_BASE_TYPE = 'Zernike'
-    N_MODES_TO_CORRECT = 200
+    #N_MODES_TO_CORRECT = 200
     TELESCOPE_PUPIL_DIAMETER = 40   # m
     SH_PIX_THR = 200 # in ADU
     PP_AMP_IN_NM = 2000

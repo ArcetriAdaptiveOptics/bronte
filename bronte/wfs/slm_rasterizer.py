@@ -15,10 +15,11 @@ class SlmRasterizer():
     Assumes that the modal basis is a Zernike base
     '''
     
-    def __init__(self, slm_pupil_mask, modal_coefficients = None):
+    def __init__(self, slm_pupil_mask, Nmodes = 200, modal_coefficients = None):
         
         self._logger = logging.getLogger("SlmRasterizer")
-        self._zernike_modal_decomposer = ZernikeModalDecomposer(n_modes=200)
+        self._n_modes = Nmodes
+        self._zernike_modal_decomposer = ZernikeModalDecomposer(n_modes = Nmodes)
         self.slm_pupil_mask = slm_pupil_mask
         self.modal_coefficients = modal_coefficients
         

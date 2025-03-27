@@ -15,6 +15,7 @@ class BaseFactory():
     SH_FRAMES2AVERAGE  = 1
     SLM_PUPIL_CENTER = (579, 968)#YX in pixel
     SLM_PUPIL_RADIUS = 568 # in pixel
+    N_MODES_TO_CORRECT = 200
     
     def __init__(self):
         self._target_device_idx= -1
@@ -68,7 +69,7 @@ class BaseFactory():
     
     @cached_property
     def slm_rasterizer(self):
-        return SlmRasterizer(self.slm_pupil_mask)
+        return SlmRasterizer(self.slm_pupil_mask, self.N_MODES_TO_CORRECT)
     
     @property
     def sh_camera_master_bkg(self):

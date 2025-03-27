@@ -3,20 +3,24 @@ specula.init(-1, precision=1)  # Default target=-1 (CPU), float32=1
 from specula import np, cpuArray
 from bronte.startup import set_data_dir
 from bronte.package_data import phase_screen_folder
+from arte.types.wavefront import Wavefront
 from astropy.io import fits 
 import h5py
 
 class PhaseScreenGenerator():
     
     PROPAGATION_DIR = 'on_axis' #'lgs1'
+    STORE_PHASE_SCREENS = True
     
     def __init__(self, scao_factory):
         
         self._factory = scao_factory
+        self._slm_raster = self._factory.slm_rasterizer
+        self._slm_mask = self._factory.slm_pupil_mask
         self._setup_atmosphere()
         self._set_inputs()
         self._define_groups()
-        self._phase_screen_list = []
+        self._initialise_turbulent_data()
     
 
     def _setup_atmosphere(self):
@@ -34,7 +38,11 @@ class PhaseScreenGenerator():
         self._prop.inputs['layer_list'].set(self._atmo.layer_list)
     
         #self._bench_devices.inputs['ef'].set(self._prop.outputs['out_on_axis_source_ef'])
-        
+    
+    def _initialise_turbulent_data(self):
+        self._phase_screen_list = []
+        self._modal_coefficients_list = []
+    
     def _define_groups(self):
         
         group1 = [self._seeing, self._wind_speed, self._wind_direction]
@@ -46,12 +54,23 @@ class PhaseScreenGenerator():
         
         ef_output = 'out_'+self.PROPAGATION_DIR+'_source_ef'
         ef = self._groups[2][0].outputs[ef_output]
-        phase_screen_in_um = cpuArray(ef.phaseInNm) * 1e-3
-        #phase_screen_to_raster = self._slm_raster.get_recentered_phase_screen_on_slm_pupil_frame(phase_screen)
-        self._phase_screen_list.append(phase_screen_in_um)
+        phase_screen = cpuArray(ef.phaseInNm)
         
-    def run(self, Nsteps = 30):
+        if self.STORE_PHASE_SCREENS is True:
+            self._phase_screen_list.append(phase_screen.astype(np.float16)) 
         
+        phase_screen_on_slm_pupil = self._slm_raster.get_recentered_phase_screen_on_slm_pupil_frame(phase_screen* 1e-9)
+        wfz = Wavefront.fromNumpyArray(phase_screen_on_slm_pupil)
+        modal_coefficents = self._slm_raster._zernike_modal_decomposer.measureModalCoefficientsFromWavefront(
+            wfz,
+            self._slm_mask,
+            self._slm_mask)
+        
+        self._modal_coefficients_list.append(modal_coefficents.toNumpyArray())
+        
+    def run(self, Nsteps = 30, storePhaseScreens = False):
+        
+        self.STORE_PHASE_SCREENS = storePhaseScreens
         self._n_steps = Nsteps
         # time step of the simulated loop isnt it QM
         self.time_step = self._factory.TIME_STEP_IN_SEC
@@ -77,7 +96,7 @@ class PhaseScreenGenerator():
             for obj in group:
                 obj.finalize()
     
-    def save_phase_screens(self, ftag):
+    def save(self, ftag):
         
         file_name = phase_screen_folder() / (ftag + '.fits')
         hdr = fits.Header()
@@ -104,9 +123,13 @@ class PhaseScreenGenerator():
         hdr['SLM_RAD'] = self._factory.SLM_PUPIL_RADIUS # in pixels
         hdr['SLM_YX'] = str(self._factory.SLM_PUPIL_CENTER) # YX pixel coordinates
         
-        fits.writeto(file_name, np.array([]), hdr)
-        self._save_phase_screens_hdf5(ftag, np.array(self._phase_screen_list))
+        fits.writeto(file_name, np.array(self._modal_coefficients_list), hdr)
+        if self.STORE_PHASE_SCREENS is True:
+            self._save_phase_screens_hdf5(ftag, np.array(self._phase_screen_list))
     
+    #TODO: MemoryError must be resolved
+    # emoryError: Unable to allocate 12.0 GiB
+    # for an array with shape (5000, 1136, 1136) and data type float16
     def _save_phase_screens_hdf5(self, ftag, data):
         frame_sizeY = self._phase_screen_list[0].shape[0]
         frame_sizeX = self._phase_screen_list[0].shape[1]
@@ -117,15 +140,17 @@ class PhaseScreenGenerator():
                 'phase_screen', 
                 data=data.astype(np.float16), 
                 compression='gzip',
-                compression_opts = 7, 
+                compression_opts = 9, 
                 chunks=(1, frame_sizeY, frame_sizeX)  # Save frame-wise chunks
             )
     @staticmethod
-    def load_phase_screen_header(ftag):
+    def load_phase_screen_fits_data(ftag):
         set_data_dir()
-        header_file_name = phase_screen_folder() / (ftag + '.fits')
-        header = fits.getheader(header_file_name)
-        return  header
+        file_name = phase_screen_folder() / (ftag + '.fits')
+        header = fits.getheader(file_name)
+        hduList = fits.open(file_name)
+        modal_coefficients_cube = hduList[0].data
+        return  header, modal_coefficients_cube
     
     @staticmethod
     def load_phase_screen_hdf5(fname, frame_idx=None):

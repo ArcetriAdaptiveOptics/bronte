@@ -45,7 +45,7 @@ class SpeculaScaoFactory(BaseFactory):
     
     #AO PARAMETERS
     MODAL_BASE_TYPE = 'Zernike'
-    N_MODES_TO_CORRECT = 200 
+    #N_MODES_TO_CORRECT = 200 # moved to base factory
     INT_GAIN = -0.3
     INT_DELAY = 2                   # frames or ms
     SH_PIX_THR = 200                # threshold in ADU for pixels in subapertures
