@@ -130,10 +130,10 @@ class FlatteningRunner():
                     time.sleep(delay)
             raise ZmqRpcTimeoutError("Max retries reached")
                 
-        psf_camera_texp = retry_on_timeout(self._factory.psf_camera.exposureTime())
-        psf_camera_fps = retry_on_timeout(self._factory.psf_camera.getFrameRate())
-        shwfs_texp = retry_on_timeout(self._factory.sh_camera.exposureTime())
-        shwfs_fps = retry_on_timeout(self._factory.sh_camera.getFrameRate())
+        psf_camera_texp = retry_on_timeout(self._factory.psf_camera.exposureTime)
+        psf_camera_fps = retry_on_timeout(self._factory.psf_camera.getFrameRate)
+        shwfs_texp = retry_on_timeout(self._factory.sh_camera.exposureTime)
+        shwfs_fps = retry_on_timeout(self._factory.sh_camera.getFrameRate)
         
         file_name = telemetry_folder() / (fname + '.fits')
         hdr = fits.Header()

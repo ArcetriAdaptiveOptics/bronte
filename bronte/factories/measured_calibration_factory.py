@@ -32,7 +32,7 @@ class MeasuredCalibrationFactory(BaseFactory):
         
         super().__init__()
         self._pupil_diameter_in_pixel  = 2 * self.slm_pupil_mask.radius()
-        self._pupil_pixel_pitch = round(self.TELESCOPE_PUPIL_DIAMETER/self._pupil_diameter_in_pixel, 3)
+        self._pupil_pixel_pitch = self.TELESCOPE_PUPIL_DIAMETER/self._pupil_diameter_in_pixel
         self.TIME_STEP_IN_SEC = self._sh_texp
         
     @cached_property
