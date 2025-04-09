@@ -61,7 +61,7 @@ class SpeculaScaoRunner():
         self._atmo.inputs['seeing'].set(self._seeing.output)
         self._atmo.inputs['wind_direction'].set(self._wind_direction.output)
         self._atmo.inputs['wind_speed'].set(self._wind_speed.output)
-        self._prop.inputs['layer_list'].set(self._atmo.layer_list + [self._dm.outputs['out_layer']])
+        self._prop.inputs['atmo_layer_list'].set(self._atmo.layer_list + [self._dm.outputs['out_layer']])
     
         self._bench_devices.inputs['ef'].set(self._prop.outputs['out_on_axis_source_ef'])
         self._slopec.inputs['in_pixels'].set(self._bench_devices.outputs['out_pixels'])
