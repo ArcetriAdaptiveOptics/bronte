@@ -5,7 +5,8 @@ from specula.data_objects.source import Source
 from specula.processing_objects.atmo_propagation import AtmoPropagation
 from specula.processing_objects.atmo_evolution import AtmoEvolution
 from specula.processing_objects.func_generator import FuncGenerator
-from specula.processing_objects.int_control import IntControl
+#from specula.processing_objects.int_control import IntControl
+from specula.processing_objects.integrator import Integrator
 from specula.processing_objects.sh_slopec import ShSlopec
 from specula.processing_objects.dm import DM
 from specula.processing_objects.modalrec import Modalrec
@@ -62,7 +63,7 @@ class SpeculaFlatteningFactory(BaseFactory):
     def integrator_controller(self):
         int_gains = np.ones(self.N_MODES_TO_CORRECT)* self.INT_GAIN
         #int_gains = np.zeros(nModes); int_gains[0:3]=-0.5  
-        return IntControl(delay = self.INT_DELAY, int_gain = int_gains)
+        return Integrator(delay = self.INT_DELAY, int_gain = int_gains)
     
     @cached_property
     def virtual_deformable_mirror(self):
