@@ -37,7 +37,7 @@ class SyntheticCalibrationFactory(SyntheticBaseFactory):
         
     @cached_property
     def source_dict(self):
-        on_axis_source = Source(polar_coordinate=[0.0, 0.0], magnitude=8, wavelengthInNm = self.WL_IN_NM,)
+        on_axis_source = Source(polar_coordinates=[0.0, 0.0], magnitude=8, wavelengthInNm = self.WL_IN_NM,)
         source_dict = {'on_axis_source': on_axis_source}
         return source_dict
     
@@ -45,7 +45,7 @@ class SyntheticCalibrationFactory(SyntheticBaseFactory):
     def disturb_propagation(self):
         prop = AtmoPropagation(pixel_pupil = self._pupil_diameter_in_pixel,              # Linear dimension of pupil phase array
                                pixel_pitch = self._pupil_pixel_pitch,         # Linear dimension of pupil phase array
-                               source_dict = self.source_dict,
+                               fov = 0.,
                                target_device_idx=self._target_device_idx)
         return prop
 

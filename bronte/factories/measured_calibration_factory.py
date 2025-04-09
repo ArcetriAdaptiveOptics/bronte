@@ -24,7 +24,8 @@ class MeasuredCalibrationFactory(BaseFactory):
     SH_PIX_THR = 200 # in ADU
     PP_AMP_IN_NM = 2000
     TIME_STEP_IN_SEC = None 
-    SOURCE_COORD = [0.0, 0.0]
+    SOURCE_COORD = [0.0, 0.0] # [radius(in_arcsec), angle(in_deg)]
+    FOV = 2*SOURCE_COORD[0] # diameter in arcsec
     SOURCE_MAG = 8
     SOURCE_WL_IN_NM = 750 
     
@@ -38,7 +39,7 @@ class MeasuredCalibrationFactory(BaseFactory):
     @cached_property
     def source_dict(self):
         on_axis_source = Source(
-            polar_coordinate = self.SOURCE_COORD,
+            polar_coordinates = self.SOURCE_COORD,
             magnitude = self.SOURCE_MAG,
             wavelengthInNm = self.SOURCE_WL_IN_NM,)
         source_dict = {'on_axis_source': on_axis_source}
@@ -48,7 +49,7 @@ class MeasuredCalibrationFactory(BaseFactory):
     def disturb_propagation(self):
         prop = AtmoPropagation(pixel_pupil = self._pupil_diameter_in_pixel,              # Linear dimension of pupil phase array
                                pixel_pitch = self._pupil_pixel_pitch,         # Linear dimension of pupil phase array
-                               source_dict = self.source_dict,
+                               fov = self.FOV,
                                target_device_idx=self._target_device_idx)
         return prop
 

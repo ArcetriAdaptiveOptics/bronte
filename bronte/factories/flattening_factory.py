@@ -1,11 +1,6 @@
 import specula
 specula.init(-1, precision=1)  # Default target=-1 (CPU), float32=1
 from specula import np
-from specula.data_objects.source import Source
-from specula.processing_objects.atmo_propagation import AtmoPropagation
-from specula.processing_objects.atmo_evolution import AtmoEvolution
-from specula.processing_objects.func_generator import FuncGenerator
-#from specula.processing_objects.int_control import IntControl
 from specula.processing_objects.integrator import Integrator
 from specula.processing_objects.sh_slopec import ShSlopec
 from specula.processing_objects.dm import DM

@@ -36,7 +36,8 @@ class SpeculaScaoFactory(BaseFactory):
     Cn2_WEIGHTS_LIST = [1 - 0.119977, 0.119977] # sum must be=1
     
     #SOURCE PARAMETERS
-    ONAXIS_SOURCE_COORD = [0.0, 0.0]
+    FOV = 0. # diameter in arcsec
+    ONAXIS_SOURCE_COORD = [0.0, 0.0] #[radius(in_arcsec), angle(in_deg)]
     ONAXIS_SOURCE_MAG = 8
     ONAXIS_SOURCE_WL_IN_NM = 750 
     LGS_COORD = [45.0, 0.0]
@@ -105,12 +106,12 @@ class SpeculaScaoFactory(BaseFactory):
     def source_dict(self):
         
         on_axis_source = Source(
-            polar_coordinate = self.ONAXIS_SOURCE_COORD,
+            polar_coordinates = self.ONAXIS_SOURCE_COORD,
             magnitude = self.ONAXIS_SOURCE_MAG,
             wavelengthInNm = self.ONAXIS_SOURCE_WL_IN_NM,)
         
         lgs1_source = Source(
-            polar_coordinate = self.LGS_COORD,
+            polar_coordinates = self.LGS_COORD,
             height = self.LGS_HEIGHT_IN_M,
             magnitude = self.LGS_MAG,
             wavelengthInNm = self.LGS_WL_IN_NM)
@@ -149,7 +150,7 @@ class SpeculaScaoFactory(BaseFactory):
                              L0 = self.OUTER_SCALE_L0,                        # [m] Outer scale
                              heights = self.LAYER_HEIGHTS_LIST, # [m] layer heights at 0 zenith angle
                              Cn2 = self.Cn2_WEIGHTS_LIST, # Cn2 weights (total must be eq 1)
-                             source_dict = self.source_dict,
+                             fov = self.FOV,
                              target_device_idx=self._target_device_idx,
                             )
         return atmo
