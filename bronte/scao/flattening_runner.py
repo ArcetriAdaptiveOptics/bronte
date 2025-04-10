@@ -17,9 +17,9 @@ class FlatteningRunner():
     
     LOOP_TYPE = 'FLATTENING'
     
-    def __init__(self, flattening_factory, xp=np):
+    def __init__(self, flattening_factory, logger_name ="FlatteningRunner", xp=np):
         
-        self._logger = get_logger("FlatteningRunner")
+        self._logger = get_logger(logger_name)
         self._factory = flattening_factory
         self._target_device_idx = self._factory._target_device_idx
         self._load_slope_computer()
@@ -40,6 +40,7 @@ class FlatteningRunner():
     @logEnterAndExit("Loading Reconstructor...",
                       "Reconstructor loaded.", level='debug')
     def _load_reconstructor(self):
+        
         self._rec = self._factory.reconstructor
     
     @logEnterAndExit("Setting control...",

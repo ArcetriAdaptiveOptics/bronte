@@ -9,6 +9,8 @@ from bronte.package_data import telemetry_folder
 from astropy.io import fits
 from plico.rpc.zmq_remote_procedure_call import ZmqRpcTimeoutError
 import time
+from bronte.utils.set_basic_logging import get_logger
+from arte.utils.decorator import logEnterAndExit 
 
 class SpeculaScaoRunner():
     
@@ -16,6 +18,7 @@ class SpeculaScaoRunner():
     
     def __init__(self, scao_factory, xp=np):
         
+        self._logger = get_logger("SpeculaScaoRunner")
         self._factory = scao_factory 
         self._target_device_idx = self._factory._target_device_idx
         self._setup_atmosphere()
@@ -27,6 +30,8 @@ class SpeculaScaoRunner():
         self._define_groups()
         self._initialize_telemetry()
 
+    @logEnterAndExit("Setting Atmo parameters...",
+                      "Atmo parameters set.", level='debug')
     def _setup_atmosphere(self):
         
         self._seeing = self._factory.seeing
@@ -34,34 +39,45 @@ class SpeculaScaoRunner():
         self._wind_direction = self._factory.wind_direction
         self._atmo = self._factory.atmo_evolution
         self._prop = self._factory.atmo_propagation
-    
+
+    @logEnterAndExit("Loading SlopePC...",
+                      "SlopePC loaded.", level='debug')  
     def _load_slope_computer(self):
         self._subapdata = self._factory.subapertures_set
         self._slopec = self._factory.slope_computer
         self._nslopes = self._subapdata.n_subaps * 2 
     
+    @logEnterAndExit("Loading Reconstructor...",
+                  "Reconstructor loaded.", level='debug')
     def _load_reconstructor(self):
-
+        
         self._rec = self._factory.reconstructor
         
+    @logEnterAndExit("Setting control...",
+                      "Control set.", level='debug')
     def _setup_control(self):
         
         self._control = self._factory.integrator_controller
         self._dm = self._factory.virtual_deformable_mirror
-        
+    
+    @logEnterAndExit("Setting Bench Devices...",
+                      "Bench Devices set.", level='debug')
     def _setup_bench_devices(self):
         
         self._factory.sh_camera.setExposureTime(self._factory._sh_texp)
         self._bench_devices = TestbenchDeviceManager(self._factory, 
                                 do_plots=True,
-                                target_device_idx= self._target_device_idx)        
-        
+                                target_device_idx= self._target_device_idx)
+                
+    @logEnterAndExit("Setting inputs to ProcessingObjects...",
+                      "ProcessingObjects inputs set.", level='debug')
     def _set_inputs(self):
         
         self._atmo.inputs['seeing'].set(self._seeing.output)
         self._atmo.inputs['wind_direction'].set(self._wind_direction.output)
         self._atmo.inputs['wind_speed'].set(self._wind_speed.output)
         self._prop.inputs['atmo_layer_list'].set(self._atmo.layer_list + [self._dm.outputs['out_layer']])
+        self._prop.inputs['common_layer_list'].set([])
     
         self._bench_devices.inputs['ef'].set(self._prop.outputs['out_on_axis_source_ef'])
         self._slopec.inputs['in_pixels'].set(self._bench_devices.outputs['out_pixels'])
@@ -88,6 +104,8 @@ class SpeculaScaoRunner():
 
         self._groups = [group1, group2, group3, group4, group5, group6, group7, group8]
     
+    @logEnterAndExit("Setting telemetry buffer...",
+                  "Telemetry buffer set.", level='debug')  
     def _initialize_telemetry(self):
         
         #self._short_exp_psf_list = []
@@ -95,6 +113,8 @@ class SpeculaScaoRunner():
         self._zc_delta_modal_command_list = []
         self._zc_integrated_modal_command_list = []
         
+    @logEnterAndExit("Updating telemetry buffer...",
+                  "Telemetry buffer updated.", level='debug')  
     def _update_telemetry(self):
         
         specula_slopes = self._groups[4][0].outputs['out_slopes']
@@ -108,25 +128,29 @@ class SpeculaScaoRunner():
         self._zc_integrated_modal_command_list.append(
             specula_integrated_commands_in_nm*1e-9)
         
-
+    @logEnterAndExit("Starting Loop...",
+              "Loop Terminated.", level='debug')
     def run(self, Nsteps = 30):
         
         self._n_steps = Nsteps
         # time step of the simulated loop isnt it QM
         self.time_step = self._factory.TIME_STEP_IN_SEC
+        tf = (self._n_steps-1)*self.time_step
         
         for group in self._groups:
             for obj in group:
                 obj.loop_dt = self.time_step * 1e9
-                obj.run_check(self.time_step)
+                #obj.run_check(self.time_step)
+                obj.setup(self.time_step, self._n_steps)
     
         for step in range(self._n_steps):
             t = 0 + step * self.time_step
-            print('T=',t)
+            self._logger.info(
+                "\n+ Loop @ time: %f/%f s\t steps: %d/%d" % (t, tf, step+1, Nsteps))
             for group in self._groups:
                 for obj in group:
                     obj.check_ready(t*1e9)
-                    print('trigger', obj)
+                    self._logger.info(f"Triggering {str(obj)}")
                     obj.trigger()
                     obj.post_trigger()
             self._update_telemetry()
@@ -134,7 +158,9 @@ class SpeculaScaoRunner():
         for group in self._groups:
             for obj in group:
                 obj.finalize()
-    
+                
+    @logEnterAndExit("Saving data...",
+              "Data saved.", level='debug')
     def save_telemetry(self, fname):
         
         def retry_on_timeout(func, max_retries = 5000, delay = 0.001):

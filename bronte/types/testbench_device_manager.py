@@ -6,6 +6,8 @@ from specula.data_objects.electric_field import ElectricField
 import time
 from bronte.utils.data_cube_cleaner import DataCubeCleaner
 import matplotlib.pyplot as plt
+from bronte.utils.set_basic_logging import get_logger
+from arte.utils.decorator import logEnterAndExit 
 
 class TestbenchDeviceManager(BaseProcessingObj):
     
@@ -14,6 +16,7 @@ class TestbenchDeviceManager(BaseProcessingObj):
     def __init__(self, factory, target_device_idx=None, precision=None, do_plots=True):
         
         super().__init__(target_device_idx, precision)
+        self._logger = get_logger("TestBenchDeviceManager")
         self._slm = factory.deformable_mirror
         self._sh_camera = factory.sh_camera
         self._sh_camera_bkg = factory.sh_camera_master_bkg
@@ -31,7 +34,9 @@ class TestbenchDeviceManager(BaseProcessingObj):
         
         if self._do_plots:
             self.fig, self.axs = plt.subplots(2, figsize=(10, 10))
-
+    
+    @logEnterAndExit("Triggering Test Bench Devices...",
+                  "Test Bench Devices Triggered.", level='debug')
     def trigger_code(self):
         ef = self.local_inputs['ef']
         phase_screen = cpuArray(ef.phaseInNm) * 1e-9

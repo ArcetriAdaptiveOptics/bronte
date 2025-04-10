@@ -4,6 +4,8 @@ from specula.data_objects.pixels import Pixels
 import time
 from bronte.utils.data_cube_cleaner import DataCubeCleaner
 import matplotlib.pyplot as plt
+from bronte.utils.set_basic_logging import get_logger
+from arte.utils.decorator import logEnterAndExit 
 
 class ShwfsDeviceManager(BaseProcessingObj):
      
@@ -12,6 +14,7 @@ class ShwfsDeviceManager(BaseProcessingObj):
     def __init__(self, factory, target_device_idx=None, precision=None, do_plots=True):
         
         super().__init__(target_device_idx, precision)
+        self._logger = get_logger("ShwfsDeviceManager")
         self._sh_camera = factory.sh_camera
         self._sh_camera_bkg = factory.sh_camera_master_bkg
         self.output_frame = Pixels(*self._sh_camera.shape())
@@ -23,6 +26,8 @@ class ShwfsDeviceManager(BaseProcessingObj):
         if self._do_plots:
             self.fig, self.axs = plt.subplots(2, figsize=(10, 10))
 
+    @logEnterAndExit("Triggering SHWFS...",
+                  "SHWFS Triggered.", level='debug')
     def trigger_code(self):
         
         #TODO: manage the different integration times for the each wfs group

@@ -5,6 +5,8 @@ from specula.connections import InputValue
 from specula.data_objects.electric_field import ElectricField
 import time
 import matplotlib.pyplot as plt
+from bronte.utils.set_basic_logging import get_logger
+from arte.utils.decorator import logEnterAndExit 
 
 class SlmDeviceManager(BaseProcessingObj):
     
@@ -13,6 +15,7 @@ class SlmDeviceManager(BaseProcessingObj):
     def __init__(self, factory, target_device_idx=None, precision=None, do_plots=True):
         
         super().__init__(target_device_idx, precision)
+        self._logger = get_logger("SlmDeviceManager")
         self._slm = factory.deformable_mirror
         self._slm_raster = factory.slm_rasterizer
         self.inputs['ef'] = InputValue(type=ElectricField)
@@ -25,7 +28,9 @@ class SlmDeviceManager(BaseProcessingObj):
         
         if self._do_plots:
             self.fig, self.axs = plt.subplots(2, figsize=(10, 10))
-
+            
+    @logEnterAndExit("Triggering SLM...",
+                  "SLM Triggered.", level='debug')
     def trigger_code(self):
         
         ef = self.local_inputs['ef']

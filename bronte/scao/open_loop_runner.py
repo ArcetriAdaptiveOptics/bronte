@@ -9,10 +9,9 @@ class OpenLoopRunner():
         self._factory = flattening_factory
         self._factory.INT_GAIN = 0
         self._factory.INT_DELAY = 0
-        self._fr = FlatteningRunner(self._factory)
+        self._fr = FlatteningRunner(self._factory , logger_name = "OpenLoopRunner")
         self._fr.LOOP_TYPE = self.LOOP_TYPE
         
-         
     def run(self, Nsteps = 30):
         self._fr.run(Nsteps)
     
