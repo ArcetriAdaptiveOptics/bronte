@@ -117,6 +117,7 @@ class PhaseScreenGenerator():
         hdr = fits.Header()
         
         # ATMO PARAMETERS
+        hdr['ATM_SEED'] = self._factory.ATMO_SEED
         hdr['PROP_DIR'] = self.PROPAGATION_DIR
         hdr['SEEING'] = self._factory.SEEING
         hdr['L0_IN_M'] = self._factory.OUTER_SCALE_L0
