@@ -2,7 +2,7 @@ from bronte import startup
 from bronte.scao.phase_screen.phase_screen_generator import PhaseScreenGenerator
 
 
-def kolmogorov_like_pahse_screens(ftag = '250409_090000'):
+def kolmogorov_like_phase_screens(ftag = '250409_090000'):
     '''
     the aim in to generate phase screens using SPECULA and to 
     verify the compatibility with Kolomogorov theory

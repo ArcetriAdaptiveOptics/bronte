@@ -1,7 +1,7 @@
 import importlib
 import logging
 
-def set_basic_logging(debug_class_name="ClassName"):
+def get_logger(debug_class_name="ClassName"):
 
     importlib.reload(logging)
     FORMAT = '%(asctime)s:%(levelname)s:%(name)s  %(message)s'

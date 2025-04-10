@@ -4,7 +4,9 @@ from specula import np, cpuArray
 from bronte.startup import set_data_dir
 from bronte.package_data import phase_screen_folder
 from arte.types.wavefront import Wavefront
-from astropy.io import fits 
+from astropy.io import fits
+from bronte.utils.set_basic_logging import get_logger
+from arte.utils.decorator import logEnterAndExit 
 
 class PhaseScreenGenerator():
     
@@ -12,6 +14,7 @@ class PhaseScreenGenerator():
     
     def __init__(self, scao_factory):
         
+        self._logger = get_logger("PhaseScreenGenerator")
         self._factory = scao_factory
         self._slm_raster = self._factory.slm_rasterizer
         self._slm_mask = self._factory.slm_pupil_mask
@@ -21,6 +24,8 @@ class PhaseScreenGenerator():
         self._define_groups()
         self._initialise_telemetry_buffers()
     
+    @logEnterAndExit("Setting Atmo parameters...",
+                      "Atmo parameters set.", level='debug')
     def _setup_atmosphere(self):
         
         self._seeing = self._factory.seeing
@@ -28,13 +33,18 @@ class PhaseScreenGenerator():
         self._wind_direction = self._factory.wind_direction
         self._atmo = self._factory.atmo_evolution
         self._prop = self._factory.atmo_propagation
-        
+    
+    @logEnterAndExit("Setting inputs to ProcessingObjects...",
+                      "ProcessingObjects inputs set.", level='debug')
     def _set_inputs(self):
         self._atmo.inputs['seeing'].set(self._seeing.output)
         self._atmo.inputs['wind_direction'].set(self._wind_direction.output)
         self._atmo.inputs['wind_speed'].set(self._wind_speed.output)
         self._prop.inputs['atmo_layer_list'].set(self._atmo.layer_list)
+        self._prop.inputs['common_layer_list'].set([])
     
+    @logEnterAndExit("Setting telemetry buffer...",
+                      "Telemetry buffer set.", level='debug')
     def _initialise_telemetry_buffers(self):
 
         self._modal_coefficients_list = []
@@ -45,7 +55,9 @@ class PhaseScreenGenerator():
         group2 = [self._atmo]
         group3 = [self._prop]
         self._groups = [group1, group2, group3]
-        
+    
+    @logEnterAndExit("Updating telemetry buffer...",
+                      "Telemetry buffer updated.", level='debug')    
     def _update_telemetry_buffers(self):
         
         ef_output = 'out_'+self.PROPAGATION_DIR+'_source_ef'
@@ -54,18 +66,22 @@ class PhaseScreenGenerator():
    
         phase_screen_on_slm_pupil = self._slm_raster.get_recentered_phase_screen_on_slm_pupil_frame(phase_screen)
         wfz = Wavefront.fromNumpyArray(phase_screen_on_slm_pupil)
+        self._logger.info("Decomposing WF to Zernike Modal Coefficients")
         modal_coefficents = self._slm_raster._zernike_modal_decomposer.measureModalCoefficientsFromWavefront(
             wfz,
             self._slm_mask,
             self._slm_mask)
         
         self._modal_coefficients_list.append(modal_coefficents.toNumpyArray())
-        
+    
+    @logEnterAndExit("Starting Loop...",
+                  "Loop Terminated.", level='debug')    
     def run(self, Nsteps = 30):
         
         self._n_steps = Nsteps
         # time step of the simulated loop isnt it QM
         self.time_step = self._factory.TIME_STEP_IN_SEC
+        tf = (self._n_steps-1)*self.time_step
         
         for group in self._groups:
             for obj in group:
@@ -75,11 +91,15 @@ class PhaseScreenGenerator():
     
         for step in range(self._n_steps):
             t = 0 + step * self.time_step
-            print('T=',t)
+            
+            #print('T=',t)
+            self._logger.info(
+                "\n+ Propagation @ time: %f/%f s\t steps: %d/%d" % (t, tf, step+1, Nsteps))
             for group in self._groups:
                 for obj in group:
                     obj.check_ready(t*1e9)
-                    print('trigger', obj)
+                    self._logger.info(f"Triggering {str(obj)}")
+                    #print('trigger', obj)
                     obj.trigger()
                     obj.post_trigger()
                     
@@ -89,6 +109,8 @@ class PhaseScreenGenerator():
             for obj in group:
                 obj.finalize()
     
+    @logEnterAndExit("Saving data...",
+                  "Data saved.", level='debug')
     def save(self, ftag):
         
         file_name = phase_screen_folder() / (ftag + '.fits')
@@ -116,7 +138,9 @@ class PhaseScreenGenerator():
         hdr['SLM_RAD'] = self._factory.SLM_PUPIL_RADIUS # in pixels
         hdr['SLM_YX'] = str(self._factory.SLM_PUPIL_CENTER) # YX pixel coordinates
         
-        fits.writeto(file_name, np.array(self._modal_coefficients_list), hdr)
+        fits.writeto(file_name, np.array(self._modal_coefficients_list), hdr)    
+    # @logEnterAndExit("Loading data...",
+    #           "Data loaded.", level='debug')
     @staticmethod
     def load_phase_screen_fits_data(ftag):
         set_data_dir()
