@@ -27,6 +27,7 @@ class SpeculaScaoFactory(BaseFactory):
     REC_MAT_TAG = '250307_140600'#'250207_120300' #'250127_155400'
     
     #ATMO PARAMETERS
+    ATMO_SEED = 1
     TELESCOPE_PUPIL_DIAMETER = 40   # m
     OUTER_SCALE_L0 = 23             # m
     SEEING = 0.3                    # arcsec
@@ -144,7 +145,8 @@ class SpeculaScaoFactory(BaseFactory):
     @cached_property
     def atmo_evolution(self):
 
-        atmo = AtmoEvolution(pixel_pupil = self._pupil_diameter_in_pixel,              # Linear dimension of pupil phase array
+        atmo = AtmoEvolution(seed = self.ATMO_SEED,
+                             pixel_pupil = self._pupil_diameter_in_pixel,              # Linear dimension of pupil phase array
                              pixel_pitch = self._pupil_pixel_pitch,         # Linear dimension of pupil phase array
                              data_dir = package_data.phase_screen_folder(),      # Data directory for phasescreens
                              L0 = self.OUTER_SCALE_L0,                        # [m] Outer scale

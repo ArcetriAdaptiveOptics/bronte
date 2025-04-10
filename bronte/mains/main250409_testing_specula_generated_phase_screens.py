@@ -9,7 +9,8 @@ def kolmogorov_like_phase_screens(ftag = '250409_090000'):
     '''
     sf = startup.specula_startup()
     
-    #SETTING ATMO PARAMETERS    
+    #SETTING ATMO PARAMETERS
+    sf.ATMO_SEED = 1    
     sf.TELESCOPE_PUPIL_DIAMETER = 8   # m
     sf._pupil_pixel_pitch = sf.TELESCOPE_PUPIL_DIAMETER/sf._pupil_diameter_in_pixel
     sf.OUTER_SCALE_L0 = 99999             # m
