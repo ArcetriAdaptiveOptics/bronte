@@ -10,6 +10,8 @@ from bronte.package_data import telemetry_folder
 from astropy.io import fits
 from plico.rpc.zmq_remote_procedure_call import ZmqRpcTimeoutError
 import time
+from bronte.utils.set_basic_logging import get_logger
+from arte.utils.decorator import logEnterAndExit 
 
 class FlatteningRunner():
     
@@ -17,6 +19,7 @@ class FlatteningRunner():
     
     def __init__(self, flattening_factory, xp=np):
         
+        self._logger = get_logger("FlatteningRunner")
         self._factory = flattening_factory
         self._target_device_idx = self._factory._target_device_idx
         self._load_slope_computer()
@@ -27,38 +30,45 @@ class FlatteningRunner():
         self._define_groups()
         self._initialize_telemetry()
     
-    
+    @logEnterAndExit("Loading SlopePC...",
+                      "SlopePC loaded.", level='debug')
     def _load_slope_computer(self):
         self._subapdata = self._factory.subapertures_set
         self._slopec = self._factory.slope_computer
         self._nslopes = self._subapdata.n_subaps * 2 
     
+    @logEnterAndExit("Loading Reconstructor...",
+                      "Reconstructor loaded.", level='debug')
     def _load_reconstructor(self):
-
         self._rec = self._factory.reconstructor
-        
+    
+    @logEnterAndExit("Setting control...",
+                      "Control set.", level='debug')
     def _setup_control(self):
         
         self._control = self._factory.integrator_controller
         self._dm = self._factory.virtual_deformable_mirror
-        
+    
+    @logEnterAndExit("Setting Bench Devices...",
+                      "Bench Devices set.", level='debug')
     def _setup_bench_devices(self):
         
         self._factory.sh_camera.setExposureTime(self._factory._sh_texp)
         self._shwfs_device = ShwfsDeviceManager(self._factory)
         self._slm_device = SlmDeviceManager(self._factory)
     
-    
+    @logEnterAndExit("Setting inputs to ProcessingObjects...",
+                      "ProcessingObjects inputs set.", level='debug')
     def _set_inputs(self):
         
         self._slopec.inputs['in_pixels'].set(self._shwfs_device.outputs['out_pixels'])
         self._rec.inputs['in_slopes'].set(self._slopec.outputs['out_slopes'])
-        self._control.inputs['delta_comm'].set(self._rec.out_modes)
+        self._control.inputs['delta_comm'].set(self._rec.modes)
         self._dm.inputs['in_command'].set(self._control.out_comm)
         self._slm_device.inputs['ef'].set(self._dm.outputs['out_layer'])
         
         self._modes_disp = ModesDisplay()
-        self._modes_disp.inputs['modes'].set(self._rec.out_modes)
+        self._modes_disp.inputs['modes'].set(self._rec.modes)
         self._slopes_disp = SlopecDisplay()
         self._slopes_disp.inputs['slopes'].set(self._slopec.outputs['out_slopes'])
         self._slopes_disp.inputs['subapdata'].set(self._factory.subapertures_set)
@@ -74,42 +84,51 @@ class FlatteningRunner():
 
         self._groups = [group1, group2, group3, group4, group5, group6]
     
+    @logEnterAndExit("Setting telemetry buffer...",
+                      "Telemetry buffer set.", level='debug')   
     def _initialize_telemetry(self):
         
         self._slopes_vector_list = []
         self._zc_delta_modal_command_list = []
         self._zc_integrated_modal_command_list = []
-        
+    
+    @logEnterAndExit("Updating telemetry buffer...",
+                  "Telemetry buffer updated.", level='debug')  
     def _update_telemetry(self):
         
         specula_slopes = self._groups[1][0].outputs['out_slopes']
         self._slopes_vector_list.append(specula_slopes.slopes.copy())        
-        specula_delta_commands_in_nm = self._groups[2][0].out_modes.value
+        specula_delta_commands_in_nm = self._groups[2][0].modes.value
         self._zc_delta_modal_command_list.append(
             specula_delta_commands_in_nm*1e-9)
         
         specula_integrated_commands_in_nm = self._groups[3][0].out_comm.value
         self._zc_integrated_modal_command_list.append(
             specula_integrated_commands_in_nm*1e-9)
-
+    
+    @logEnterAndExit("Starting Loop...",
+              "Loop Terminated.", level='debug')
     def run(self, Nsteps = 30):
         
         self._n_steps = Nsteps
         # time step of the simulated loop isnt it QM
         self.time_step = self._factory.TIME_STEP_IN_SEC
+        tf = (self._n_steps-1)*self.time_step
         
         for group in self._groups:
             for obj in group:
                 obj.loop_dt = self.time_step * 1e9
-                obj.run_check(self.time_step)
+                #obj.run_check(self.time_step)
+                obj.setup(self.time_step, self._n_steps)
     
         for step in range(self._n_steps):
             t = 0 + step * self.time_step
-            print('T=',t)
+            self._logger.info(
+                "\n+ Loop @ time: %f/%f s\t steps: %d/%d" % (t, tf, step+1, Nsteps))
             for group in self._groups:
                 for obj in group:
                     obj.check_ready(t*1e9)
-                    print('trigger', obj)
+                    self._logger.info(f"Triggering {str(obj)}")
                     obj.trigger()
                     obj.post_trigger()
             self._update_telemetry()
@@ -117,7 +136,9 @@ class FlatteningRunner():
         for group in self._groups:
             for obj in group:
                 obj.finalize()
-    
+                
+    @logEnterAndExit("Saving data...",
+                  "Data saved.", level='debug')
     def save_telemetry(self, fname):
         
         def retry_on_timeout(func, max_retries = 5000, delay = 0.001):

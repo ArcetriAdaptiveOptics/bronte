@@ -120,7 +120,7 @@ class TiltScannerForSlopesLinearityAnalyzer():
             s = copy.copy(slopec.slopes.slopes)
             slopes_cube[idx,:, 0] = Slopes(slopes = s).xslopes#get2d(None, pupdata=self._specula_subap)
             slopes_cube[idx,:, 1] = Slopes(slopes = s).yslopes
-            s_2d =  Slopes(slopes = s).get2d(None, pupdata=self._specula_subap)
+            s_2d =  Slopes(slopes = s).get2d()#None, pupdata=self._specula_subap)
             slope_map_x_cube.append(s_2d[0])
             slope_map_y_cube.append(s_2d[1])
             

@@ -85,8 +85,8 @@ class BronteVsSpeculaSlopePC():
         slopec.calc_slopes_nofor()
         sref = copy.copy(slopec.slopes.slopes)
         
-        s1_2d =  Slopes(slopes = s).get2d(None, pupdata=self._specula_subap)
-        sref_2d = Slopes(slopes = sref).get2d(None, pupdata=self._specula_subap)
+        s1_2d =  Slopes(slopes = s).get2d()#None, pupdata=self._specula_subap)
+        sref_2d = Slopes(slopes = sref).get2d()#None, pupdata=self._specula_subap)
         
         return s1_2d, sref_2d
     

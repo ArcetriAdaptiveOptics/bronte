@@ -2,7 +2,7 @@ from specula import np, cpuArray
 from specula.base_processing_obj import BaseProcessingObj
 from specula.data_objects.pixels import Pixels
 from specula.connections import InputValue
-from specula.data_objects.ef import ElectricField
+from specula.data_objects.electric_field import ElectricField
 import time
 from bronte.utils.data_cube_cleaner import DataCubeCleaner
 import matplotlib.pyplot as plt

@@ -91,15 +91,13 @@ class PhaseScreenGenerator():
     
         for step in range(self._n_steps):
             t = 0 + step * self.time_step
-            
-            #print('T=',t)
+        
             self._logger.info(
                 "\n+ Propagation @ time: %f/%f s\t steps: %d/%d" % (t, tf, step+1, Nsteps))
             for group in self._groups:
                 for obj in group:
                     obj.check_ready(t*1e9)
                     self._logger.info(f"Triggering {str(obj)}")
-                    #print('trigger', obj)
                     obj.trigger()
                     obj.post_trigger()
                     

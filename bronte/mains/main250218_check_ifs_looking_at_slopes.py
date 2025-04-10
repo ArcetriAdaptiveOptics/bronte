@@ -42,7 +42,7 @@ class DisplaySlopeMapsFromIfs():
         
         for idx in range(n_modes):
             ifs = self._intmat._intmat[idx]
-            slope_map = Slopes(slopes=ifs).get2d(None, self._subapdata)
+            slope_map = Slopes(slopes=ifs).get2d()#None, self._subapdata)
             # slope_mask = np.zeros(slope_map[0].shape)
             # slope_mask[slope_map[0] == 0.] = 1
             slope_maps_x.append(np.ma.array(data = slope_map[0], mask = slope_mask))

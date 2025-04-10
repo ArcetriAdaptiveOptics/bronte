@@ -66,11 +66,11 @@ class SpeculaScaoRunner():
         self._bench_devices.inputs['ef'].set(self._prop.outputs['out_on_axis_source_ef'])
         self._slopec.inputs['in_pixels'].set(self._bench_devices.outputs['out_pixels'])
         self._rec.inputs['in_slopes'].set(self._slopec.outputs['out_slopes'])
-        self._control.inputs['delta_comm'].set(self._rec.out_modes)
+        self._control.inputs['delta_comm'].set(self._rec.modes)
         self._dm.inputs['in_command'].set(self._control.out_comm)
         
         self._modes_disp = ModesDisplay()
-        self._modes_disp.inputs['modes'].set(self._rec.out_modes)
+        self._modes_disp.inputs['modes'].set(self._rec.modes)
         self._slopes_disp = SlopecDisplay()
         self._slopes_disp.inputs['slopes'].set(self._slopec.outputs['out_slopes'])
         self._slopes_disp.inputs['subapdata'].set(self._factory.subapertures_set)
@@ -100,7 +100,7 @@ class SpeculaScaoRunner():
         specula_slopes = self._groups[4][0].outputs['out_slopes']
         self._slopes_vector_list.append(specula_slopes.slopes.copy())        
         # self._short_exp_psf_list.append(self._short_exp)
-        specula_delta_commands_in_nm = self._groups[5][0].out_modes.value
+        specula_delta_commands_in_nm = self._groups[5][0].modes.value
         self._zc_delta_modal_command_list.append(
             specula_delta_commands_in_nm*1e-9)
         
