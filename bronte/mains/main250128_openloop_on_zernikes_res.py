@@ -1,6 +1,6 @@
 
 from bronte import startup
-from bronte.telemetry.display_telemetry_data import DisplayTelemetryData
+from bronte.telemetry_trash.display_telemetry_data import DisplayTelemetryData
 import matplotlib.pyplot as plt
  
 def main():

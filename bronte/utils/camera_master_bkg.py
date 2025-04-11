@@ -22,7 +22,7 @@ class CameraMasterMeasurer():
         return self._master_frame
     
     def save_master(self, detector = 'shwfs'):
-        if detector is 'shwfs':
+        if detector == 'shwfs':
             file_name = shframes_folder() / (self._ftag + '.fits')
         else:
             file_name = psf_camera_folder()/ (self._ftag + '.fits')
@@ -32,7 +32,7 @@ class CameraMasterMeasurer():
     
     @staticmethod
     def load_master(ftag, detector = 'shwfs'):
-        if detector is 'shwfs':
+        if detector == 'shwfs':
             file_name = shframes_folder() / (ftag + '.fits')
         else:
             file_name = psf_camera_folder()/ (ftag + '.fits')

@@ -16,7 +16,7 @@ from specula.data_objects.recmat import Recmat
 from functools import cached_property
 from bronte.factories.base_factory import BaseFactory
 from bronte import package_data
-from bronte.telemetry.display_telemetry_data import DisplayTelemetryData
+from bronte.telemetry_trash.display_telemetry_data import DisplayTelemetryData
 
 
 class SpeculaScaoFactory(BaseFactory):

@@ -1,6 +1,6 @@
 from bronte import startup
 from bronte.mains import main240802_ao_test
-from bronte.telemetry.display_telemetry_data import DisplayTelemetryData
+from bronte.telemetry_trash.display_telemetry_data import DisplayTelemetryData
 from arte.types.zernike_coefficients import ZernikeCoefficients
 import numpy as np
      

@@ -7,7 +7,7 @@ from bronte.wfs.subaperture_set import ShSubapertureSet
 from arte.utils.modal_decomposer import ModalDecomposer
 from arte.atmo.phase_screen_generator import PhaseScreenGenerator
 from bronte.wfs.temporal_controller import PureIntegrator
-from bronte.telemetry.display_telemetry_data import DisplayTelemetryData
+from bronte.telemetry_trash.display_telemetry_data import DisplayTelemetryData
 from bronte.factories.base_factory import BaseFactory
 
 class BronteFactory(BaseFactory):
