@@ -81,7 +81,7 @@ class MeasuredControlMatrixCalibrator():
         for group in self._groups:
             for obj in group:
                 obj.loop_dt = self.time_step * 1e9
-                obj.setup(self.time_step* 1e9, self._n_steps)
+                obj.setup(self.time_step * 1e9, self._n_steps)
         
         for step in range(self._n_steps):
             t = 0 + step * self.time_step

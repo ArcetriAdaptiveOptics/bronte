@@ -141,7 +141,7 @@ class SpeculaScaoRunner():
             for obj in group:
                 obj.loop_dt = self.time_step * 1e9
                 #obj.run_check(self.time_step)
-                obj.setup(self.time_step, self._n_steps)
+                obj.setup(self.time_step * 1e9, self._n_steps)
     
         for step in range(self._n_steps):
             t = 0 + step * self.time_step
