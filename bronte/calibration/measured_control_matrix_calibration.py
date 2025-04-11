@@ -74,14 +74,14 @@ class MeasuredControlMatrixCalibrator():
     def run(self):
         
         self.time_step = self._factory.TIME_STEP_IN_SEC
-        self._n_steps = 2*self._Nmodes
-        tf = (self._n_steps-1)*self.time_step
+        self._n_steps = 2 * self._Nmodes
+        tf = (self._n_steps - 1) * self.time_step
         self.save_calib_config()
         
         for group in self._groups:
             for obj in group:
                 obj.loop_dt = self.time_step * 1e9
-                obj.setup(self.time_step, self._n_steps)
+                obj.setup(self.time_step* 1e9, self._n_steps)
         
         for step in range(self._n_steps):
             t = 0 + step * self.time_step
