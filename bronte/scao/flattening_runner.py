@@ -54,11 +54,11 @@ class FlatteningRunner():
                       "Bench Devices set.", level='debug')
     def _setup_bench_devices(self):
         
-        self._factory.sh_camera.setExposureTime(self._factory._sh_texp)
+        #self._factory.sh_camera.setExposureTime(self._factory._sh_texp)
         self._shwfs_device = ShwfsDeviceManager(self._factory)
         self._slm_device = SlmDeviceManager(self._factory)
     
-    @logEnterAndExit("Setting inputs to ProcessingObjects...",
+    @logEnterAndExit("Setting ProcessingObjects inputs ...",
                       "ProcessingObjects inputs set.", level='debug')
     def _set_inputs(self):
         
@@ -196,7 +196,8 @@ class FlatteningRunner():
         fits.append(file_name, np.array(self._zc_delta_modal_command_list))
         fits.append(file_name, np.array(self._zc_integrated_modal_command_list))
 
-        
+    @logEnterAndExit("Loading data...",
+           "Data loaded.", level='debug')    
     @staticmethod
     def load_telemetry(fname):
         set_data_dir()

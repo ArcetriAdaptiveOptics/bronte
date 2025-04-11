@@ -7,6 +7,8 @@ from bronte.package_data import reconstructor_folder
 from astropy.io import fits
 from plico.rpc.zmq_remote_procedure_call import ZmqRpcTimeoutError
 import time
+from bronte.utils.set_basic_logging import get_logger
+from arte.utils.decorator import logEnterAndExit 
 
 
 class MeasuredControlMatrixCalibrator():
@@ -14,24 +16,33 @@ class MeasuredControlMatrixCalibrator():
     CALIBRATION_TYPE = 'MEASURED'
     
     def __init__(self, ftag, pp_amp_in_nm = None, xp=np):
+        
+        self._logger = get_logger("MeasuredControlMatrixCalibrator")
         self._ftag = ftag
         self._factory = measured_calibration_startup()
         self._Nmodes = self._factory.N_MODES_TO_CORRECT 
         if pp_amp_in_nm is not None:
             self._factory.PP_AMP_IN_NM = pp_amp_in_nm
             
+        self._build_processing_objects()        
+        self._set_inputs()
+        self._define_groups()
+    
+    @logEnterAndExit("Creating ProcessingObjects...",
+                  "ProcessingObjects created.", level='debug')
+    def _build_processing_objects(self):
+        
         self._prop = self._factory.disturb_propagation
         self._slopec = self._factory.slope_computer
         self._dm = self._factory.virtual_deformable_mirror
         self._bench_devices = self._factory.testbench_devices
         self._pp = self._factory.push_pull
-        self._im_calibrator = self._factory.interaction_matrix_calibrator(ftag)
+        self._im_calibrator = self._factory.interaction_matrix_calibrator(self._ftag)
         self._empty_layer = self._factory.empty_layer
         self._empty_layer.generation_time = 0
-        
-        self._set_inputs()
-        self._define_groups()
-        
+    
+    @logEnterAndExit("Setting ProcessingObjects inputs ...",
+                      "ProcessingObjects inputs set.", level='debug')
     def _set_inputs(self):
         
         self._im_calibrator.inputs['in_slopes'].set(self._slopec.outputs['out_slopes'])
@@ -39,8 +50,9 @@ class MeasuredControlMatrixCalibrator():
         self._bench_devices.inputs['ef'].set(self._prop.outputs['out_on_axis_source_ef'])
         self._slopec.inputs['in_pixels'].set(self._bench_devices.outputs['out_pixels'])
         self._dm.inputs['in_command'].set(self._pp.output)
-        self._prop.inputs['layer_list'].set([self._empty_layer, self._dm.outputs['out_layer']])
-    
+        self._prop.inputs['atmo_layer_list'].set([self._empty_layer])
+        self._prop.inputs['common_layer_list'].set([self._dm.outputs['out_layer']])
+        
         self._slopes_disp = SlopecDisplay()
         self._slopes_disp.inputs['slopes'].set(self._slopec.outputs['out_slopes'])
         self._slopes_disp.inputs['subapdata'].set(self._factory.subapertures_set)
@@ -57,24 +69,28 @@ class MeasuredControlMatrixCalibrator():
         
         self._groups = [group1, group2, group3, group4, group5, group6, group7]
     
+    @logEnterAndExit("Starting Calibration...",
+          "Calibration Terminated.", level='debug')
     def run(self):
         
         self.time_step = self._factory.TIME_STEP_IN_SEC
-        n_steps = 2*self._Nmodes
+        self._n_steps = 2*self._Nmodes
+        tf = (self._n_steps-1)*self.time_step
         self.save_calib_config()
         
         for group in self._groups:
             for obj in group:
                 obj.loop_dt = self.time_step * 1e9
-                obj.run_check(self.time_step)
+                obj.setup(self.time_step, self._n_steps)
         
-        for step in range(n_steps):
+        for step in range(self._n_steps):
             t = 0 + step * self.time_step
-            print('T=',t)
+            self._logger.info(
+                "\n+ Push/Pull @ time: %f/%f s\t steps: %d/%d" % (t, tf, step+1, self._n_steps))
             for group in self._groups:
                 for obj in group:
                     obj.check_ready(t*1e9)
-                    print('trigger', obj)
+                    self._logger.info(f"Triggering {str(obj)}")
                     obj.trigger()
                     obj.post_trigger()
         
@@ -82,8 +98,8 @@ class MeasuredControlMatrixCalibrator():
             for obj in group:
                 obj.finalize()
         
-        
-                
+    @logEnterAndExit("Saving data...",
+          "Data saved.", level='debug')        
     def save_calib_config(self):
         
         def retry_on_timeout(func, max_retries = 5000, delay = 0.001):
@@ -138,7 +154,8 @@ class MeasuredControlMatrixCalibrator():
         
         fits.writeto(file_name, self._factory._pp_ampl_vect, hdr)
 
-        
+    @logEnterAndExit("Loading data...",
+       "Data loaded.", level='debug')
     @staticmethod
     def load_calib_config(ftag):
         set_data_dir()

@@ -37,7 +37,7 @@ class SpeculaScaoFactory(BaseFactory):
     Cn2_WEIGHTS_LIST = [1 - 0.119977, 0.119977] # sum must be=1
     
     #SOURCE PARAMETERS
-    FOV = 0. # diameter in arcsec
+    FOV = 90. # diameter in arcsec
     ONAXIS_SOURCE_COORD = [0.0, 0.0] #[radius(in_arcsec), angle(in_deg)]
     ONAXIS_SOURCE_MAG = 8
     ONAXIS_SOURCE_WL_IN_NM = 750 

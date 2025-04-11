@@ -57,6 +57,7 @@ class ShwfsDeviceManager(BaseProcessingObj):
 
     def run_check(self, time_step):
         return True
+    
     #TODO: adjust plot
     def _plot(self, sh_camera_frame):
         if self.first:

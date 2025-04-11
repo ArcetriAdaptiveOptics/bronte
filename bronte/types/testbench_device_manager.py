@@ -74,8 +74,8 @@ class TestbenchDeviceManager(BaseProcessingObj):
     def run_check(self, time_step):
         return True
     
-    def setup(self, time_step):
-        return True
+    # def setup(self, time_step):
+    #     return True
 
     def _plot(self, sh_camera_frame, phase_screen_to_raster):
         if self.first:

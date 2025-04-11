@@ -64,20 +64,20 @@ class SpeculaScaoRunner():
                       "Bench Devices set.", level='debug')
     def _setup_bench_devices(self):
         
-        self._factory.sh_camera.setExposureTime(self._factory._sh_texp)
+        #self._factory.sh_camera.setExposureTime(self._factory._sh_texp)
         self._bench_devices = TestbenchDeviceManager(self._factory, 
                                 do_plots=True,
                                 target_device_idx= self._target_device_idx)
                 
-    @logEnterAndExit("Setting inputs to ProcessingObjects...",
+    @logEnterAndExit("Setting ProcessingObjects inputs ...",
                       "ProcessingObjects inputs set.", level='debug')
     def _set_inputs(self):
         
         self._atmo.inputs['seeing'].set(self._seeing.output)
         self._atmo.inputs['wind_direction'].set(self._wind_direction.output)
         self._atmo.inputs['wind_speed'].set(self._wind_speed.output)
-        self._prop.inputs['atmo_layer_list'].set(self._atmo.layer_list + [self._dm.outputs['out_layer']])
-        self._prop.inputs['common_layer_list'].set([])
+        self._prop.inputs['atmo_layer_list'].set(self._atmo.layer_list)
+        self._prop.inputs['common_layer_list'].set([self._dm.outputs['out_layer']])
     
         self._bench_devices.inputs['ef'].set(self._prop.outputs['out_on_axis_source_ef'])
         self._slopec.inputs['in_pixels'].set(self._bench_devices.outputs['out_pixels'])
@@ -233,7 +233,8 @@ class SpeculaScaoRunner():
         fits.append(file_name, np.array(self._zc_delta_modal_command_list))
         fits.append(file_name, np.array(self._zc_integrated_modal_command_list))
 
-        
+    @logEnterAndExit("Loading data...",
+           "Data loaded.", level='debug')
     @staticmethod
     def load_telemetry(fname):
         set_data_dir()

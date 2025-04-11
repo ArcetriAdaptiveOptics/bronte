@@ -34,7 +34,7 @@ class MeasuredCalibrationFactory(BaseFactory):
         super().__init__()
         self._pupil_diameter_in_pixel  = 2 * self.slm_pupil_mask.radius()
         self._pupil_pixel_pitch = self.TELESCOPE_PUPIL_DIAMETER/self._pupil_diameter_in_pixel
-        self.TIME_STEP_IN_SEC = self._sh_texp
+        self.TIME_STEP_IN_SEC = self._sh_texp*1e-3
         
     @cached_property
     def source_dict(self):
@@ -48,8 +48,8 @@ class MeasuredCalibrationFactory(BaseFactory):
     @cached_property
     def disturb_propagation(self):
         prop = AtmoPropagation(pixel_pupil = self._pupil_diameter_in_pixel,              # Linear dimension of pupil phase array
-                               pixel_pitch = self._pupil_pixel_pitch,         # Linear dimension of pupil phase array
-                               fov = self.FOV,
+                               pixel_pitch = self._pupil_pixel_pitch,
+                               source_dict = self.source_dict,         # Linear dimension of pupil phase array
                                target_device_idx=self._target_device_idx)
         return prop
 
@@ -75,7 +75,7 @@ class MeasuredCalibrationFactory(BaseFactory):
     
     @cached_property
     def testbench_devices(self):
-        self.sh_camera.setExposureTime(self._sh_texp)
+        #self.sh_camera.setExposureTime(self._sh_texp)
         tbd = TestbenchDeviceManager(
             factory = self,
             target_device_idx = self._target_device_idx)
