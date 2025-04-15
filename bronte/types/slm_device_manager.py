@@ -6,16 +6,21 @@ from specula.data_objects.electric_field import ElectricField
 import time
 import matplotlib.pyplot as plt
 from bronte.utils.set_basic_logging import get_logger
-from arte.utils.decorator import logEnterAndExit 
+from arte.utils.decorator import logEnterAndExit, override 
 
 class SlmDeviceManager(BaseProcessingObj):
     
     SLM_RESPONSE_TIME = 0.005
     
-    def __init__(self, factory, target_device_idx=None, precision=None, do_plots=True):
+    def __init__(self, factory,
+                 setup_cmd = None,
+                 target_device_idx = None,
+                 precision = None,
+                 do_plots = True):
         
         super().__init__(target_device_idx, precision)
         self._logger = get_logger("SlmDeviceManager")
+        self._setup_cmd = setup_cmd
         self._slm = factory.deformable_mirror
         self._slm_raster = factory.slm_rasterizer
         self.inputs['ef'] = InputValue(type=ElectricField)
@@ -38,7 +43,6 @@ class SlmDeviceManager(BaseProcessingObj):
         phase_screen_to_raster = self._slm_raster.get_recentered_phase_screen_on_slm_pupil_frame(phase_screen)
         self._command = self._slm_raster.reshape_map2vector(phase_screen_to_raster) + self._offset_cmd
         self._slm.set_shape(self._command)
-        
         time.sleep(self.SLM_RESPONSE_TIME)
         
         if self._do_plots:
@@ -46,6 +50,26 @@ class SlmDeviceManager(BaseProcessingObj):
 
     def run_check(self, time_step):
         return True
+    
+    # @override
+    # @logEnterAndExit("SLM ProcObj  Setup...",
+    #               "SLM ProcObj Setup accomplished.", level='debug')
+    # def setup(self, loop_dt, loop_niters):
+    #
+    #     if self._setup_cmd is None:
+    #         self._setup_cmd = self._slm.get_shape()
+    #     else:
+    #         self._slm.set_shape(self._setup_cmd)
+    #         time.sleep(self.SLM_RESPONSE_TIME)
+    #
+    #     self._loop_dt = loop_dt
+    #     self._loop_niters = loop_niters
+    #     if self.target_device_idx >= 0:
+    #         self._target_device.use()
+    #     for name, input in self.inputs.items():
+    #         if input.get(self.target_device_idx) is None and not input.optional:
+    #             raise ValueError(f'Input {name} for object {self} has not been set')
+    #     return True
     
     #TODO: adjust plot
     def _plot(self, phase_screen_to_raster):

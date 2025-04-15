@@ -110,6 +110,12 @@ class FlatteningRunner():
     @logEnterAndExit("Starting Loop...",
               "Loop Terminated.", level='debug')
     def run(self, Nsteps = 30):
+
+        print(f'{self._dm.if_commands.shape=}')
+        print(f'{self._dm._ifunc.influence_function.shape=}')
+        print(f'{self._dm._ifunc.idx_inf_func[0].shape=}')
+        print(f'{self._dm._ifunc.idx_inf_func[1].shape=}')
+        print(f'{self._dm.layer.phaseInNm.shape=}')
         
         self._n_steps = Nsteps
         # time step of the simulated loop isnt it QM
@@ -119,6 +125,7 @@ class FlatteningRunner():
         for group in self._groups:
             for obj in group:
                 obj.loop_dt = self.time_step * 1e9
+                #self._logger.info(self.time_step * 1e9)
                 #obj.run_check(self.time_step)
                 obj.setup(self.time_step * 1e9, self._n_steps)
     
@@ -128,10 +135,26 @@ class FlatteningRunner():
                 "\n+ Loop @ time: %f/%f s\t steps: %d/%d" % (t, tf, step+1, Nsteps))
             for group in self._groups:
                 for obj in group:
+                    print('Before ', obj)
+                    print(f'{self._dm.if_commands.shape=}')
+                    print(f'{self._dm._ifunc.influence_function.shape=}')
+                    print(f'{self._dm._ifunc.idx_inf_func[0].shape=}')
+                    print(f'{self._dm._ifunc.idx_inf_func[1].shape=}')
+                    print(f'{self._dm.layer.phaseInNm.shape=}')
+                        
                     obj.check_ready(t*1e9)
                     self._logger.info(f"Triggering {str(obj)}")
                     obj.trigger()
+                    self._logger.info(f"PostTriggering {str(obj)}")
                     obj.post_trigger()
+
+                    print('After', obj)
+                    print(f'{self._dm.if_commands.shape=}')
+                    print(f'{self._dm._ifunc.influence_function.shape=}')
+                    print(f'{self._dm._ifunc.idx_inf_func[0].shape=}')
+                    print(f'{self._dm._ifunc.idx_inf_func[1].shape=}')
+                    print(f'{self._dm.layer.phaseInNm.shape=}')
+
             self._update_telemetry()
             
         for group in self._groups:

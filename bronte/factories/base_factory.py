@@ -15,7 +15,7 @@ class BaseFactory():
     SH_FRAMES2AVERAGE  = 1
     SLM_PUPIL_CENTER = (579, 968)#YX in pixel
     SLM_PUPIL_RADIUS = 568 # in pixel
-    N_MODES_TO_CORRECT = 10#200
+    N_MODES_TO_CORRECT = 200
     
     def __init__(self):
         self._target_device_idx= -1
@@ -76,5 +76,5 @@ class BaseFactory():
         return self._sh_master_bkg
     
     @property
-    def pc_camera_master_bkg(self):
+    def psf_camera_master_bkg(self):
         return self._psfcam_master_bkg

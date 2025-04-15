@@ -7,16 +7,22 @@ import time
 from bronte.utils.data_cube_cleaner import DataCubeCleaner
 import matplotlib.pyplot as plt
 from bronte.utils.set_basic_logging import get_logger
-from arte.utils.decorator import logEnterAndExit 
+from arte.utils.decorator import logEnterAndExit, override, _logEnterAndExit
 
 class TestbenchDeviceManager(BaseProcessingObj):
     
     SLM_RESPONSE_TIME = 0.005
     
-    def __init__(self, factory, target_device_idx=None, precision=None, do_plots=True):
+    def __init__(self, factory,
+                 setup_cmd = None,
+                 target_device_idx = None,
+                 precision = None,
+                 do_plots = True):
         
         super().__init__(target_device_idx, precision)
         self._logger = get_logger("TestBenchDeviceManager")
+        #self._factory = factory
+        self._setup_cmd = setup_cmd
         self._slm = factory.deformable_mirror
         self._sh_camera = factory.sh_camera
         self._sh_camera_bkg = factory.sh_camera_master_bkg
@@ -74,7 +80,28 @@ class TestbenchDeviceManager(BaseProcessingObj):
     def run_check(self, time_step):
         return True
     
-    # def setup(self, time_step):
+    # @override
+    # @logEnterAndExit("Bench Devices ProcObj Setup...",
+    #                   "Bench Devices Setup accomplished.", level='debug')
+    # def setup(self, loop_dt, loop_niters):
+    #
+    #     if self._setup_cmd is None:
+    #         self._setup_cmd = self._slm.get_shape()
+    #     else:
+    #         self._slm.set_shape(self._setup_cmd)
+    #         time.sleep(self.SLM_RESPONSE_TIME)
+    #
+    #     self._factory._load_sh_camera_master_bkg()
+    #     self._sh_camera_bkg = self._factory.sh_camera_master_bkg
+    #     self._factory._load_psf_camera_master_bkg()
+    #
+    #     self._loop_dt = loop_dt
+    #     self._loop_niters = loop_niters
+    #     if self.target_device_idx >= 0:
+    #         self._target_device.use()
+    #     for name, input in self.inputs.items():
+    #         if input.get(self.target_device_idx) is None and not input.optional:
+    #             raise ValueError(f'Input {name} for object {self} has not been set')
     #     return True
 
     def _plot(self, sh_camera_frame, phase_screen_to_raster):

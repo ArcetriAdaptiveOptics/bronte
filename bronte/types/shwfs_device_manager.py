@@ -5,7 +5,7 @@ import time
 from bronte.utils.data_cube_cleaner import DataCubeCleaner
 import matplotlib.pyplot as plt
 from bronte.utils.set_basic_logging import get_logger
-from arte.utils.decorator import logEnterAndExit 
+from arte.utils.decorator import logEnterAndExit, override 
 
 class ShwfsDeviceManager(BaseProcessingObj):
      
@@ -15,6 +15,7 @@ class ShwfsDeviceManager(BaseProcessingObj):
         
         super().__init__(target_device_idx, precision)
         self._logger = get_logger("ShwfsDeviceManager")
+        #self._factory = factory
         self._sh_camera = factory.sh_camera
         self._sh_camera_bkg = factory.sh_camera_master_bkg
         self.output_frame = Pixels(*self._sh_camera.shape())
@@ -33,9 +34,12 @@ class ShwfsDeviceManager(BaseProcessingObj):
         #TODO: manage the different integration times for the each wfs group
         # how to reproduce faint source? shall we play with the texp of the hardware?
         #TODO: load dark and bkg for sh frame reduction
-        
+        print("acquiring frame ")
         sh_camera_frame = self._sh_camera.getFutureFrames(self._Nframes).toNumpyArray()
-        
+        #sh_camera_frame= np.zeros((2048,2048))
+        print("frame acquired")
+        print(sh_camera_frame.shape)
+        print(sh_camera_frame.dtype)
         if self._Nframes > 1:
             if self._sh_camera_bkg is not None:
                 sh_camera_frame = DataCubeCleaner.get_master_from_rawCube(
@@ -57,6 +61,23 @@ class ShwfsDeviceManager(BaseProcessingObj):
 
     def run_check(self, time_step):
         return True
+    
+    # @override
+    # @logEnterAndExit("SHWFS ProcObj Setup...",
+    #           "SHWFS ProcObj Setup accomplished.", level='debug')
+    # def setup(self, loop_dt, loop_niters):
+    #
+    #     self._factory._load_sh_camera_master_bkg()
+    #     self._sh_camera_bkg = self._factory.sh_camera_master_bkg
+    #
+    #     self._loop_dt = loop_dt
+    #     self._loop_niters = loop_niters
+    #     if self.target_device_idx >= 0:
+    #         self._target_device.use()
+    #     for name, input in self.inputs.items():
+    #         if input.get(self.target_device_idx) is None and not input.optional:
+    #             raise ValueError(f'Input {name} for object {self} has not been set')
+    #     return True
     
     #TODO: adjust plot
     def _plot(self, sh_camera_frame):

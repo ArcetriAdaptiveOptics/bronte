@@ -32,5 +32,5 @@ def kolmogorov_like_phase_screens(ftag = '250409_090000'):
     
     psg = PhaseScreenGenerator(sf)
     psg.PROPAGATION_DIR = 'on_axis'
-    psg.run(30)
+    psg.run(3000000)
     psg.save(ftag)
