@@ -7,7 +7,7 @@ import time
 from bronte.utils.data_cube_cleaner import DataCubeCleaner
 import matplotlib.pyplot as plt
 from bronte.utils.set_basic_logging import get_logger
-from arte.utils.decorator import logEnterAndExit, override, _logEnterAndExit
+from arte.utils.decorator import logEnterAndExit, override
 
 class TestbenchDeviceManager(BaseProcessingObj):
     

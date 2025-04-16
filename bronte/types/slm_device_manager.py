@@ -32,7 +32,7 @@ class SlmDeviceManager(BaseProcessingObj):
             self._offset_cmd = self._get_offset_command(factory.modal_offset)
         
         if self._do_plots:
-            self.fig, self.axs = plt.subplots(2, figsize=(10, 10))
+            self.fig, self.axs = plt.subplots(1, figsize=(8, 4))
             
     @logEnterAndExit("Triggering SLM...",
                   "SLM Triggered.", level='debug')
@@ -75,8 +75,8 @@ class SlmDeviceManager(BaseProcessingObj):
     def _plot(self, phase_screen_to_raster):
         if self.first:
             # Prima chiamata: crea le immagini e le colorbar
-            self.img0 = self.axs[0].imshow(phase_screen_to_raster, aspect='auto')
-            self.colorbar0 = self.fig.colorbar(self.img0, ax=self.axs[0])
+            self.img0 = self.axs.imshow(phase_screen_to_raster, aspect='auto')
+            self.colorbar0 = self.fig.colorbar(self.img0, ax=self.axs, label = 'm')
             
             self.first = False
         else:

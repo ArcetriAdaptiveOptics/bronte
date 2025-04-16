@@ -25,7 +25,7 @@ class ShwfsDeviceManager(BaseProcessingObj):
         self.first = True
         
         if self._do_plots:
-            self.fig, self.axs = plt.subplots(2, figsize=(10, 10))
+            self.fig, self.axs = plt.subplots(1, figsize=(12, 12))
 
     @logEnterAndExit("Triggering SHWFS...",
                   "SHWFS Triggered.", level='debug')
@@ -34,12 +34,12 @@ class ShwfsDeviceManager(BaseProcessingObj):
         #TODO: manage the different integration times for the each wfs group
         # how to reproduce faint source? shall we play with the texp of the hardware?
         #TODO: load dark and bkg for sh frame reduction
-        print("acquiring frame ")
+        #print("acquiring frame ")
         sh_camera_frame = self._sh_camera.getFutureFrames(self._Nframes).toNumpyArray()
         #sh_camera_frame= np.zeros((2048,2048))
-        print("frame acquired")
-        print(sh_camera_frame.shape)
-        print(sh_camera_frame.dtype)
+        # print("frame acquired")
+        # print(sh_camera_frame.shape)
+        # print(sh_camera_frame.dtype)
         if self._Nframes > 1:
             if self._sh_camera_bkg is not None:
                 sh_camera_frame = DataCubeCleaner.get_master_from_rawCube(
@@ -83,8 +83,8 @@ class ShwfsDeviceManager(BaseProcessingObj):
     def _plot(self, sh_camera_frame):
         if self.first:
             # Prima chiamata: crea le immagini e le colorbar
-            self.img0 = self.axs[0].imshow(sh_camera_frame, aspect='auto')
-            self.colorbar0 = self.fig.colorbar(self.img0, ax=self.axs[0])
+            self.img0 = self.axs.imshow(sh_camera_frame, aspect='auto')
+            self.colorbar0 = self.fig.colorbar(self.img0, ax=self.axs, label = 'ADU')
             
             self.first = False
         else:

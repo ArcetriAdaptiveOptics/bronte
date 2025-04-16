@@ -70,7 +70,7 @@ class FlatteningRunner():
         
         self._modes_disp = ModesDisplay()
         self._modes_disp.inputs['modes'].set(self._rec.modes)
-        self._slopes_disp = SlopecDisplay()
+        self._slopes_disp = SlopecDisplay(disp_factor = 3)
         self._slopes_disp.inputs['slopes'].set(self._slopec.outputs['out_slopes'])
         self._slopes_disp.inputs['subapdata'].set(self._factory.subapertures_set)
         
@@ -111,11 +111,11 @@ class FlatteningRunner():
               "Loop Terminated.", level='debug')
     def run(self, Nsteps = 30):
 
-        print(f'{self._dm.if_commands.shape=}')
-        print(f'{self._dm._ifunc.influence_function.shape=}')
-        print(f'{self._dm._ifunc.idx_inf_func[0].shape=}')
-        print(f'{self._dm._ifunc.idx_inf_func[1].shape=}')
-        print(f'{self._dm.layer.phaseInNm.shape=}')
+        # print(f'{self._dm.if_commands.shape=}')
+        # print(f'{self._dm._ifunc.influence_function.shape=}')
+        # print(f'{self._dm._ifunc.idx_inf_func[0].shape=}')
+        # print(f'{self._dm._ifunc.idx_inf_func[1].shape=}')
+        # print(f'{self._dm.layer.phaseInNm.shape=}')
         
         self._n_steps = Nsteps
         # time step of the simulated loop isnt it QM
@@ -135,12 +135,12 @@ class FlatteningRunner():
                 "\n+ Loop @ time: %f/%f s\t steps: %d/%d" % (t, tf, step+1, Nsteps))
             for group in self._groups:
                 for obj in group:
-                    print('Before ', obj)
-                    print(f'{self._dm.if_commands.shape=}')
-                    print(f'{self._dm._ifunc.influence_function.shape=}')
-                    print(f'{self._dm._ifunc.idx_inf_func[0].shape=}')
-                    print(f'{self._dm._ifunc.idx_inf_func[1].shape=}')
-                    print(f'{self._dm.layer.phaseInNm.shape=}')
+                    # print('Before ', obj)
+                    # print(f'{self._dm.if_commands.shape=}')
+                    # print(f'{self._dm._ifunc.influence_function.shape=}')
+                    # print(f'{self._dm._ifunc.idx_inf_func[0].shape=}')
+                    # print(f'{self._dm._ifunc.idx_inf_func[1].shape=}')
+                    # print(f'{self._dm.layer.phaseInNm.shape=}')
                         
                     obj.check_ready(t*1e9)
                     self._logger.info(f"Triggering {str(obj)}")
@@ -148,12 +148,12 @@ class FlatteningRunner():
                     self._logger.info(f"PostTriggering {str(obj)}")
                     obj.post_trigger()
 
-                    print('After', obj)
-                    print(f'{self._dm.if_commands.shape=}')
-                    print(f'{self._dm._ifunc.influence_function.shape=}')
-                    print(f'{self._dm._ifunc.idx_inf_func[0].shape=}')
-                    print(f'{self._dm._ifunc.idx_inf_func[1].shape=}')
-                    print(f'{self._dm.layer.phaseInNm.shape=}')
+                    # print('After', obj)
+                    # print(f'{self._dm.if_commands.shape=}')
+                    # print(f'{self._dm._ifunc.influence_function.shape=}')
+                    # print(f'{self._dm._ifunc.idx_inf_func[0].shape=}')
+                    # print(f'{self._dm._ifunc.idx_inf_func[1].shape=}')
+                    # print(f'{self._dm.layer.phaseInNm.shape=}')
 
             self._update_telemetry()
             

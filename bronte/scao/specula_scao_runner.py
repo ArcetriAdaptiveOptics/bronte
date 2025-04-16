@@ -87,7 +87,7 @@ class SpeculaScaoRunner():
         
         self._modes_disp = ModesDisplay()
         self._modes_disp.inputs['modes'].set(self._rec.modes)
-        self._slopes_disp = SlopecDisplay()
+        self._slopes_disp = SlopecDisplay(disp_factor = 3)
         self._slopes_disp.inputs['slopes'].set(self._slopec.outputs['out_slopes'])
         self._slopes_disp.inputs['subapdata'].set(self._factory.subapertures_set)
     
