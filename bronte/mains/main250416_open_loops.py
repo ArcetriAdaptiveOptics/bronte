@@ -1,6 +1,6 @@
 import numpy as np 
 from bronte import startup
-from bronte.scao.open_loop_runner_new import OpenLoopRunner
+from bronte.scao.open_loop_runner import OpenLoopRunner
 
 def main_ol_on_tilt(ftag = '250416_161600'):
     
