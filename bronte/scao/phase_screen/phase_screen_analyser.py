@@ -19,7 +19,7 @@ class PhaseScreenAnalyser():
         self._slm_pupil_mask = self._get_slm_pupil_mask()
         self._sr = SlmRasterizer(self._slm_pupil_mask, self.corrected_modes)
         self._noll_index_vector = np.arange(2, self.corrected_modes + 2)
-        self._vk_var_in_rad = self._get_vk_var_in_rad()
+        self._vk_var_in_rad2 = self._get_vk_var_in_rad()
         self._zc_mean = self._modal_coef_cube.mean(axis = 0)
         self._zc_std = self._modal_coef_cube.std(axis = 0)
         
@@ -49,22 +49,22 @@ class PhaseScreenAnalyser():
         
     def _get_vk_var_in_rad(self):
         
-        scale = (self.telescope_pupil_diameter/self.r0)**2
+        scale = (self.telescope_pupil_diameter/self.r0)**(5./3)
         L0norm = self.L0/self.telescope_pupil_diameter
         vk_var = np.zeros(self.corrected_modes)
         
         for idx, j in enumerate(self._noll_index_vector):
-            vk = VonKarmanSpatialCovariance(j, j, L0norm)
+            vk = VonKarmanSpatialCovariance(int(j),int(j), L0norm)
             vk_var[idx] = vk.get_covariance()
         
-        vk_var_in_rad = 4*np.pi**2 * vk_var * scale
-        return vk_var_in_rad
+        vk_var_in_rad2 = 4*np.pi**2 * vk_var * scale
+        return vk_var_in_rad2
     
     def display_modal_plot(self):
         
         zc_var = self._zc_std**2
         obs_zc_std = np.sqrt(zc_var)
-        exp_zc_std = np.sqrt(self._vk_var_in_rad)*self.wl*0.5/np.pi
+        exp_zc_std = np.sqrt(self._vk_var_in_rad2)*self.wl*0.5/np.pi
         print(obs_zc_std/exp_zc_std)
         plt.figure()
         plt.clf()

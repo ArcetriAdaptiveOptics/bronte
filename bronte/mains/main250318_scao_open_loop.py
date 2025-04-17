@@ -1,6 +1,6 @@
 import numpy as np 
 from bronte import startup
-from bronte.scao.open_loop_runner import OpenLoopRunner
+from bronte.scao.open_loop_runner_old import OpenLoopRunner
 from bronte.scao.telemetry.scao_telemetry_data_analyser import ScaoTelemetryDataAnalyser
 
 def main():

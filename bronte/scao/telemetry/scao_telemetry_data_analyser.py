@@ -43,7 +43,11 @@ class ScaoTelemetryDataAnalyser():
         for n in range(self.Nstep):
             
             slopes_at_step_n = self._slopes_vect[n]
-            slope_map = Slopes(slopes = slopes_at_step_n).get2d()#None, self._subapdata)
+            #slope_map = Slopes(slopes = slopes_at_step_n).get2d()#None, self._subapdata)
+            slope_obj = Slopes(slopes = slopes_at_step_n)
+            slope_obj.single_mask = self._subapdata.single_mask()
+            slope_obj.display_map = self._subapdata.display_map
+            slope_map =  slope_obj.get2d()
             slope_maps_x.append(np.ma.array(data = slope_map[0], mask = slope_mask))
             slope_maps_y.append(np.ma.array(data = slope_map[1], mask = slope_mask))
         

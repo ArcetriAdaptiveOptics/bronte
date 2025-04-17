@@ -233,8 +233,8 @@ class SpeculaScaoRunner():
         fits.append(file_name, np.array(self._zc_delta_modal_command_list))
         fits.append(file_name, np.array(self._zc_integrated_modal_command_list))
 
-    @logEnterAndExit("Loading data...",
-           "Data loaded.", level='debug')
+    # @logEnterAndExit("Loading data...",
+    #        "Data loaded.", level='debug')
     @staticmethod
     def load_telemetry(fname):
         set_data_dir()

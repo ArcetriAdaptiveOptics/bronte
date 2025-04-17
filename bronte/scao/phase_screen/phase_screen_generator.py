@@ -138,8 +138,6 @@ class PhaseScreenGenerator():
         hdr['SLM_YX'] = str(self._factory.SLM_PUPIL_CENTER) # YX pixel coordinates
         
         fits.writeto(file_name, np.array(self._modal_coefficients_list), hdr)    
-    @logEnterAndExit("Loading data...",
-               "Data loaded.", level='debug')
     @staticmethod
     def load_phase_screen_fits_data(ftag):
         set_data_dir()

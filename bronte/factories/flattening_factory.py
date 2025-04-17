@@ -51,7 +51,9 @@ class SpeculaFlatteningFactory(BaseFactory):
        
         if self.MODAL_OFFSET_TAG is not None:
             modal_offset = self.modal_offset[:self.N_MODES_TO_CORRECT]
-            
+        # added factor 2 missed on IFs normalization
+        N_pp = 2
+        recmat.recmat = N_pp*recmat.recmat    
         return Modalrec(self.N_MODES_TO_CORRECT, recmat=recmat, modal_offset=modal_offset)
     
     @cached_property

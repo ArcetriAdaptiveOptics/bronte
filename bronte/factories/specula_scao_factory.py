@@ -72,7 +72,9 @@ class SpeculaScaoFactory(BaseFactory):
     def reconstructor(self):
         recmat = Recmat.restore(package_data.reconstructor_folder() / (self.REC_MAT_TAG + "_bronte_rec.fits"))
         modal_offset= np.zeros(self.N_MODES_TO_CORRECT)
-       
+        #added factor 2 missed on IFs normalization
+        N_pp = 2
+        recmat.recmat = N_pp*recmat.recmat  
         if self.MODAL_OFFSET_TAG is not None:
             modal_offset = self.modal_offset[:self.N_MODES_TO_CORRECT]
             
