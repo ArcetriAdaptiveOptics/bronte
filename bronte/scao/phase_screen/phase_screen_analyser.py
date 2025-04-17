@@ -63,7 +63,7 @@ class PhaseScreenAnalyser():
     def display_modal_plot(self):
         
         zc_var = self._zc_std**2
-        obs_zc_std = np.sqrt(zc_var)
+        obs_zc_std = np.sqrt(zc_var)*np.sqrt(2)
         exp_zc_std = np.sqrt(self._vk_var_in_rad2)*self.wl*0.5/np.pi
         print(obs_zc_std/exp_zc_std)
         plt.figure()

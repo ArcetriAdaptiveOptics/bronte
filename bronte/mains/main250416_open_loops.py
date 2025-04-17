@@ -39,6 +39,7 @@ def show_plot(ftag_mode, ftag_wfc):
     
     dzc_wfc_mean = dzc_wfc.mean(axis=0)
     dzc_wfc_mode = dzc_mode.mean(axis=0)
+    #TODO: fare std
     noll_index = np.arange(2,len(dzc_wfc_mean)+2)
     import matplotlib.pyplot as plt
     
