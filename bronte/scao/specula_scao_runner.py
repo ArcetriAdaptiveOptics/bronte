@@ -199,6 +199,7 @@ class SpeculaScaoRunner():
             hdr['OFF_TAG'] = 'NA'
         
         # ATMO PARAMETERS
+        hdr['ATM_SEED'] = self._factory.ATMO_SEED
         hdr['SEEING'] = self._factory.SEEING
         hdr['L0_IN_M'] = self._factory.OUTER_SCALE_L0
         hdr['D_IN_M'] = self._factory.TELESCOPE_PUPIL_DIAMETER

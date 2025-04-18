@@ -38,15 +38,28 @@ def show_plot(ftag_mode, ftag_wfc):
     h_wfc,s_wfc,dzc_wfc = OpenLoopRunner.load_telemetry(ftag_wfc)
     
     dzc_wfc_mean = dzc_wfc.mean(axis=0)
-    dzc_wfc_mode = dzc_mode.mean(axis=0)
-    #TODO: fare std
+    dzc_mode_mean = dzc_mode.mean(axis=0)
+    
+    dzc_wfc_std = dzc_wfc.std(axis=0)
+    dzc_mode_std = dzc_mode.std(axis=0)
+    
+    #TODO: controllare std
     noll_index = np.arange(2,len(dzc_wfc_mean)+2)
     import matplotlib.pyplot as plt
     
     plt.figure()
     plt.clf()
-    plt.plot(noll_index, dzc_wfc_mean - dzc_wfc_mode, '.-',label = 'wfc - mode')
+    plt.plot(noll_index, dzc_wfc_mean - dzc_mode_mean, '.-',label = 'wfc - mode')
     plt.xlabel('Noll index')
     plt.ylabel('Modal coefficients m rms wf')
+    plt.legend(loc = 'best')
+    plt.grid('--', alpha = 0.3)
+    
+    plt.figure()
+    plt.clf()
+    plt.plot(noll_index, dzc_wfc_std,'.-',label = 'wfc')
+    plt.plot(noll_index, dzc_mode_std,'.-',label = 'mode')
+    plt.xlabel('Noll index')
+    plt.ylabel('Modal coefficients std m rms wf')
     plt.legend(loc = 'best')
     plt.grid('--', alpha = 0.3)

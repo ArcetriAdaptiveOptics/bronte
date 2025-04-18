@@ -58,6 +58,7 @@ class SpeculaScaoFactory(BaseFactory):
         super().__init__()
         self._pupil_diameter_in_pixel  = 2 * self.slm_pupil_mask.radius()
         self._pupil_pixel_pitch = self.TELESCOPE_PUPIL_DIAMETER/self._pupil_diameter_in_pixel
+    
     @cached_property
     def subapertures_set(self):
         subapdata = SubapData.restore_from_bronte(
