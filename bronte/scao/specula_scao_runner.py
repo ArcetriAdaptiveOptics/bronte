@@ -7,10 +7,9 @@ from specula.display.modes_display import ModesDisplay
 from specula.display.slopec_display import SlopecDisplay
 from bronte.package_data import telemetry_folder
 from astropy.io import fits
-from plico.rpc.zmq_remote_procedure_call import ZmqRpcTimeoutError
-import time
 from bronte.utils.set_basic_logging import get_logger
 from arte.utils.decorator import logEnterAndExit 
+from bronte.utils.retry_on_zmqrpc_timeout_error import retry_on_timeout
 
 class SpeculaScaoRunner():
     
@@ -163,15 +162,15 @@ class SpeculaScaoRunner():
               "Data saved.", level='debug')
     def save_telemetry(self, fname):
         
-        def retry_on_timeout(func, max_retries = 5000, delay = 0.001):
-            '''Retries a function call if ZmqRpcTimeoutError occurs.'''
-            for attempt in range(max_retries):
-                try:
-                    return func()
-                except ZmqRpcTimeoutError:
-                    print(f"Timeout error, retrying {attempt + 1}/{max_retries}...")
-                    time.sleep(delay)
-            raise ZmqRpcTimeoutError("Max retries reached")
+        # def retry_on_timeout(func, max_retries = 5000, delay = 0.001):
+        #     '''Retries a function call if ZmqRpcTimeoutError occurs.'''
+        #     for attempt in range(max_retries):
+        #         try:
+        #             return func()
+        #         except ZmqRpcTimeoutError:
+        #             print(f"Timeout error, retrying {attempt + 1}/{max_retries}...")
+        #             time.sleep(delay)
+        #     raise ZmqRpcTimeoutError("Max retries reached")
         
         psf_camera_texp = retry_on_timeout(lambda: self._factory.psf_camera.exposureTime())
         psf_camera_fps = retry_on_timeout(lambda: self._factory.psf_camera.getFrameRate())
@@ -216,7 +215,8 @@ class SpeculaScaoRunner():
         
         # LOOP PARAMETERS
         hdr['TSTEP_S'] = self.time_step # in seconds
-        hdr['INT_GAIN'] = self._factory.INT_GAIN
+        if np.isscalar(self._factory.INT_GAIN):
+            hdr['INT_GAIN'] = self._factory.INT_GAIN
         hdr['INT_DEL'] = self._factory.INT_DELAY # in frames
         hdr['N_STEPS'] = self._n_steps
         hdr['N_MODES'] = self._factory.N_MODES_TO_CORRECT
@@ -233,6 +233,8 @@ class SpeculaScaoRunner():
         fits.writeto(file_name, np.array(self._slopes_vector_list), hdr)
         fits.append(file_name, np.array(self._zc_delta_modal_command_list))
         fits.append(file_name, np.array(self._zc_integrated_modal_command_list))
+        if isinstance(self._factory.INT_GAIN, np.ndarray):
+            fits.append(file_name, self._factory.INT_GAIN)
 
     # @logEnterAndExit("Loading data...",
     #        "Data loaded.", level='debug')
