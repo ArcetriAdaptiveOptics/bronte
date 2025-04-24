@@ -30,13 +30,13 @@ def main(ftag = '250418'):
     sf.N_MODES_TO_CORRECT = 200
     sf.TIME_STEP_IN_SEC = 0.001
     # TODO: set ad hoc gains 
-    gain = -0.3 * np.ones(sf.N_MODES_TO_CORRECT) #* 1e-9
-    bad_mode_index = 187 
-    gain[bad_mode_index] = -0.3*0.5
+    #gain = -0.3 * np.ones(sf.N_MODES_TO_CORRECT) #* 1e-9
+    #bad_mode_index = 187 
+    #gain[bad_mode_index] = -0.3*0.5
     #sf.INT_GAIN = -0.3
-    #sf.INT_GAIN = np.zeros(sf.N_MODES_TO_CORRECT)
-    sf.INT_GAIN = gain
-    T = 10
+    sf.INT_GAIN = np.zeros(sf.N_MODES_TO_CORRECT)
+    #sf.INT_GAIN =  gain
+    T = 3 #10
     Nsteps = int(T/sf.TIME_STEP_IN_SEC)
     
     ssr = SpeculaScaoRunner(sf)

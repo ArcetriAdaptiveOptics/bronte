@@ -17,6 +17,7 @@ from astropy.io import fits
 class ScaoTelemetryDataAnalyser():
     
     ARCSEC2RAD = np.pi/(180*60*60)
+    N_PUSH_PULL = 2
     
     def __init__(self, ftag):
         set_data_dir()
@@ -80,7 +81,6 @@ class ScaoTelemetryDataAnalyser():
     #     return var_sl_in_rad2
     def _compute_pseudo_open_loop_modal_cmds(self):
         
-        
         pol_modal_cmd_list = []
         for idx in range(self.Nstep-self.integ_delay):
             pol_modal_cmd = self._integ_cmds[idx] + self._delta_cmds[idx+self.integ_delay]
@@ -93,7 +93,7 @@ class ScaoTelemetryDataAnalyser():
         self.seeing = self._hdr.get('SEEING', 'NA')#arcsec
         self.L0 = self._hdr.get('L0_IN_M', 'NA')
         self.telescope_pupil_diameter = self._hdr.get('D_IN_M', 'NA')
-        self.integ_gain = self._hdr['INT_GAIN']
+        self.integ_gain = self._hdr.get('INT_GAIN','AD_HOC')
         self.integ_delay = self._hdr['INT_DEL']
         self.loop_time_step = self._hdr['TSTEP_S']#time step of the loop in sec
         self.Nstep = self._hdr['N_STEPS']
@@ -120,6 +120,8 @@ class ScaoTelemetryDataAnalyser():
         
         file_name = reconstructor_folder() / (intmat_tag + '_bronte_im.fits')
         int_mat = Intmat.restore(file_name)
+        Npp = 2
+        int_mat._intmat = int_mat._intmat / Npp
         return int_mat
     
     @staticmethod
@@ -127,6 +129,8 @@ class ScaoTelemetryDataAnalyser():
         
         file_name = reconstructor_folder() / (recmat_tag + '_bronte_rec.fits')
         rec_mat = Recmat.restore(file_name)
+        Npp = 2
+        rec_mat.recmat = Npp * rec_mat.recmat
         return rec_mat
     
     @staticmethod
@@ -135,6 +139,31 @@ class ScaoTelemetryDataAnalyser():
         subapdata = SubapData.restore_from_bronte(
             subaperture_set_folder() / (subap_tag + ".fits"))
         return subapdata
+    
+    ###_______________________ DISPLAY_______________________________
+    
+    def display_delta_cmds_temporal_evolution(self, mode_index_list = [2,3,4], time_range = None):
+        
+        plt.figure()
+        plt.clf()
+        if self._ol_cmds is not None:
+            N = np.min((self._ol_cmds.shape[0], self._delta_cmds.shape[0]))
+            time = np.arange(N)*self.loop_time_step
+        else:
+            time = np.arange(self.Nstep)*self.loop_time_step
+            N = self.Nstep
+        for j in mode_index_list:
+            k = j-2
+            plt.plot(time, self._delta_cmds[:N, k], '-', label = f"c{j} CL")
+            if self._ol_cmds is not None:
+                plt.plot(time, self._ol_cmds[:N, k], '--', label = f"c{j} OL")
+            
+        plt.legend(loc='best')
+        plt.grid('--', alpha = 0.3)
+        plt.ylabel('Delta modal command [m] rms wf')
+        plt.xlabel('Time [s]')
+        if time_range is not None:
+            plt.xlim(np.min(time_range), np.max(time_range))
     
     def display_delta_modal_commads_at_nth_step(self, step, mode_index_list = None):
         """
@@ -247,6 +276,8 @@ class ScaoTelemetryDataAnalyser():
         plt.legend(loc='best')
         plt.grid('--', alpha=0.3)
     
+    ### ____________________SAVE/LOAD___________________________________
+    
     def save_coeff_as_modal_offset(self, coeff_vector, ftag):
         
         file_name = modal_offsets_folder() / (ftag + '.fits')
@@ -256,8 +287,11 @@ class ScaoTelemetryDataAnalyser():
         fits.writeto(file_name, modal_offset, hdr)
         
     def load_turbulent_coefficients(self, ftag):
-        hdr, self._ol_cmds = PhaseScreenGenerator.load_phase_screen_fits_data(ftag)
+        hdr, self._psg_cmds = PhaseScreenGenerator.load_phase_screen_fits_data(ftag)
         self._check_headers(hdr)
+    
+    def load_open_loop_modal_commands(self, ftag):
+        self._ol_hdr, self._ol_slopes, self._ol_cmds, _ = SpeculaScaoRunner.load_telemetry(ftag)
         
     #TODO: check if the parameters are the same
     def _check_headers(self, hdr):
