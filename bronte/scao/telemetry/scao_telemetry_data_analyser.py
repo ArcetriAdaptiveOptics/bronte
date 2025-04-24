@@ -142,11 +142,11 @@ class ScaoTelemetryDataAnalyser():
     
     ###_______________________ DISPLAY_______________________________
     
-    def display_delta_cmds_temporal_evolution(self, mode_index_list = [2,3,4], time_range = None):
+    def display_delta_cmds_temporal_evolution(self, mode_index_list = [2,3,4], display_ol=None, time_range = None):
         
         plt.figure()
         plt.clf()
-        if self._ol_cmds is not None:
+        if display_ol is not None:
             N = np.min((self._ol_cmds.shape[0], self._delta_cmds.shape[0]))
             time = np.arange(N)*self.loop_time_step
         else:
@@ -155,7 +155,7 @@ class ScaoTelemetryDataAnalyser():
         for j in mode_index_list:
             k = j-2
             plt.plot(time, self._delta_cmds[:N, k], '-', label = f"c{j} CL")
-            if self._ol_cmds is not None:
+            if display_ol is not None:
                 plt.plot(time, self._ol_cmds[:N, k], '--', label = f"c{j} OL")
             
         plt.legend(loc='best')

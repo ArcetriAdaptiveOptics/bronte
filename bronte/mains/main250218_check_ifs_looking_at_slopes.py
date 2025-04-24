@@ -38,19 +38,18 @@ class DisplaySlopeMapsFromIfs():
         slope_maps_y = []
         idl_slope_mask = self._subapdata.single_mask()
         slope_mask = np.ones(idl_slope_mask.shape) - idl_slope_mask
-       # slope_mask[idl_slope_mask == 1.] = 0
         
         for idx in range(n_modes):
             ifs = self._intmat._intmat[idx]
-            slope_map = Slopes(slopes=ifs).get2d()#None, self._subapdata)
-            # slope_mask = np.zeros(slope_map[0].shape)
-            # slope_mask[slope_map[0] == 0.] = 1
+            slope_obj = Slopes(slopes = ifs)
+            slope_obj.single_mask = self._subapdata.single_mask()
+            slope_obj.display_map = self._subapdata.display_map
+            slope_map =  slope_obj.get2d()
             slope_maps_x.append(np.ma.array(data = slope_map[0], mask = slope_mask))
             slope_maps_y.append(np.ma.array(data = slope_map[1], mask = slope_mask))
         
         self._slope_maps_y = np.ma.array(slope_maps_y)
         self._slope_maps_x = np.ma.array(slope_maps_x)
-        
         
         
     def get_slope_maps(self):
