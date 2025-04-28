@@ -1,5 +1,5 @@
 import specula
-specula.init(-1, precision=1)  # Default target=-1 (CPU), float32=1
+specula.init(-1, precision=0)  # Default target=-1 (CPU), float32=1
 from specula import np, cpuArray
 from bronte.startup import set_data_dir
 from bronte.package_data import phase_screen_folder

@@ -30,7 +30,7 @@ def main(ftag = '250409_090000'):
     sf.INT_DELAY = 0
     sf.N_MODES_TO_CORRECT = 200
     sf.TIME_STEP_IN_SEC = 0.001
-    Nsteps = 30000 
+    Nsteps = 5000 
     
     psg = PhaseScreenGenerator(sf)
     psg.PROPAGATION_DIR = 'on_axis'

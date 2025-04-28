@@ -1,11 +1,13 @@
 import numpy as np 
 from astropy.io import fits
+from bronte.startup import set_data_dir
 from bronte.subapertures_initializer import SubapertureGridInitialiser
 from bronte.package_data import shframes_folder
 from bronte.package_data import subaperture_set_folder 
 
 def main():
     
+    set_data_dir()
     fname_ext_source = shframes_folder() / '250110_170300.fits'
     fname_laser_source = shframes_folder() / '250117_103000.fits'
     
