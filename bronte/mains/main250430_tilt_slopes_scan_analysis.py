@@ -18,8 +18,8 @@ def main():
     sa.set_sh_slope_pc()
     
     # index relative to +-5um rms wf
-    idx_min = 25
-    idx_plus = 35
+    idx_min = 23#20#29#25
+    idx_plus = 37#40#31#35
     amp_in_meters = sa._coef_vector[idx_plus]
     
     # the slopes from spc are normalized to -1 to +1
@@ -43,13 +43,52 @@ def main():
     
     s_exp_in_pixel = (4*amp_in_meters*(f2/f3)*fla/D)/pixel_size_in_meters
     
+    sa.display2Dslope(s_if_in_pixel)
     plt.figure()
     plt.clf()
     plt.plot(s_if_in_pixel, label='measured')
     plt.grid('--', alpha = 0.3)
     plt.ylabel("Slopes [pixel]")
     plt.title(f"c = {amp_in_meters} m rms wf: Expected slope {s_exp_in_pixel} pixels")
+
+def linearity_plot():
+    
+    ftag = '250430_144800'
+    sa = SlopesAnalyser(ftag)
+    sa.set_sh_slope_pc()
+    N = 31
+    Nsubap = sa._subapertures_set.n_subaps
+    Npixelpersub = 26
+    pixel_size_in_meters = 5.5e-6
+    NofPushPull = 2
+    
+    f2 = 250e-3
+    f3 = 150e-3
+    fla = 8.31477e-3
+    D = 10.2e-3
+    
+    s_if_list = []
+    s_mean =[]
+    s_exp_in_pixel = (4*sa._coef_vector[31:]*(f2/f3)*fla/D)/pixel_size_in_meters
+    
+    for idx in np.arange(1, N):
+        idx_plus = 30 +idx
+        idx_min = 30 - idx
+        amp_in_meters = sa._coef_vector[idx_plus]
+        s_plus = sa.compute_slopes_from_frame(sa._frame_cube[idx_plus])
+        s_min = sa.compute_slopes_from_frame(sa._frame_cube[idx_min])
+        s_if_in_pixel = (0.5*Npixelpersub*pixel_size_in_meters)*(s_plus - s_min)/(NofPushPull*amp_in_meters)
+        s_if_list.append(s_if_in_pixel)
+        s_mean.append(s_if_in_pixel[:Nsubap].mean())
         
+    plt.figure()
+    plt.clf()
+    plt.plot(sa._coef_vector[31:], s_mean, label='measured')
+    plt.plot(sa._coef_vector[31:], s_exp_in_pixel, label='expected')
+    plt.xlabel('Coefficient m rms wf')
+    plt.ylabel('Slopes ifs [pixels]')
+
+  
 class SlopesAnalyser():
     
     #DEFAULT 
