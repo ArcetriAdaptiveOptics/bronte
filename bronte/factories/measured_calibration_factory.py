@@ -20,7 +20,7 @@ class MeasuredCalibrationFactory(BaseFactory):
     SUBAPS_TAG = '250120_122000'
     MODAL_BASE_TYPE = 'Zernike'
     #N_MODES_TO_CORRECT = 200
-    TELESCOPE_PUPIL_DIAMETER = 40   # m
+    TELESCOPE_PUPIL_DIAMETER = 568*2*9.2e-6   # m
     SH_PIX_THR = 200 # in ADU
     PP_AMP_IN_NM = 2000
     TIME_STEP_IN_SEC = None 
@@ -36,6 +36,7 @@ class MeasuredCalibrationFactory(BaseFactory):
         self._pupil_pixel_pitch = self.TELESCOPE_PUPIL_DIAMETER/self._pupil_diameter_in_pixel
         self._load_sh_camera_master_bkg()
         self.TIME_STEP_IN_SEC = self._sh_texp * 1e-3
+        self.SH_FRAMES2AVERAGE = 10
         
     @cached_property
     def source_dict(self):

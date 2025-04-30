@@ -56,7 +56,7 @@ class TestbenchDeviceManager(BaseProcessingObj):
         # how to reproduce faint source? shall we play with the texp of the hardware?
         #TODO: load dark and bkg for sh frame reduction
         
-        sh_camera_frame = self._sh_camera.getFutureFrames(self._Nframes).toNumpyArray()
+        sh_camera_frame = self._sh_camera.getFutureFrames(self._Nframes, timeoutSec=30).toNumpyArray()
         
         if self._Nframes > 1:
             if self._sh_camera_bkg is not None:

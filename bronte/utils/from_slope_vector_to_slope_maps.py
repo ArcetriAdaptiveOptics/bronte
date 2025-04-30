@@ -2,7 +2,6 @@ import specula
 specula.init(-1, precision=1)  # Default target=-1 (CPU), float32=1
 from specula import np
 from specula.data_objects.slopes import Slopes
-from specula.data_objects.intmat import Intmat
 from specula.data_objects.subap_data import SubapData
 from bronte.package_data import subaperture_set_folder
 import matplotlib.pyplot as plt

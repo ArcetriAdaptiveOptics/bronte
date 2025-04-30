@@ -112,8 +112,8 @@ class MeasuredControlMatrixCalibrator():
                     time.sleep(delay)
             raise ZmqRpcTimeoutError("Max retries reached")
                 
-        psf_camera_texp = retry_on_timeout(lambda: self._factory.psf_camera.exposureTime())
-        psf_camera_fps = retry_on_timeout(lambda: self._factory.psf_camera.getFrameRate())
+        #psf_camera_texp = retry_on_timeout(lambda: self._factory.psf_camera.exposureTime())
+        #psf_camera_fps = retry_on_timeout(lambda: self._factory.psf_camera.getFrameRate())
         shwfs_texp = retry_on_timeout(lambda: self._factory.sh_camera.exposureTime())
         shwfs_fps = retry_on_timeout(lambda: self._factory.sh_camera.getFrameRate())
         
@@ -147,8 +147,8 @@ class MeasuredControlMatrixCalibrator():
         hdr['SLM_RAD'] = self._factory.SLM_PUPIL_RADIUS # in pixels
         hdr['SLM_YX'] = str(self._factory.SLM_PUPIL_CENTER) # YX pixel coordinates
         hdr['SHPX_THR'] = self._factory.SH_PIX_THR # in ADU
-        hdr['PC_TEXP'] = psf_camera_texp # in ms
-        hdr['PC_FPS'] = psf_camera_fps
+        hdr['PC_TEXP'] = 'NA' # in ms
+        hdr['PC_FPS'] = 'NA'
         hdr['SH_TEXP'] = shwfs_texp # in ms
         hdr['SH_FPS'] = shwfs_fps
         

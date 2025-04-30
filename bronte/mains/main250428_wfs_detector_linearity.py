@@ -39,14 +39,15 @@ def analyse(ftag):
 
 def measure_detector_linearity(ftag):
     
-    Nsubap = 4
+    #Nsubap = 4
     N = 100
     # coord of brightest points
-    subap_coord_x = np.array([1011, 1114, 957, 879])
-    subap_coord_y = np.array([600, 993, 967, 1097])
+    subap_coord_x = np.array([1011, 1114, 957, 879, 852,879,905,852,878,904,852,878,904])
+    subap_coord_y = np.array([600, 993, 967, 1097, 888,888,888,913,913,914,940,940,940])
+    Nsubap = len(subap_coord_x)
     # coord of both bright andfaint spots
-    subap_coord2_x = np.array([852,879,905,852,878,904,852,878,904])
-    subap_coord2_y = np.array([888,888,888,913,913,914,940,940,940])
+    # subap_coord2_x = np.array([852,879,905,852,878,904,852,878,904])
+    # subap_coord2_y = np.array([888,888,888,913,913,914,940,940,940])
     
     i_mean_per_sub = np.zeros((Nsubap, N))
     err_i_per_sub = np.zeros((Nsubap, N))

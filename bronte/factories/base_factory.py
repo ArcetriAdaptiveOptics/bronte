@@ -22,7 +22,7 @@ class BaseFactory():
         self._set_up_basic_logging()
         
         self._load_sh_camera_master_bkg()
-        self._load_psf_camera_master_bkg()
+        #self._load_psf_camera_master_bkg()
            
     def _set_up_basic_logging(self):
         import importlib
