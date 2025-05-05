@@ -7,6 +7,10 @@ from specula.data_objects.pixels import Pixels
 from bronte.mains.main250429shwfs_frames_tilt_scan import load
 from bronte.startup import set_data_dir
 from bronte.package_data import subaperture_set_folder
+
+from bronte.wfs.slope_computer import PCSlopeComputer
+from bronte.wfs.subaperture_set import ShSubapertureSet
+
 import copy
 from bronte.utils.from_slope_vector_to_slope_maps import SlopeVectorTo2DMap
 import matplotlib.pyplot as plt
@@ -133,5 +137,12 @@ class SlopesAnalyser():
             ftag_subap = self.SUBAPS_TAG
             
         self._s2map = SlopeVectorTo2DMap(ftag_subap)
+        self._load_subapertures_grid_map(ftag_subap)
         return SubapData.restore_from_bronte(
                 subaperture_set_folder() / (ftag_subap + ".fits"))
+        
+    
+    def _load_subapertures_grid_map(self, subap_tag):
+        subap_set = ShSubapertureSet.restore(subaperture_set_folder() / (subap_tag + '.fits'))
+        sc = PCSlopeComputer(subap_set)
+        self._subaperture_grid_map = sc.subapertures_map()
