@@ -9,9 +9,10 @@ import matplotlib.pyplot as plt
 
 def acquire_master_bkgs_vs_texp(ftag):
     
-    N = 60
+    N = 20
     Nframes2average = 20
-    texp_in_ms_vector = np.linspace(0.5, 30, N)
+    #texp_in_ms_vector = np.linspace(0.5, 30, N)
+    texp_in_ms_vector = np.linspace(0.05, 1, N)
     sf = startup.specula_startup()
     bkgs_list = []
     for idx, texp in enumerate(texp_in_ms_vector):
@@ -31,12 +32,13 @@ def acquire_master_bkgs_vs_texp(ftag):
 
 def acquire_flat_fields(ftag):
     
-    N = 60
-    Nframes2average = 50#100
+    #N = 60
+    Nframes2average = 20
     frame_size = 2048
     sf = startup.specula_startup()
-    
-    fname_bkgs = shframes_folder() / ('250506_122300.fits')
+    #ftag_bkgs = '250506_122300' # from 0.5 to 30 ms
+    ftag_bkgs = '250506_163400' # from 0.05 to 1 ms
+    fname_bkgs = shframes_folder() / (ftag_bkgs + '.fits')
     hdulist = fits.open(fname_bkgs)
     
     bkgs = hdulist[0].data
@@ -44,6 +46,7 @@ def acquire_flat_fields(ftag):
     flat_field_list = []
     std_flat_field_list = []
     dcc = DataCubeCleaner()
+    N = len(texp_in_ms_vector)
     #texp_in_ms_vector = np.linspace(0.5, 30, N)
     
     for idx, texp in enumerate(texp_in_ms_vector):
@@ -71,24 +74,32 @@ def acquire_flat_fields(ftag):
 def display_gain():
     
     
-    ftag = '250506_152500'
+    #ftag = '250506_154800'# from 0.5 to 30ms
+    ftag = '250506_164500' # from 0.05 to 1 ms
     file_name = shframes_folder() /(ftag + '.fits')
     hdulist = fits.open(file_name)
     ffs = hdulist[0].data
     std_ffs = hdulist[1].data
     #texp_vect = hdulist[2].data
-    
-    y_coords = np.array([])
-    x_coords = np.array([])
+    #Nframes = ffs.shape[0]
+    y_coords = np.array([1070, 1070, 1070, 1070])
+    x_coords = np.array([828, 828+26, 828+26*2, 828+26*3])
     Npoints = len(y_coords)
     plt.figure()
     plt.clf()
+    a = 6
+    b = a+1
+    Npt = (a*b)**2#9 
+    #dx = 
     for idx in np.arange(Npoints):
-        
-        signal = ffs[y_coords[idx],x_coords[idx]]
-        noise = std_ffs[y_coords[idx],x_coords[idx]]**2
-    
-    plt.plot(signal, noise, '.-', label = f"#{idx}")
+        yc = y_coords[idx]
+        xc = x_coords[idx]
+        signal = ffs[:,yc-a:yc+b ,xc-a:xc+b].sum(axis=(1,2))/Npt
+        noise = (std_ffs[:, yc-a:yc+b, xc-a:xc+b]**2).sum(axis=(1,2))/Npt
+        #signal = ffs[:, y_coords[idx], x_coords[idx]]
+        #noise = std_ffs[:, y_coords[idx], x_coords[idx]]**2
+        plt.loglog(signal, noise, '.-', label = f"#{idx}")
     plt.xlabel('Signal [ADU]')
     plt.ylabel('Noise [ADU^2]')
     plt.grid('--', alpha = 0.3)
+    plt.legend(loc = 'best')
