@@ -48,7 +48,7 @@ class SlopesVectorAnalyser():
         self._slopec = ShSlopec(subapdata= self._subapertures_set, thr_value = abs_pix_thr)
         self._slopec.thr_ratio_value = pix_thr_ratio
     
-    def get_slopes_from_frame(self, frame = None):
+    def get_slopes_from_frame(self, frame = None, fluxperSub=False):
         if frame is None:
             frame = self._frame
             
@@ -58,7 +58,11 @@ class SlopesVectorAnalyser():
         self._slopec.inputs['in_pixels'].set(pix)
         self._slopec.calc_slopes_nofor()
         s = copy.copy(self._slopec.slopes.slopes)
-        return s
+        if fluxperSub is True:
+            flux_per_sub = copy.copy(self._slopec.flux_per_subaperture_vector.value)
+            return s, flux_per_sub
+        else:
+            return s
     
     def reload_slope_pc(self, pix_thr_ratio = None, abs_pix_thr = None):
         self._load_slope_pc(pix_thr_ratio, abs_pix_thr)
