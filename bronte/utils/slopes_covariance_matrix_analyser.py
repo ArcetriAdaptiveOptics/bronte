@@ -55,7 +55,8 @@ class SlopesCovariaceMatrixAnalyser():
         return np.array(rms_slope_x_list), np.array(rms_slope_y_list)
     
     def _compute_slopes_covariance_matrix(self):
-        self._slope_covariance_matrix = self._slopes_cube.T @ self._slopes_cube
+        St = self._slopes_cube - self._slopes_cube.mean(axis=0)
+        self._slope_covariance_matrix = St.T @ St
     
     def get_slopes_covariace_matrix(self):
         return self._slope_covariance_matrix

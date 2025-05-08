@@ -1,5 +1,5 @@
 from bronte.mains.main250429shwfs_frames_tilt_scan import load
-from bronte.utils.slopes_vector_analyser import SubapertureSetAndSlopesAnalyser
+from bronte.utils.slopes_vector_analyser import SlopesVectorAnalyser
 from bronte.startup import set_data_dir
 from astropy.io import fits
 from bronte.utils.camera_master_bkg import CameraMasterMeasurer
@@ -20,7 +20,7 @@ def main():
     frame[frame < 0] = 0
     
     subap_tag = '250120_122000'
-    ssa = SubapertureSetAndSlopesAnalyser(subap_tag)
+    ssa = SlopesVectorAnalyser(subap_tag)
     ssa.display_shframe(frame)
     
     slopes = ssa.get_slopes_from_frame(frame)
@@ -36,7 +36,7 @@ def main_scan_tilt():
     
     subap_tag = '250120_122000'
     
-    ssa = SubapertureSetAndSlopesAnalyser(subap_tag)
+    ssa = SlopesVectorAnalyser(subap_tag)
     
     # index relative to +-5um rms wf
     idx_min = 25
@@ -82,7 +82,7 @@ def main_scan_tilt_vs_thr():
     
     subap_tag = '250120_122000'
     
-    ssa = SubapertureSetAndSlopesAnalyser(subap_tag)
+    ssa = SlopesVectorAnalyser(subap_tag)
     
     # index relative to +-5um rms wf
     idx_min = 25

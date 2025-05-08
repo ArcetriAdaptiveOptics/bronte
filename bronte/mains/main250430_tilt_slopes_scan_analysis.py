@@ -16,6 +16,10 @@ from bronte.utils.from_slope_vector_to_slope_maps import SlopeVectorTo2DMap
 import matplotlib.pyplot as plt
 
 def main():
+    '''
+    this main is meant to check by hand how a ifs looks like
+    and if the measured slope is the one expected
+    '''
     
     ftag = '250430_144800'
     sa = SlopesAnalyser(ftag)

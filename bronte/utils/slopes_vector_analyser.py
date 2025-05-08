@@ -66,7 +66,9 @@ class SlopesVectorAnalyser():
     
     def reload_slope_pc(self, pix_thr_ratio = None, abs_pix_thr = None):
         self._load_slope_pc(pix_thr_ratio, abs_pix_thr)
-    
+        self.ABSOLUTE_PIX_THR = abs_pix_thr
+        self.RELATIVE_PIX_THR_RATIO = pix_thr_ratio
+        
     def load_shwfs_frame(self, frame):
         self._frame = frame
     
