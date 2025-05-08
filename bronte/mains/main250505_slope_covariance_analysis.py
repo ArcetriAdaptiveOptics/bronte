@@ -22,6 +22,12 @@ def main():
     
     scma.display_rms_slopes()
     scma.display_slope_covariance_matrix()
+    
+    plt.figure()
+    plt.clf()
+    plt.imshow(scma._slope_covariance_matrix, vmin = -2e-4,vmax=2e-4);
+    plt.colorbar()
+    
     Nsub = scma.Nsubap
     NpixperSub = scma.NpixperSub
     sloeps_variance_in_pixel2 = scma._slope_covariance_matrix.diagonal()*(0.5*NpixperSub)**2
