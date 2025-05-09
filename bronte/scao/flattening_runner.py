@@ -201,7 +201,9 @@ class FlatteningRunner():
         
         # LOOP PARAMETERS
         hdr['TSTEP_S'] = self.time_step
-        hdr['INT_GAIN'] = self._factory.INT_GAIN
+        if np.isscalar(self._factory.INT_GAIN):
+            hdr['INT_GAIN'] = self._factory.INT_GAIN
+        #hdr['INT_GAIN'] = self._factory.INT_GAIN
         hdr['INT_DEL'] = self._factory.INT_DELAY
         hdr['N_STEPS'] = self._n_steps
         hdr['N_MODES'] = self._factory.N_MODES_TO_CORRECT
@@ -209,7 +211,8 @@ class FlatteningRunner():
         #HARDWARE PARAMETERS
         hdr['SLM_RAD'] = self._factory.SLM_PUPIL_RADIUS # in pixels
         hdr['SLM_YX'] = str(self._factory.SLM_PUPIL_CENTER) # YX pixel coordinates
-        hdr['SHPX_THR'] = self._factory.SH_PIX_THR # in ADU
+        hdr['SHPX_THR'] = self._factory.SH_ABS_PIX_THR # in ADU
+        hdr['SHTH_REL'] = self._factory.SH_THR_RATIO
         hdr['PC_TEXP'] = psf_camera_texp # in ms
         hdr['PC_FPS'] = psf_camera_fps
         hdr['SH_TEXP'] = shwfs_texp # in ms
@@ -218,9 +221,9 @@ class FlatteningRunner():
         fits.writeto(file_name, np.array(self._slopes_vector_list), hdr)
         fits.append(file_name, np.array(self._zc_delta_modal_command_list))
         fits.append(file_name, np.array(self._zc_integrated_modal_command_list))
-
-    @logEnterAndExit("Loading data...",
-           "Data loaded.", level='debug')    
+        if isinstance(self._factory.INT_GAIN, np.ndarray):
+            fits.append(file_name, self._factory.INT_GAIN)
+ 
     @staticmethod
     def load_telemetry(fname):
         set_data_dir()

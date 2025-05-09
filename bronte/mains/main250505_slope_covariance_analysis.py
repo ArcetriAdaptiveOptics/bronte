@@ -18,14 +18,14 @@ def main():
     
     subap_tag = '250120_122000'
     scma = SlopesCovariaceMatrixAnalyser(subap_tag)
-    scma.set_slopes_from_frame_cube(frame_cube, pix_thr_ratio=0.2, abs_pix_thr=0)
+    scma.set_slopes_from_frame_cube(frame_cube, pix_thr_ratio=0.17, abs_pix_thr=0)
     
     scma.display_rms_slopes()
     scma.display_slope_covariance_matrix()
     
     plt.figure()
     plt.clf()
-    plt.imshow(scma._slope_covariance_matrix, vmin = -2e-4,vmax=2e-4);
+    plt.imshow(scma._slope_covariance_matrix, vmin = -2e-4,vmax=1e-4);
     plt.colorbar()
     
     Nsub = scma.Nsubap

@@ -1,5 +1,5 @@
 from bronte import startup
-from bronte.package_data import shframes_folder
+from bronte.package_data import shframes_folder, modal_offsets_folder
 import numpy as np 
 from astropy.io import fits
 from bronte.utils.retry_on_zmqrpc_timeout_error import retry_on_timeout
@@ -8,7 +8,7 @@ from bronte.utils.data_cube_cleaner import DataCubeCleaner
 
 
 
-def main(ftag, jnoll_mode=2):
+def main(ftag, jnoll_mode=2, addOffset = False):
     '''
     Tilt scan:
     Acquires sh frames relative to tilts of differnet amplitude
@@ -20,7 +20,18 @@ def main(ftag, jnoll_mode=2):
     factory.SH_FRAMES2AVERAGE = 10
     Nframes = factory.SH_FRAMES2AVERAGE
     flat = np.zeros(1920*1152)
-    factory.deformable_mirror.set_shape(flat)
+    
+    offset_cmd = 0
+    hdr_offset = 'NA'
+    if addOffset is True:
+        off_tag = '250509_170000'#'250509_161700'
+        offset_fname = modal_offsets_folder() / (off_tag+'.fits')
+        hdl = fits.open(offset_fname)
+        offset = hdl[0].data
+        offset_cmd = - offset#factory.slm_rasterizer.m2c(modal_offset)
+        hdr_offset = off_tag
+        
+    factory.deformable_mirror.set_shape(flat + offset_cmd)
     texp_ms = retry_on_timeout(lambda: factory.sh_camera.exposureTime())
     time.sleep(SLEEP_TIME_IN_SEC)
     ref_frame = factory.sh_camera.getFutureFrames(1).toNumpyArray() - factory.sh_camera_master_bkg
@@ -38,16 +49,17 @@ def main(ftag, jnoll_mode=2):
         modal_cmd[mode_index2be_scan] = amp
         print(f"applying c = {amp} m rms wf")
         cmd = factory.slm_rasterizer.m2c(modal_cmd)
-        factory.deformable_mirror.set_shape(cmd)
+        factory.deformable_mirror.set_shape(cmd + offset_cmd)
         time.sleep(SLEEP_TIME_IN_SEC)
         raw_cube = factory.sh_camera.getFutureFrames(Nframes).toNumpyArray()
-        frame_cube[idx] = dcc.get_master_from_rawCube(raw_cube, factory.sh_camera_master_bkg)
+        frame_cube[idx] = dcc.get_mean_from_rawCube(raw_cube[:,:, 2:], factory.sh_camera_master_bkg)
     
     file_name = shframes_folder()/(ftag + '.fits')
     hdr = fits.Header()
     hdr['NOLL_J'] =  jnoll_mode
     hdr['TEXP'] = texp_ms
     hdr['TSLEEP'] = SLEEP_TIME_IN_SEC
+    hdr['OFFSET'] = hdr_offset
     fits.writeto(file_name, frame_cube, hdr)
     fits.append(file_name, ref_frame)
     fits.append(file_name, coef_scan_vector)

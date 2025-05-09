@@ -9,13 +9,14 @@ def main():
     
     set_data_dir()
     fname_ext_source = shframes_folder() / '250110_170300.fits'
-    fname_laser_source = shframes_folder() / '250117_103000.fits'
+    fname_laser_source = shframes_folder() / '250509_120000.fits'#'250117_103000.fits'
     
     data_ext = fits.open(fname_ext_source)
     wf_ref = data_ext[0].data
     
     data_laser = fits.open(fname_laser_source)
     ima = data_laser[0].data
+    ima[ima<180] = 0
     
     sgi_ext = SubapertureGridInitialiser(wf_ref, 26, 50)
     sgi_ext.define_subaperture_set(230, 330)
@@ -33,10 +34,11 @@ def main():
     sgi.display_flux_and_grid_maps()
     
     #removing subaps with low flux by thresholding
-    
-    sgi.remove_low_flux_subaperturers(threshold = 9.5e4)
+    sgi.remove_low_flux_subaperturers(threshold = 1.1e4)
     sgi.display_flux_and_grid_maps()
-    
+    # sgi.remove_low_flux_subaperturers(threshold = 9.5e4) # for fname_laser_source '250117_103000.fits'
+    # sgi.display_flux_and_grid_maps()
+    #
     #sgi._subaps.save(subaperture_set_folder()/ "fname.fits", None)
-    
+    #
     return sgi
