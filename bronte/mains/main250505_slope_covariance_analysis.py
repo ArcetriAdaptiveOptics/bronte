@@ -25,7 +25,7 @@ def main():
     
     plt.figure()
     plt.clf()
-    plt.imshow(scma._slope_covariance_matrix, vmin = -2e-4,vmax=1e-4);
+    plt.imshow(scma._slope_covariance_matrix, vmin = -2e-4,vmax=1e-5);
     plt.colorbar()
     
     Nsub = scma.Nsubap
@@ -38,7 +38,7 @@ def main():
     count_in_adu = scma._flux_per_sub_cube.mean(axis=0)
     sh_gain = 2.34 #e-/ADU
     QE = 0.62
-    Nph = count_in_adu*sh_gain/QE
+    Nph = count_in_adu*sh_gain*QE
     theta_in_pixel = 36.55/5.5
     expected_slop_var = theta_in_pixel**2/Nph
     
@@ -69,7 +69,7 @@ def main2():
     Npixpersub = scma.NpixperSub
     Nsubaps =  scma.Nsubap
     
-    scma.set_slopes_from_frame_cube(frame_cube, pix_thr_ratio = 0.35, abs_pix_thr = 0)
+    scma.set_slopes_from_frame_cube(frame_cube, pix_thr_ratio = 0.17, abs_pix_thr = 0)
     
     slopes_var_in_pixels = (scma._slopes_cube.std(axis = 0)*0.5*Npixpersub)**2
     

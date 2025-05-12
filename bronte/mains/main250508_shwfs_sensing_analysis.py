@@ -12,7 +12,7 @@ def z2_scan_analysis():
     '''
     set_data_dir()
     # loading TT scan data
-    ftag = '250509_163100'#'250509_112800'#'250430_144800' # Z2 data
+    ftag ='250512_102100' #'250512_102100'#'250509_163100'#'250430_144800' # Z2 data
     file_name = shframes_folder() / (ftag + '.fits')
     hdr = fits.getheader(file_name)
     jnoll_index = hdr['NOLL_J']
@@ -74,7 +74,7 @@ def z2_scan_analysis():
     plt.plot(xfit/1e-6,yfit, 'r-', label=r"$fit$") 
     plt.legend(loc='best')
     
-    return param
+    return frame_cube, c_vector, subap_tag
 
 
 def z3_scan_analysis():
@@ -84,7 +84,7 @@ def z3_scan_analysis():
     '''
     set_data_dir()
     # loading TT scan data
-    ftag = '250509_163700'#'250509_113400'#'250430_145200' # Z3 data
+    ftag = '250512_102900'#'250512_102900'#'250509_163700'#'250430_145200' # Z3 data
     file_name = shframes_folder() / (ftag + '.fits')
     hdr = fits.getheader(file_name)
     jnoll_index = hdr['NOLL_J']

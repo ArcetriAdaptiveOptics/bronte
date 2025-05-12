@@ -98,7 +98,7 @@ class SlopesVectorAnalyser():
         
         plt.figure()
         plt.clf()
-        plt.imshow(frame + 1000*self._subaperture_grid_map)
+        plt.imshow(frame)# + 1000*self._subaperture_grid_map)
         plt.colorbar()
     
     def display_subap_mask(self):
