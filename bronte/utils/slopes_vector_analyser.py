@@ -24,7 +24,7 @@ class SlopesVectorAnalyser():
         self._s2map_display = None
         self._subaperture_grid_map = None
         self._subapertures_set = self._load_subaperture_set(subap_tag)
-        self._slope_pc = None
+        self._slopec = None
         self._load_slope_pc()
         self._frame = None
         
