@@ -23,7 +23,7 @@ def main(ftag, addOffset = False):
     #cmd = np.zeros(1920*1152)
     sf.deformable_mirror.set_shape(cmd + offset_cmd)
     
-    ftag_bkg = '250211_135800'#'250506_135400'
+    ftag_bkg = '250211_135800'#'250515_145200'#'250211_135800'#'250506_135400'
     fname_bkg = shframes_folder() /(ftag_bkg + '.fits')
     hdr = fits.getheader(fname_bkg)
     hdul = fits.open(fname_bkg)

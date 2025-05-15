@@ -117,7 +117,7 @@ def z2_scan_analysis():
     
     
     
-    return frame_cube, c_vector, subap_tag
+    return frame_cube[30], c_vector, subap_tag
 
 
 def z3_scan_analysis():
@@ -219,3 +219,5 @@ def z3_scan_analysis():
     sva.display2Dslope_maps_from_slope_vector(s_ref)
     
     return frame_cube, c_vector, subap_tag
+
+    
