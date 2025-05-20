@@ -58,11 +58,15 @@ class SlopesVectorAnalyser():
         self._slopec.inputs['in_pixels'].set(pix)
         self._slopec.calc_slopes_nofor()
         s = copy.copy(self._slopec.slopes.slopes)
+        self._pix_after_thr = copy.copy(self._slopec.pixels_after_thr)
         if fluxperSub is True:
             flux_per_sub = copy.copy(self._slopec.flux_per_subaperture_vector.value)
             return s, flux_per_sub
         else:
             return s
+    
+    def get_frame_after_thresholding(self):
+        return self._pix_after_thr
     
     def reload_slope_pc(self, pix_thr_ratio = None, abs_pix_thr = None):
         self._load_slope_pc(pix_thr_ratio, abs_pix_thr)

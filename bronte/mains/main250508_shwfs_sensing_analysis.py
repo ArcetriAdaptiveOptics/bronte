@@ -12,7 +12,7 @@ def z2_scan_analysis():
     '''
     set_data_dir()
     # loading TT scan data
-    ftag ='250430_144800' #'250512_102100'#'250430_144800' # Z2 data
+    ftag ='250512_102100' #'250512_102100'#'250430_144800' # Z2 data
     file_name = shframes_folder() / (ftag + '.fits')
     hdr = fits.getheader(file_name)
     jnoll_index = hdr['NOLL_J']
@@ -20,6 +20,7 @@ def z2_scan_analysis():
     frame_cube = hdl[0].data 
     Nframes = frame_cube.shape[0]
     ref_frame = hdl[1].data
+    ref_frame[ref_frame<0] = 0
     c_vector = hdl[2].data
     
     subap_tag = '250120_122000'
@@ -27,6 +28,7 @@ def z2_scan_analysis():
     sva.reload_slope_pc(pix_thr_ratio = 0.18, abs_pix_thr = 0)
     Nsubap = sva._subapertures_set.n_subaps
     NpixperSub = sva._subapertures_set.np_sub
+    
     
     s_ref = sva.get_slopes_from_frame(ref_frame)
     slope_cube = np.zeros((Nframes, len(s_ref)))
@@ -87,8 +89,6 @@ def z2_scan_analysis():
     # Stampa i dati riga per riga
     for a_val, b_val, c_str in zip(a, b, c_pm_d):
         print(f"{a_val:10.3f} {b_val:10.3f} {c_str:>15}")
-    
-
     
     plt.figure();
     plt.clf()

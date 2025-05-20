@@ -42,7 +42,7 @@ def main():
     Nph = count_in_adu*sh_gain/QE
     theta_in_pixel = 36.55/5.5
     sigma_ron = (6.5 * sh_gain/QE)
-    expected_slop_var = (theta_in_pixel**2)/Nph + (26*26)*(sigma_ron**2/Nph**2)
+    expected_slop_var = (theta_in_pixel**2)/Nph + (26*26)**2*(sigma_ron**2/Nph**2)
     
     plt.figure()
     plt.clf()
@@ -62,16 +62,22 @@ def main2():
     exposure time
     '''
     set_data_dir()
-    ftag_flat12ms = '250507_142000' 
-    ftag_flat8ms = '250505_151700' 
+    #ftag_flat12ms = '250507_142000' 
+    ftag4ms = '250515_145500'
+    ftag8ms = '250515_150200'#'250505_151700' 
+    ftag16ms = '250515_145900'
    
-    fname8 = shframes_folder() / (ftag_flat8ms + '.fits')
+    fname4 = shframes_folder() / (ftag4ms + '.fits')
+    hdl4 = fits.open(fname4)
+    frame_cube4 = hdl4[0].data
+   
+    fname8 = shframes_folder() / (ftag8ms + '.fits')
     hdl8 = fits.open(fname8)
     frame_cube8 = hdl8[0].data
     
-    fname12 = shframes_folder() / (ftag_flat12ms + '.fits')
-    hdl12 = fits.open(fname12)
-    frame_cube12 = hdl12[0].data
+    fname16 = shframes_folder() / (ftag16ms + '.fits')
+    hdl16 = fits.open(fname16)
+    frame_cube16 = hdl16[0].data
     
     subap_tag = '250120_122000'
     scma = SlopesCovariaceMatrixAnalyser(subap_tag)
@@ -79,13 +85,17 @@ def main2():
     Npixpersub = scma.NpixperSub
     Nsubaps =  scma.Nsubap
     
+    scma.set_slopes_from_frame_cube(frame_cube4, pix_thr_ratio = 0.18, abs_pix_thr = 0)
+    slopes_var_in_pixels4 = (scma._slopes_cube.std(axis = 0)*0.5*Npixpersub)**2
+    count_in_adu4 = scma._flux_per_sub_cube.mean(axis=0)
+    
     scma.set_slopes_from_frame_cube(frame_cube8, pix_thr_ratio = 0.18, abs_pix_thr = 0)
     slopes_var_in_pixels8 = (scma._slopes_cube.std(axis = 0)*0.5*Npixpersub)**2
     count_in_adu8 = scma._flux_per_sub_cube.mean(axis=0)
     
-    scma.set_slopes_from_frame_cube(frame_cube12, pix_thr_ratio = 0.18, abs_pix_thr = 0)
-    slopes_var_in_pixels12 = (scma._slopes_cube.std(axis = 0)*0.5*Npixpersub)**2
-    count_in_adu12 = scma._flux_per_sub_cube.mean(axis=0)
+    scma.set_slopes_from_frame_cube(frame_cube16, pix_thr_ratio = 0.18, abs_pix_thr = 0)
+    slopes_var_in_pixels16 = (scma._slopes_cube.std(axis = 0)*0.5*Npixpersub)**2
+    count_in_adu16 = scma._flux_per_sub_cube.mean(axis=0)
     
     # count_in_adu8 = scma._flux_per_sub_cube.mean(axis=0)
     # sh_gain = 2.34 #e-/ADU
@@ -93,26 +103,37 @@ def main2():
     # Nph = count_in_adu*sh_gain*QE
     # theta_in_pixel = 36.55/5.5
     
-    #expected_slop_var = theta_in_pixel**2/Nph
-    measured_slope_varX8 = slopes_var_in_pixels8[:Nsubaps]
-    measured_slope_varY8 = slopes_var_in_pixels8[Nsubaps:]
-    
-    measured_slope_varX12 = slopes_var_in_pixels12[:Nsubaps]
-    measured_slope_varY12 = slopes_var_in_pixels12[Nsubaps:]
-    
     plt.figure()
     plt.clf()
+    plt.plot(slopes_var_in_pixels4, '-', label = '$\sigma^2_s @4ms$')
     plt.plot(slopes_var_in_pixels8, '-', label = '$\sigma^2_s @8ms$')
-    plt.plot(slopes_var_in_pixels12, '-', label = '$\sigma^2_s @12ms$')
-    plt.xlabel('Nsubap')
+    plt.plot(slopes_var_in_pixels16, '-', label = '$\sigma^2_s @16ms$')
+    plt.xlabel('2Nsubap')
     plt.ylabel('Slope Variance [pixel^2]')
     plt.grid('--', alpha = 0.3)
     plt.legend(loc = 'best')
     
+    var_ratiox2 =  slopes_var_in_pixels8/slopes_var_in_pixels16
+    var_ratiox4 = slopes_var_in_pixels4/slopes_var_in_pixels16
+    meanx2 = var_ratiox2.mean()
+    errx2 = var_ratiox2.std()
+    meanx4 = var_ratiox4.mean()
+    errx4 = var_ratiox4.std()
     plt.figure()
     plt.clf()
-    plt.plot(slopes_var_in_pixels12/slopes_var_in_pixels8)
-
+   
+    plt.plot(var_ratiox2 ,'b-', label='texp x2')
+    plt.plot(var_ratiox4, 'r-', label='texp x4')
+    plt.hlines(meanx2, 0, len(var_ratiox2), ls='--', color='k', label = 'mean x2')
+    plt.hlines(meanx4, 0, len(var_ratiox4), ls='--', color='g', label = 'mean x4')
+    plt.legend(loc='best')
+    plt.grid('--', alpha = 0.3)
+    plt.ylabel('Slope Variance ratio')
+    plt.xlabel('2Nsubap')
+    
+    print(f'mean x 2 : {meanx2} +/- {errx2}')
+    print(f'mean x 4 : {meanx4} +/- {errx4}')
+    
 def main3():
     '''
     checking slopes variance as a function of the pixel thr
