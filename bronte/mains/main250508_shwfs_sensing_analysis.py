@@ -4,6 +4,9 @@ from bronte.package_data import shframes_folder, modal_offsets_folder
 import numpy as np 
 from bronte.utils.slopes_vector_analyser import SlopesVectorAnalyser
 import matplotlib.pyplot as plt
+from scipy.optimize import curve_fit
+
+
 
 def z2_scan_analysis():
     '''
@@ -65,16 +68,26 @@ def z2_scan_analysis():
     pixel_size = 5.5e-6
     d_la = NpixperSub * pixel_size
     
-    c = c_vector[25:42]
+    c = c_vector[26:41]
     s_exp = ((f2/f3)*(4*c/Dslm)*f_la)/(0.5*NpixperSub*pixel_size)
     plt.plot(c/1e-6, s_exp*0.5*NpixperSub, 'r-', label='$S_{exp}$')
-    plt.legend(loc='best')
-    dd = sx[25:42] - s_exp
-    
-    
+
     sexp_in_pixel = s_exp*0.5*NpixperSub
-    smeas_in_pixel = sx[25:42]*0.5*NpixperSub
-    err_meas_in_pixel = err_sx[25:42]*0.5*NpixperSub
+    smeas_in_pixel = sx[26:41]*0.5*NpixperSub
+    err_meas_in_pixel = err_sx[26:41]*0.5*NpixperSub
+    
+    par, cov = curve_fit(_linear_model, c, smeas_in_pixel, sigma=err_meas_in_pixel, absolute_sigma=True)
+    m, offset = par
+    m_err, offset_err = np.sqrt(np.diag(cov))
+    s_fit = _linear_model(np.linspace(c[0],c[-1],100), m, offset)
+    plt.plot(np.linspace(c[0],c[-1],100)/1e-6, s_fit, 'm-', label='$S_{fit}$')
+    plt.legend(loc='best')
+    print(f"Slope (m): {m} +/- {m_err}")
+    print(f"Intercept (c): {offset} +/- {offset_err}")
+    
+    g = m*(f3/f2)*(Dslm/4)*(pixel_size/f_la)
+    err_g = (f3/f2)*(Dslm/4)*(pixel_size/f_la)*m_err
+    print(f"gain (g): {g} +/- {err_g}")
     
     a = c/1e-6
     b = sexp_in_pixel
@@ -127,7 +140,7 @@ def z3_scan_analysis():
     '''
     set_data_dir()
     # loading TT scan data
-    ftag = '250512_102900'#'250512_102900'#'250430_145200' # Z3 data
+    ftag = '250430_145200'#'250512_102900'#'250430_145200' # Z3 data
     file_name = shframes_folder() / (ftag + '.fits')
     hdr = fits.getheader(file_name)
     jnoll_index = hdr['NOLL_J']
@@ -135,6 +148,7 @@ def z3_scan_analysis():
     frame_cube = hdl[0].data 
     Nframes = frame_cube.shape[0]
     ref_frame = hdl[1].data
+    ref_frame[ref_frame<0] = 0
     c_vector = hdl[2].data
     
     subap_tag = '250120_122000'
@@ -179,15 +193,29 @@ def z3_scan_analysis():
     pixel_size = 5.5e-6
     d_la = NpixperSub * pixel_size
     
-    c = c_vector[20:39]
+    c = c_vector[21:38]
     s_exp = ((f2/f3)*(4*c/Dslm)*f_la)/(0.5*NpixperSub*pixel_size)
     plt.plot(c/1e-6, s_exp*0.5*NpixperSub, 'r-', label='$S_{exp}$')
     plt.legend(loc='best')
     
     
     sexp_in_pixel = s_exp*0.5*NpixperSub
-    smeas_in_pixel = sy[20:39]*0.5*NpixperSub
-    err_meas_in_pixel = err_sy[20:39]*0.5*NpixperSub
+    smeas_in_pixel = sy[21:38]*0.5*NpixperSub
+    err_meas_in_pixel = err_sy[21:38]*0.5*NpixperSub
+
+    par, cov = curve_fit(_linear_model, c, smeas_in_pixel, sigma=err_meas_in_pixel, absolute_sigma=True)
+    m, offset = par
+    m_err, offset_err = np.sqrt(np.diag(cov))
+    s_fit = _linear_model(np.linspace(c[0],c[-1],100), m, offset)
+    plt.plot(np.linspace(c[0],c[-1],100)/1e-6, s_fit, 'm-', label='$S_{fit}$')
+    plt.legend(loc='best')
+    print(f"Slope (m): {m} +/- {m_err}")
+    print(f"Intercept (c): {offset} +/- {offset_err}")
+    
+    g = m*(f3/f2)*(Dslm/4)*(pixel_size/f_la)
+    err_g = (f3/f2)*(Dslm/4)*(pixel_size/f_la)*m_err
+    print(f"gain (g): {g} +/- {err_g}")
+
 
     a = c/1e-6
     b = sexp_in_pixel
@@ -219,5 +247,8 @@ def z3_scan_analysis():
     sva.display2Dslope_maps_from_slope_vector(s_ref)
     
     return frame_cube, c_vector, subap_tag
+
+def _linear_model(x, m, c):
+    return m*x + c
 
     
