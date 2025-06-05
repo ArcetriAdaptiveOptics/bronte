@@ -251,4 +251,3 @@ def z3_scan_analysis():
 def _linear_model(x, m, c):
     return m*x + c
 
-    

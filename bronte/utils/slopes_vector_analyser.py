@@ -61,7 +61,8 @@ class SlopesVectorAnalyser():
         self._pix_after_thr = copy.copy(self._slopec.pixels_after_thr)
         if fluxperSub is True:
             flux_per_sub = copy.copy(self._slopec.flux_per_subaperture_vector.value)
-            return s, flux_per_sub
+            #Npix_eff_per_sub = self._slopec.Npix_eff_per_sub
+            return s, flux_per_sub#, Npix_eff_per_sub
         else:
             return s
     

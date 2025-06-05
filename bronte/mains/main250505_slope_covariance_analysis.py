@@ -12,7 +12,7 @@ def main():
     ftag_flat = '250507_142000'#'250505_151700'
     ftag_tip = '250507_142300'#'250505_152300'
     ftag_offset = '250514_172200'
-    ftag = ftag_offset
+    ftag = ftag_flat #ftag_offset
     fname = shframes_folder() / (ftag + '.fits')
     hdl = fits.open(fname)
     frame_cube = hdl[0].data
@@ -37,18 +37,26 @@ def main():
     #slopexy_var_in_pixel = slopex_var+ slopey_var
     
     count_in_adu = scma._flux_per_sub_cube.mean(axis=0)
+    
+    # plt.figure()
+    # plt.clf()
+    # plt.plot(count_in_adu)
+    # plt.xlabel('Nsubap')
+    # plt.ylabel('Mean counts [ADU]')
+    
     sh_gain = 2.34 #e-/ADU
     QE = 0.62
     Nph = count_in_adu*sh_gain/QE
     theta_in_pixel = 36.55/5.5
     sigma_ron = (6.5 * sh_gain/QE)
-    expected_slop_var = (theta_in_pixel**2)/Nph + (26*26)**2*(sigma_ron**2/Nph**2)
+    expected_slop_var = (theta_in_pixel**2)/Nph + (82/np.sqrt(theta_in_pixel))**4*(sigma_ron**2/Nph**2)
     
     plt.figure()
     plt.clf()
     plt.plot(expected_slop_var, 'k--', label= r"$\theta^2 /N_{ph}$")
-    plt.plot(slopex_var, '-', label = "$\sigma^2_{slope-x}$")
-    plt.plot(slopey_var, '-', label = "$\sigma^2_{slope-y}$")
+    plt.plot(slopex_var + slopey_var, '-', label = "$\sigma^2_{slope}$")
+    #plt.plot(slopex_var, '-', label = "$\sigma^2_{slope-x}$")
+    #plt.plot(slopey_var, '-', label = "$\sigma^2_{slope-y}$")
     plt.xlabel('Nsubap')
     plt.ylabel('Slope Variance [pixel^2]')
     plt.grid('--', alpha = 0.3)

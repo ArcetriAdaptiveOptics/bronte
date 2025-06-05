@@ -33,12 +33,15 @@ class SlopesCovariaceMatrixAnalyser():
         self._sva.reload_slope_pc(pix_thr_ratio, abs_pix_thr)
         slopes_list = []
         flux_per_sub_list = []
+        Neff_per_sub_list = []
         for idx in np.arange(Nframes):
             slopes, flux_per_sub = self._sva.get_slopes_from_frame(frame_cube[idx], True)
             slopes_list.append(slopes)
             flux_per_sub_list.append(flux_per_sub)
+            #Neff_per_sub_list.append(Neff_per_sub)
         self._slopes_cube = np.array(slopes_list)
         self._flux_per_sub_cube = np.array(flux_per_sub_list)
+        self._Neff_per_sub_cube = np.array(Neff_per_sub_list)
         self._rms_slopes_x_cube, self._rms_slopes_y_cube = self.get_rms_slopes_cube()
         self._compute_slopes_covariance_matrix()
         
