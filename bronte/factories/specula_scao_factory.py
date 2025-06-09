@@ -1,5 +1,5 @@
 import specula
-from pickle import NONE
+
 
 specula.init(-1, precision=1)  # Default target=-1 (CPU), float32=1
 from specula import np
@@ -56,7 +56,8 @@ class SpeculaScaoFactory(BaseFactory):
     #N_MODES_TO_CORRECT = 200 # moved to base factory
     INT_GAIN = -0.3
     INT_DELAY = 2                   # frames or ms
-    SH_PIX_THR = 200                # threshold in ADU for pixels in subapertures
+    SH_PIX_THR = 0#200                # threshold in ADU for pixels in subapertures
+    PIX_THR_RATIO = 0.2
     TIME_STEP_IN_SEC = 0.01          # time step of the simulated loop in sec
     
     def __init__(self):
@@ -83,12 +84,14 @@ class SpeculaScaoFactory(BaseFactory):
             sn = Slopes(len(self.slope_offset), self.slope_offset)
         else:
             sn = None
-        return ShSlopec(subapdata= self.subapertures_set, thr_value =  self.SH_PIX_THR, sn = sn)
+        slopec =  ShSlopec(subapdata= self.subapertures_set, thr_value =  self.SH_PIX_THR, sn = sn)
+        slopec.thr_ratio_value = self.PIX_THR_RATIO
+        return slopec
     
     @cached_property
     def reconstructor(self):
         recmat = Recmat.restore(package_data.reconstructor_folder() / (self.REC_MAT_TAG + "_bronte_rec.fits"))
-        modal_offset= np.zeros(self.N_MODES_TO_CORRECT)
+        modal_offset = np.zeros(self.N_MODES_TO_CORRECT)
         #added factor 2 missed on IFs normalization
         N_pp = 2
         recmat.recmat = N_pp*recmat.recmat  

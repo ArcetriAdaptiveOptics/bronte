@@ -14,6 +14,7 @@ class SlmDeviceManager(BaseProcessingObj):
     
     def __init__(self, factory,
                  setup_cmd = None,
+                 load_huge_tilt_under_mask = False,
                  target_device_idx = None,
                  precision = None,
                  do_plots = True):
@@ -25,6 +26,7 @@ class SlmDeviceManager(BaseProcessingObj):
         self._slm_raster = factory.slm_rasterizer
         self.inputs['ef'] = InputValue(type=ElectricField)
         self._do_plots = do_plots
+        self._load_tilt_under_mask = load_huge_tilt_under_mask
         self.first = True
         if factory.modal_offset is None:
             self._offset_cmd = 0.
@@ -40,9 +42,17 @@ class SlmDeviceManager(BaseProcessingObj):
         
         ef = self.local_inputs['ef']
         phase_screen = cpuArray(ef.phaseInNm) * 1e-9
+        
         phase_screen_to_raster = self._slm_raster.get_recentered_phase_screen_on_slm_pupil_frame(phase_screen)
+        if self._load_tilt_under_mask is True:
+            phase_screen_to_raster = self._slm_raster.load_a_tilt_under_pupil_mask()
+        
         self._command = self._slm_raster.reshape_map2vector(phase_screen_to_raster) + self._offset_cmd
-        self._slm.set_shape(self._command)
+        
+        if self._load_tilt_under_mask is True:
+            self._slm.set_shape(self._command.data) 
+        else:
+            self._slm.set_shape(self._command)
         time.sleep(self.SLM_RESPONSE_TIME)
         
         if self._do_plots:

@@ -10,18 +10,22 @@ from specula.data_objects.layer import Layer
 from specula.data_objects.subap_data import SubapData
 from specula.processing_objects.sh_slopec import ShSlopec
 from specula.processing_objects.dm import DM
+from specula.data_objects.slopes import Slopes
 from bronte.package_data import subaperture_set_folder, reconstructor_folder
 from functools import cached_property
 from bronte.utils.noll_to_radial_order import from_noll_to_radial_order
 from bronte.types.testbench_device_manager import TestbenchDeviceManager
+from bronte.utils.slopes_covariance_matrix_analyser import SlopesCovariaceMatrixAnalyser
 
 class MeasuredCalibrationFactory(BaseFactory):
     
     SUBAPS_TAG = '250120_122000'
+    SLOPE_OFFSET_TAG = None
     MODAL_BASE_TYPE = 'Zernike'
     #N_MODES_TO_CORRECT = 200
     TELESCOPE_PUPIL_DIAMETER = 568*2*9.2e-6   # m
-    SH_PIX_THR = 200 # in ADU
+    SH_PIX_THR = 0#200 # in ADU
+    PIX_THR_RATIO = 0.2
     PP_AMP_IN_NM = 2000
     TIME_STEP_IN_SEC = None 
     SOURCE_COORD = [0.0, 0.0] # [radius(in_arcsec), angle(in_deg)]
@@ -63,7 +67,13 @@ class MeasuredCalibrationFactory(BaseFactory):
     
     @cached_property
     def slope_computer(self):
-        return ShSlopec(subapdata= self.subapertures_set, thr_value =  self.SH_PIX_THR)
+        if self.SLOPE_OFFSET_TAG is not None:
+            sn = Slopes(len(self.slope_offset), self.slope_offset)
+        else:
+            sn = None
+        slopec =  ShSlopec(subapdata= self.subapertures_set, thr_value =  self.SH_PIX_THR, sn = sn)
+        slopec.thr_ratio_value = self.PIX_THR_RATIO
+        return slopec
     
     @cached_property
     def virtual_deformable_mirror(self):
@@ -74,6 +84,13 @@ class MeasuredCalibrationFactory(BaseFactory):
                 obsratio = 0,                    # obstruction dimension ratio w.r.t. diameter
                 height =  0)     # DM height [m]
         return virtual_dm
+    
+    @cached_property
+    def slope_offset(self):
+        if self.SLOPE_OFFSET_TAG is None:
+            return None
+        slope_offset, _, _ = SlopesCovariaceMatrixAnalyser.load_slope_offset(self.SLOPE_OFFSET_TAG)
+        return slope_offset
     
     @cached_property
     def testbench_devices(self):
