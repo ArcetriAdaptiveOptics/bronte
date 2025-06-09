@@ -2,7 +2,7 @@ import specula
 specula.init(-1, precision=1)  # Default target=-1 (CPU), float32=1
 from specula import np
 from specula.display.slopec_display import SlopecDisplay
-from bronte.startup import measured_calibration_startup, set_data_dir
+from bronte.startup import  set_data_dir
 from bronte.package_data import reconstructor_folder
 from astropy.io import fits
 from plico.rpc.zmq_remote_procedure_call import ZmqRpcTimeoutError
@@ -15,11 +15,11 @@ class MeasuredControlMatrixCalibrator():
     
     CALIBRATION_TYPE = 'MEASURED'
     
-    def __init__(self, ftag, pp_amp_in_nm = None, xp=np):
+    def __init__(self, calib_factory, ftag, pp_amp_in_nm = None, xp=np):
         
         self._logger = get_logger("MeasuredControlMatrixCalibrator")
         self._ftag = ftag
-        self._factory = measured_calibration_startup()
+        self._factory = calib_factory
         self._Nmodes = self._factory.N_MODES_TO_CORRECT 
         if pp_amp_in_nm is not None:
             self._factory.PP_AMP_IN_NM = pp_amp_in_nm
@@ -146,7 +146,7 @@ class MeasuredControlMatrixCalibrator():
         #HARDWARE PARAMETERS
         hdr['SLM_RAD'] = self._factory.SLM_PUPIL_RADIUS # in pixels
         hdr['SLM_YX'] = str(self._factory.SLM_PUPIL_CENTER) # YX pixel coordinates
-        hdr['SHPX_THR'] = self._factory.SH_PIX_THR # in ADU
+        hdr['SHPX_THR'] = np.min((self._factory.SH_PIX_THR, self._factory.PIX_THR_RATIO)) 
         hdr['PC_TEXP'] = 'NA' # in ms
         hdr['PC_FPS'] = 'NA'
         hdr['SH_TEXP'] = shwfs_texp # in ms

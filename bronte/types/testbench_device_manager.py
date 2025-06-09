@@ -51,7 +51,7 @@ class TestbenchDeviceManager(BaseProcessingObj):
         
         phase_screen_to_raster = self._slm_raster.get_recentered_phase_screen_on_slm_pupil_frame(phase_screen)
         if self._load_tilt_under_mask is True:
-            phase_screen_to_raster = self._slm_raster.load_a_tilt_under_pupil_mask()
+            phase_screen_to_raster = self._slm_raster.load_a_tilt_under_pupil_mask(phase_screen_to_raster)
         
         self._command = self._slm_raster.reshape_map2vector(phase_screen_to_raster) + self._offset_cmd
         
@@ -70,6 +70,10 @@ class TestbenchDeviceManager(BaseProcessingObj):
         
         if self._Nframes > 1:
             if self._sh_camera_bkg is not None:
+                # sh_camera_frame = sh_camera_frame[:,:,-1]
+                # sh_camera_frame = sh_camera_frame.astype(float) - self._sh_camera_bkg.astype(float)
+                # sh_camera_frame[sh_camera_frame < 0.] = 0.                
+                sh_camera_frame = sh_camera_frame[:,:,3:]
                 sh_camera_frame = DataCubeCleaner.get_master_from_rawCube(
                     sh_camera_frame, self._sh_camera_bkg)
             else:

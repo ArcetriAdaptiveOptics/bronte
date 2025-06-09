@@ -64,7 +64,8 @@ class SpeculaScaoRunner():
     def _setup_bench_devices(self):
         
         #self._factory.sh_camera.setExposureTime(self._factory._sh_texp)
-        self._bench_devices = TestbenchDeviceManager(self._factory, 
+        self._bench_devices = TestbenchDeviceManager(self._factory,
+                                load_huge_tilt_under_mask = self._factory.LOAD_HUGE_TILT_UNDER_MASK, 
                                 do_plots=True,
                                 target_device_idx= self._target_device_idx)
                 
@@ -224,7 +225,7 @@ class SpeculaScaoRunner():
         #HARDWARE PARAMETERS
         hdr['SLM_RAD'] = self._factory.SLM_PUPIL_RADIUS # in pixels
         hdr['SLM_YX'] = str(self._factory.SLM_PUPIL_CENTER) # YX pixel coordinates
-        hdr['SHPX_THR'] = self._factory.SH_PIX_THR # in ADU
+        hdr['SHPX_THR'] = np.min((self._factory.SH_PIX_THR, self._factory.PIX_THR_RATIO))#self._factory.SH_PIX_THR # in ADU
         hdr['PC_TEXP'] = psf_camera_texp # in ms
         hdr['PC_FPS'] = psf_camera_fps
         hdr['SH_TEXP'] = shwfs_texp # in ms

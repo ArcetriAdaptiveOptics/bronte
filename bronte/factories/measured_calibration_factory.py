@@ -21,9 +21,11 @@ class MeasuredCalibrationFactory(BaseFactory):
     
     SUBAPS_TAG = '250120_122000'
     SLOPE_OFFSET_TAG = None
+    LOAD_HUGE_TILT_UNDER_MASK  = False
     MODAL_BASE_TYPE = 'Zernike'
-    #N_MODES_TO_CORRECT = 200
-    TELESCOPE_PUPIL_DIAMETER = 568*2*9.2e-6   # m
+    PP_VCT_LOADED = False
+    #N_MODES_TO_CORRECT = 200 in BaseFactory
+    #TELESCOPE_PUPIL_DIAMETER = 568*2*9.2e-6   # m
     SH_PIX_THR = 0#200 # in ADU
     PIX_THR_RATIO = 0.2
     PP_AMP_IN_NM = 2000
@@ -37,7 +39,8 @@ class MeasuredCalibrationFactory(BaseFactory):
         
         super().__init__()
         self._pupil_diameter_in_pixel  = 2 * self.slm_pupil_mask.radius()
-        self._pupil_pixel_pitch = self.TELESCOPE_PUPIL_DIAMETER/self._pupil_diameter_in_pixel
+        
+        self._pupil_pixel_pitch = 9.2e-6 #self.TELESCOPE_PUPIL_DIAMETER/self._pupil_diameter_in_pixel
         self._load_sh_camera_master_bkg()
         self.TIME_STEP_IN_SEC = self._sh_texp * 1e-3
         self.SH_FRAMES2AVERAGE = 10
@@ -97,15 +100,17 @@ class MeasuredCalibrationFactory(BaseFactory):
         #self.sh_camera.setExposureTime(self._sh_texp)
         tbd = TestbenchDeviceManager(
             factory = self,
+            load_huge_tilt_under_mask = self.LOAD_HUGE_TILT_UNDER_MASK,
             target_device_idx = self._target_device_idx)
         return tbd
     
     @cached_property
     def push_pull(self):
         
-        j_noll_vector = np.arange(self.N_MODES_TO_CORRECT) + 2
-        radial_order = from_noll_to_radial_order(j_noll_vector)
-        self._pp_ampl_vect = self.PP_AMP_IN_NM /(radial_order) # in nm
+        if self.PP_VCT_LOADED is not True:
+            j_noll_vector = np.arange(self.N_MODES_TO_CORRECT) + 2
+            radial_order = from_noll_to_radial_order(j_noll_vector)
+            self._pp_ampl_vect = self.PP_AMP_IN_NM /(radial_order) # in nm
         #ampl_vect = np.ones(self.N_MODES_TO_CORRECT)*500
         pp = FuncGenerator(func_type = 'PUSHPULL',
                    nmodes = self.N_MODES_TO_CORRECT,
@@ -134,3 +139,7 @@ class MeasuredCalibrationFactory(BaseFactory):
     @cached_property
     def modal_offset(self):
         return None
+    
+    def load_custom_pp_amp_vector(self, pp_vector_in_nm):
+        self.PP_VCT_LOADED = True
+        self._pp_ampl_vect = pp_vector_in_nm

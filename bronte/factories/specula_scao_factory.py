@@ -1,6 +1,5 @@
 import specula
 
-
 specula.init(-1, precision=1)  # Default target=-1 (CPU), float32=1
 from specula import np
 from specula.data_objects.source import Source
@@ -31,6 +30,7 @@ class SpeculaScaoFactory(BaseFactory):
     MODAL_OFFSET_TAG = None 
     REC_MAT_TAG = '250307_140600'#'250207_120300' #'250127_155400'
     SLOPE_OFFSET_TAG = '250609_102700'
+    LOAD_HUGE_TILT_UNDER_MASK  = False
     #ATMO PARAMETERS
     ATMO_SEED = 1
     TELESCOPE_PUPIL_DIAMETER = 40   # m

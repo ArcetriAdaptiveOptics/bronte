@@ -14,7 +14,7 @@ class BaseFactory():
     PSFCAM_BKG_TAG = '250314_151800'
     SH_FRAMES2AVERAGE  = 1
     SLM_PUPIL_CENTER = (579, 968)#YX in pixel
-    SLM_PUPIL_RADIUS = 568 # in pixel
+    SLM_PUPIL_RADIUS = 545#568 # in pixel
     N_MODES_TO_CORRECT = 200
     
     def __init__(self):
