@@ -46,6 +46,9 @@ def shframes_folder():
 def psf_camera_folder():
     return data_root_dir() / "psf_camera_frames"
 
+def slope_offset_folder():
+    return data_root_dir() / "slope_offset"
+
 def modal_offsets_folder():
     return data_root_dir() / "modal_offsets"
 

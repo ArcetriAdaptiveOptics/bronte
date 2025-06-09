@@ -1,4 +1,6 @@
 import specula
+from pickle import NONE
+
 specula.init(-1, precision=1)  # Default target=-1 (CPU), float32=1
 from specula import np
 from specula.data_objects.source import Source
@@ -8,6 +10,7 @@ from specula.processing_objects.func_generator import FuncGenerator
 from specula.processing_objects.integrator import Integrator
 #from specula.processing_objects.int_control import IntControl
 from specula.processing_objects.sh_slopec import ShSlopec
+from specula.data_objects.slopes import Slopes
 from specula.processing_objects.dm import DM
 from specula.processing_objects.modalrec import Modalrec
 from specula.data_objects.subap_data import SubapData
@@ -16,8 +19,10 @@ from specula.data_objects.recmat import Recmat
 from functools import cached_property
 from bronte.factories.base_factory import BaseFactory
 from bronte import package_data
+from bronte.wfs.slope_computer import PCSlopeComputer
+from bronte.wfs.subaperture_set import ShSubapertureSet
 from bronte.telemetry_trash.display_telemetry_data import DisplayTelemetryData
-
+from bronte.utils.slopes_covariance_matrix_analyser import SlopesCovariaceMatrixAnalyser
 
 class SpeculaScaoFactory(BaseFactory):
     
@@ -25,7 +30,7 @@ class SpeculaScaoFactory(BaseFactory):
     SUBAPS_TAG = '250120_122000'
     MODAL_OFFSET_TAG = None 
     REC_MAT_TAG = '250307_140600'#'250207_120300' #'250127_155400'
-    
+    SLOPE_OFFSET_TAG = '250609_102700'
     #ATMO PARAMETERS
     ATMO_SEED = 1
     TELESCOPE_PUPIL_DIAMETER = 40   # m
@@ -66,8 +71,19 @@ class SpeculaScaoFactory(BaseFactory):
         return subapdata
     
     @cached_property
+    def subaperture_set_grid_map(self):
+        subap_set = ShSubapertureSet.restore(
+            package_data.subaperture_set_folder() / (self.SUBAPS_TAG + '.fits'))
+        sc = PCSlopeComputer(subap_set)
+        return sc.subapertures_map()
+    
+    @cached_property
     def slope_computer(self):
-        return ShSlopec(subapdata= self.subapertures_set, thr_value =  self.SH_PIX_THR)
+        if self.SLOPE_OFFSET_TAG is not None:
+            sn = Slopes(len(self.slope_offset), self.slope_offset)
+        else:
+            sn = None
+        return ShSlopec(subapdata= self.subapertures_set, thr_value =  self.SH_PIX_THR, sn = sn)
     
     @cached_property
     def reconstructor(self):
@@ -105,6 +121,13 @@ class SpeculaScaoFactory(BaseFactory):
             return None
         modal_offset,_ = DisplayTelemetryData.load_modal_offset(self.MODAL_OFFSET_TAG)
         return modal_offset 
+    
+    @cached_property
+    def slope_offset(self):
+        if self.SLOPE_OFFSET_TAG is None:
+            return None
+        slope_offset, _, _ = SlopesCovariaceMatrixAnalyser.load_slope_offset(self.SLOPE_OFFSET_TAG)
+        return slope_offset
     
     @cached_property
     def source_dict(self):

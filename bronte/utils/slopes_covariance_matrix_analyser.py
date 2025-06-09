@@ -1,6 +1,9 @@
 from bronte.utils.slopes_vector_analyser import SlopesVectorAnalyser
 import numpy as np 
 import matplotlib.pyplot as plt
+from bronte.startup import set_data_dir
+from bronte.package_data import slope_offset_folder
+from astropy.io import fits
 
 
 class SlopesCovariaceMatrixAnalyser():
@@ -30,6 +33,8 @@ class SlopesCovariaceMatrixAnalyser():
         '''
         self._frame_cube = frame_cube
         Nframes = frame_cube.shape[0]
+        self._pix_thr_ratio = pix_thr_ratio
+        self._abs_pix_thr = abs_pix_thr
         self._sva.reload_slope_pc(pix_thr_ratio, abs_pix_thr)
         slopes_list = []
         flux_per_sub_list = []
@@ -64,6 +69,18 @@ class SlopesCovariaceMatrixAnalyser():
     def get_slopes_covariace_matrix(self):
         return self._slope_covariance_matrix
     
+    def _compute_average_slopes(self):
+        self._average_slopes = self._slopes_cube.mean(axis = 0)
+    
+    def _compute_std_slopes(self):
+        self._std_slopes = self._slopes_cube.std(axis = 0)
+        
+    def get_average_slopes(self):
+        return self._average_slopes
+    
+    def get_std_slopes(self):
+        return self._std_slopes
+    
     def display_rms_slopes(self):
         
         norm2pixel = 0.5*self.NpixperSub
@@ -82,3 +99,25 @@ class SlopesCovariaceMatrixAnalyser():
         plt.clf()
         plt.imshow(self._slope_covariance_matrix)
         plt.colorbar()
+        
+    def save_average_slopes_as_slope_offset(self, ftag):
+        
+        set_data_dir()
+        file_name = slope_offset_folder() / (ftag + '.fits')
+        hdr = fits.Header()
+        hdr['SUB_TAG'] = self._subap_tag
+        hdr['ABS_THR'] = self._abs_pix_thr
+        hdr['REL_THR'] = self._pix_thr_ratio
+        slope_offset = self._average_slopes
+        fits.writeto(file_name, slope_offset, hdr)
+    
+    @staticmethod
+    def load_slope_offset(ftag):
+        set_data_dir()
+        file_name = slope_offset_folder() / (ftag + '.fits')
+        hduList = fits.open(file_name)
+        hdr = fits.getheader(file_name)
+        abs_thr = hdr['ABS_THR']
+        rel_thr = hdr['REL_THR']
+        slope_offset = hduList[0].data
+        return slope_offset, abs_thr, rel_thr

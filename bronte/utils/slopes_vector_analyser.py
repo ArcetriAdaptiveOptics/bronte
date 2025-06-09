@@ -49,6 +49,10 @@ class SlopesVectorAnalyser():
         self._slopec.thr_ratio_value = pix_thr_ratio
     
     def get_slopes_from_frame(self, frame = None, fluxperSub=False):
+        '''
+        computes the slopes from a frame
+        the returend slopes are normalized such that s lies in +/- 1
+        '''
         if frame is None:
             frame = self._frame
             

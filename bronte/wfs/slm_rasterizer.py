@@ -44,8 +44,8 @@ class SlmRasterizer():
         wf_on_pupil.fill_value = 0
         return wf_on_pupil
     
-    @cached_property
-    def _get_tilt_over_slm_full_frame(self, c2_m_rms = 30e-6):
+    #@cached_property
+    def _get_tilt_over_slm_full_frame(self, c2_m_rms = 60e-6):
         
         c2 = c2_m_rms * 0.5 * self.slm_pupil_mask.shape()[1]/self.slm_pupil_mask.radius()
         tilt_profile = np.linspace(-2*c2, 2*c2, self.slm_pupil_mask.shape()[1])
@@ -54,12 +54,12 @@ class SlmRasterizer():
     
     @logEnterAndExit("Loading a huge Tilt under Wavefront Mask",
                      "Huge Tilt loaded on Wavefront Mask", level='debug') 
-    def load_a_tilt_under_pupil_mask(self, wf):
+    def load_a_tilt_under_pupil_mask(self, wf, c2_m_rms = 60e-6):
         '''
         it returns a masked array where on the masked points is set a tilt
         c2_m_rms over cmask, then is extended to the full screen with the same slope
         '''
-        tilt_over_the_full_frame = self._get_tilt_over_slm_full_frame
+        tilt_over_the_full_frame = self._get_tilt_over_slm_full_frame(c2_m_rms)
         wf2raster = wf.copy()
         wf2raster[wf.mask == True] = tilt_over_the_full_frame[wf.mask == True]
         return wf2raster
