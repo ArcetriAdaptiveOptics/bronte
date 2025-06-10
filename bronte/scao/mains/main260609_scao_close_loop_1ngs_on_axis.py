@@ -10,13 +10,13 @@ def main(ftag='pippo'):
     sf.deformable_mirror.set_shape(flat)
     
     #SLM_RADIUS = 545 # set on base factory
-    sf.SUBAPS_TAG = '250120_122000'
-    sf.REC_MAT_TAG = '250609_145300' # Nmodes=10
-    sf.SLOPE_OFFSET_TAG = '250609_102700'
+    sf.SUBAPS_TAG = '250610_140500'
+    sf.REC_MAT_TAG = '250610_170500' # Nmodes=10
+    sf.SLOPE_OFFSET_TAG = '250610_150900'
     sf.LOAD_HUGE_TILT_UNDER_MASK = True
     
     sf.SH_PIX_THR = 0
-    sf.PIX_THR_RATIO = 0.2
+    sf.PIX_THR_RATIO = 0.18
     
     sf.ATMO_SEED = 1
     sf.TELESCOPE_PUPIL_DIAMETER = 8
@@ -35,10 +35,10 @@ def main(ftag='pippo'):
     
     #SETTING AO PARAMETERS
     sf.INT_DELAY = 2
-    sf.N_MODES_TO_CORRECT = 10
+    sf.N_MODES_TO_CORRECT = 200
     sf.TIME_STEP_IN_SEC = 0.001
     
-    sf.INT_GAIN =  -0.3
+    sf.INT_GAIN =  -0.15
     
     T = 3 #10 # in sec
     Nsteps = int(T/sf.TIME_STEP_IN_SEC)

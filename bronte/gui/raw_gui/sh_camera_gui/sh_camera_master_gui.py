@@ -14,8 +14,8 @@ from arte.utils.decorator import override
 class RealtimeSHWFSDisplay(BaseRealTimeCameraDisplay):
     
     FRAME_SHAPE = (2048, 2048)
-    SHWFS_BKG_TAG = '250211_135800'
-    SUBAPS_TAG = '250120_122000' 
+    SHWFS_BKG_TAG = '250610_152400'
+    SUBAPS_TAG = '250610_140500'#'250120_122000' 
     SH_PIX_THR = 200
     
     def __init__(self,

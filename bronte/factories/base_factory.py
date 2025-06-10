@@ -10,7 +10,7 @@ from bronte.utils.camera_master_bkg import CameraMasterMeasurer
 class BaseFactory():
     
     ELT_PUPIL_TAG = None #'EELT480pp0.0803m_obs0.283_spider2023'
-    SHWFS_BKG_TAG = '250211_135800'
+    SHWFS_BKG_TAG = '250610_152400'
     PSFCAM_BKG_TAG = '250314_151800'
     SH_FRAMES2AVERAGE  = 1
     SLM_PUPIL_CENTER = (579, 968)#YX in pixel

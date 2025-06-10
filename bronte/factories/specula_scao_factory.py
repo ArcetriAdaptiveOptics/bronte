@@ -26,10 +26,10 @@ from bronte.utils.slopes_covariance_matrix_analyser import SlopesCovariaceMatrix
 class SpeculaScaoFactory(BaseFactory):
     
     #FILE TAGS
-    SUBAPS_TAG = '250120_122000'
+    SUBAPS_TAG = '250610_140500'#'250120_122000'
     MODAL_OFFSET_TAG = None 
     REC_MAT_TAG = '250307_140600'#'250207_120300' #'250127_155400'
-    SLOPE_OFFSET_TAG = '250609_102700'
+    SLOPE_OFFSET_TAG = '250610_150900'
     LOAD_HUGE_TILT_UNDER_MASK  = False
     #ATMO PARAMETERS
     ATMO_SEED = 1
