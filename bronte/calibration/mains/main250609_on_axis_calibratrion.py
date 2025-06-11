@@ -2,6 +2,9 @@ from bronte.startup import measured_calibration_startup
 from bronte.calibration.measured_control_matrix_calibration import MeasuredControlMatrixCalibrator
 from bronte.utils.noll_to_radial_order import from_noll_to_radial_order
 import numpy as np
+from bronte.calibration.display_slope_maps_from_intmat import DisplaySlopeMapsFromInteractionMatrix
+from bronte.startup import set_data_dir
+import matplotlib.pyplot as plt 
 
 def main(ftag):
     
@@ -19,11 +22,14 @@ def main(ftag):
     calib_factory.FOV = 2*calib_factory.SOURCE_COORD[0] # diameter in arcsec
     calib_factory.SH_FRAMES2AVERAGE = 6 # the first 3 frames are discarded
     
-    pp_amp_in_nm = 1000
-    j_noll_vector = np.arange(Nmodes) + 2
-    radial_order = from_noll_to_radial_order(j_noll_vector)
-    pp_vector_in_nm = pp_amp_in_nm /(radial_order)
-    #pp_vector_in_nm[3:] = pp_vector_in_nm[3:] * 0.25
+    # pp_amp_in_nm = 5000#1000
+    # j_noll_vector = np.arange(Nmodes) + 2
+    # radial_order = from_noll_to_radial_order(j_noll_vector)
+    # pp_vector_in_nm = pp_amp_in_nm /(radial_order)**2
+    
+    pp_vector_in_nm = eris_like_calib()
+    plt.close('all')
+    
     calib_factory.load_custom_pp_amp_vector(pp_vector_in_nm)
     
     mcmc = MeasuredControlMatrixCalibrator(
@@ -32,3 +38,37 @@ def main(ftag):
         pp_amp_in_nm = None)
     
     mcmc.run()
+    
+def eris_like_calib():
+    
+    set_data_dir()
+    subap_tag = '250610_140500'
+    intmat_tag = '250611_123500'
+    
+    j_noll_vector = np.arange(200) + 2
+    radial_order = from_noll_to_radial_order(j_noll_vector)
+    pp_in_nm = 5000/(radial_order)**2
+    
+    dsm = DisplaySlopeMapsFromInteractionMatrix(intmat_tag, subap_tag, pp_in_nm)
+    im = dsm._intmat._intmat
+
+    imstd = im.std(axis=1)*pp_in_nm
+    target_val = 0.1
+    new_pp_vect_in_nm = (target_val/imstd)*pp_in_nm
+    new_pp_vect_in_nm[:2]=5000
+    
+    plt.figure()
+    plt.clf()
+    plt.plot(imstd, label=intmat_tag)
+    
+    plt.figure()
+    plt.clf()
+    plt.plot(j_noll_vector, pp_in_nm, label=intmat_tag)
+    plt.plot(j_noll_vector, new_pp_vect_in_nm, label='new pp')
+    plt.ylabel('Push-Pull [nm] rms wf')
+    plt.xlabel('j index')
+    plt.grid('--', alpha=0.3)
+    plt.legend(loc='best')
+    
+    new_pp_vect_in_nm[:2]=5000
+    return new_pp_vect_in_nm

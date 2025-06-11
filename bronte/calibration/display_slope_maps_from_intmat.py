@@ -10,12 +10,14 @@ from mpl_toolkits.axes_grid1 import make_axes_locatable
 
 class DisplaySlopeMapsFromInteractionMatrix():
     
-    def __init__(self, intmat_tag, subap_tag):
+    def __init__(self, intmat_tag, subap_tag, pp_vect_in_nm = None):
         
         self._subapdata = self._load_subaperture_set(subap_tag)
         self._intmat = self._load_intmat(intmat_tag)
+        self._pp_vec_in_nm = pp_vect_in_nm
         self._load_slopes_from_intmat()
-
+        
+        
     @staticmethod    
     def _load_intmat(intmat_tag):
         
@@ -38,16 +40,19 @@ class DisplaySlopeMapsFromInteractionMatrix():
         slope_maps_x = []
         slope_maps_y = []
         idl_slope_mask = self._subapdata.single_mask()
-        slope_mask = np.ones(idl_slope_mask.shape) - idl_slope_mask
+        self._slope_mask = np.ones(idl_slope_mask.shape) - idl_slope_mask
         
         for idx in range(n_modes):
-            ifs = self._intmat._intmat[idx]
+            if self._pp_vec_in_nm is not None:
+                ifs = self._intmat._intmat[idx]*self._pp_vec_in_nm[idx]
+            else:
+                ifs = self._intmat._intmat[idx]
             slope_obj = Slopes(slopes = ifs)
             slope_obj.single_mask = self._subapdata.single_mask()
             slope_obj.display_map = self._subapdata.display_map
             slope_map =  slope_obj.get2d()
-            slope_maps_x.append(np.ma.array(data = slope_map[0], mask = slope_mask))
-            slope_maps_y.append(np.ma.array(data = slope_map[1], mask = slope_mask))
+            slope_maps_x.append(np.ma.array(data = slope_map[0], mask = self._slope_mask))
+            slope_maps_y.append(np.ma.array(data = slope_map[1], mask = self._slope_mask))
         
         self._slope_maps_y = np.ma.array(slope_maps_y)
         self._slope_maps_x = np.ma.array(slope_maps_x)
@@ -79,5 +84,30 @@ class DisplaySlopeMapsFromInteractionMatrix():
         fig.suptitle(f"Mode index {mode_index}")
         fig.tight_layout()
     
-    def display_all_slope_maps(self):
-        pass
+    def display_all_slope_maps(self, size = 45, ncols = 3, nrows = 2, title = None):
+        
+        Nmodes = self._intmat._intmat.shape[0] 
+        Nx = 2 * size * ncols
+        Ny = size * nrows
+        full_map = np.zeros((Ny,Nx))
+        full_map_mask = np.zeros((Ny,Nx))
+        
+        idx = 0
+        # Nrows = nrows
+        # Ncols = ncols*2
+        for row in range(nrows):
+            for col in range(ncols):
+
+                full_map[row*size:(row+1)*size, (col*2)*size:(2*col+1)*size] = self._slope_maps_x[idx, 8:8+size, 14:14+size]
+                full_map[row*size:(row+1)*size, (2*col+1)*size:(2*col+2)*size] = self._slope_maps_y[idx, 8:8+size, 14:14+size]
+                full_map_mask[row*size:(row+1)*size, (col*2)*size:(2*col+1)*size] = self._slope_mask[8:8+size, 14:14+size]
+                full_map_mask[row*size:(row+1)*size, (2*col+1)*size:(2*col+2)*size] = self._slope_mask[8:8+size, 14:14+size]
+                idx+=1
+        
+                
+        plt.figure()
+        plt.clf()
+        plt.imshow(np.ma.array(data=full_map, mask=full_map_mask))
+        plt.colorbar()
+        if title is not None:
+            plt.title(title)
