@@ -27,13 +27,7 @@ def main():
     
     laser_frame_cube  = data_laser[0].data
     laser_bkg = data_laser[1].data
-    texp = 8 
-    # hdr = fits.Header()
-    # hdr['TEXP_MS'] = texp
-    # filename = shframes_folder() / '250610_152400.fits'
-    # fits.writeto(filename, laser_bkg, hdr)
-    
-    
+ 
     red_laser_cube = dcc.get_redCube_from_rawCube( laser_frame_cube, laser_bkg)
     laser_souce_frame = red_laser_cube.mean(axis=-1)
     
@@ -75,5 +69,5 @@ def main():
     
     sgi.remove_low_flux_subaperturers(threshold = 1.45e4)
     sgi.display_flux_and_grid_maps()
-    
-    sgi._subaps.save(subaperture_set_folder()/ "250610_140500.fits", None)
+    return sgi
+    #sgi._subaps.save(subaperture_set_folder()/ "250610_140500.fits", None)

@@ -33,23 +33,23 @@ class SubapertureGridInitialiser():
         self._sc = PCSlopeComputer(self._subaps)
         self._sc.set_frame(self._wf_ref)
 
-    def shift_subaperture_grid_with_memory(self, grid_shiftYX=[0, 0]):
-        '''
-        maybe useless
-        '''
-
-        if self._last_grid_shiftYX is not None:
-            reset_shiftYX = [-self._last_grid_shiftYX[0], -
-                             self._last_grid_shiftYX[1]]
-            self._subaps.shiftSubap(self._subaps.keys(), reset_shiftYX)
-
-        self._last_grid_shiftYX = grid_shiftYX
-
-        self._subaps.shiftSubap(self._subaps.keys(), grid_shiftYX)
-        # self._last_grid_shiftYX = grid_shiftYX
-        self.show_subaperture_grid()
-        plt.title(
-            f"Grid Shift: Y, X = [{grid_shiftYX[0]} , {grid_shiftYX[1]}]")
+    # def shift_subaperture_grid_with_memory(self, grid_shiftYX=[0, 0]):
+    #     '''
+    #     maybe useless
+    #     '''
+    #
+    #     if self._last_grid_shiftYX is not None:
+    #         reset_shiftYX = [-self._last_grid_shiftYX[0], -
+    #                          self._last_grid_shiftYX[1]]
+    #         self._subaps.shiftSubap(self._subaps.keys(), reset_shiftYX)
+    #
+    #     self._last_grid_shiftYX = grid_shiftYX
+    #
+    #     self._subaps.shiftSubap(self._subaps.keys(), grid_shiftYX)
+    #     # self._last_grid_shiftYX = grid_shiftYX
+    #     self.show_subaperture_grid()
+    #     plt.title(
+    #         f"Grid Shift: Y, X = [{grid_shiftYX[0]} , {grid_shiftYX[1]}]")
 
     def shift_subaperture_grid(self, grid_shiftYX=[0, 0]):
 
@@ -96,8 +96,6 @@ class SubapertureGridInitialiser():
         frame = self._sc.frame()[yc-hsize:yc+hsize,xc-hsize:xc+hsize]
         self._show_map(grid+frame)
         
-        
-    
     def show_subaperture_grid(self):
 
         self._show_map(self._sc.subapertures_map()*1000+self._sc.frame())
@@ -114,10 +112,11 @@ class SubapertureGridInitialiser():
 
         sub_flux = self._sc.subapertures_flux_map().flatten()
         bins = range(0, int(sub_flux.max()), int(sub_flux.max()*0.02))
+        #bins = range(0, len(sub_flux), 10)#len(sub_flux)*0.02)
         plt.figure()
         plt.clf()
         plt.hist(sub_flux, bins, fc='k', ec='k')
-        plt.xlabel('Sum Flux [ADU]')
+        plt.xlabel('Counts per Subap [ADU]')
         plt.ylabel('N')
 
     def show_subaperture_flux_map(self):
@@ -197,27 +196,183 @@ class SubapertureGridInitialiser():
                 slope_computer.subapertures.keys(), [offset_y, offset_x])
             slope_computer._reset_all_computed_attributes()
 
+    def remove_subaps_beyond_radius(self, central_subap_id, radius):
+        """
+        Remouves the subapertures over a certain distance from a central subaperture
+    
+        """
+        subap_set = self._subaps
+        subaperture_size = self.get_pixel_per_subapertures
+        frame_shape = self._wf_ref.shape
+        subIdMap = np.zeros(frame_shape, dtype=int)
+        for subap in subap_set.values():
+            subIdMap.flat[subap.pixelList()] = subap.ID()
+        
+        # computes the center of each subaperture
+        centers = {}
+        for subap in subap_set.values():
+            pixels = subap.pixelList()
+            rows, cols = np.unravel_index(pixels, subIdMap.shape)
+            center_row = np.mean(rows)
+            center_col = np.mean(cols)
+            
+            grid_row = int(center_row // subaperture_size)
+            grid_col = int(center_col // subaperture_size)
+            centers[subap.ID()] = (grid_row, grid_col)
+    
+        # computes the coordiates of the central subaperture
+        if central_subap_id not in centers:
+            raise ValueError("Central ID not found in subapertures")
+        c_row, c_col = centers[central_subap_id]
+    
+        # Computes the distances and the list of subapertures to be remouved
+        to_remove = []
+        for subap_id, (r, c) in centers.items():
+            dist = np.sqrt((r - c_row)**2 + (c - c_col)**2)  
+            if dist > radius:
+                to_remove.append(subap_id)
+    
+        # remouves the subapertures
+        subap_set.removeSubap(to_remove)
+
+    def display_simple_subapID_map(self):
+        
+        plt.figure()
+        plt.clf()
+        plt.imshow(self._sc.subapertures_id_map())
+
+    def display_subapID_map(self):
+
+        plt.figure()
+        plt.clf()
+    
+        id_map = self._sc.subapertures_id_map()
+    
+        plt.imshow(id_map, cmap='nipy_spectral')
+        #plt.colorbar(label='Subaperture ID')
+        plt.title("Subaperture ID map")
+    
+        unique_ids = np.unique(id_map)
+    
+        for sub_id in unique_ids:
+            if sub_id == 0:
+                continue  
+    
+            coords = np.argwhere(id_map == sub_id)
+            center_y, center_x = coords.mean(axis=0)
+
+            plt.text(center_x, center_y, str(np.int16(sub_id)),
+                     color='white', fontsize=5,
+                     ha='center', va='center')#,
+                    #weight='bold',
+                    #bbox=dict(facecolor='black', alpha=0.5, lw=0))
+    
+        plt.axis('off')
+        plt.show()
+    
+    def display_subaperture_status(self):
+        
+        plt.subplots(1, 3, sharex=True, sharey=True)
+        plt.subplot(1,3,1)
+        plt.imshow(self._sc.subapertures_flux_map())
+        plt.subplot(1,3,2)
+        plt.imshow(self._sc.subapertures_map()*1000+self._sc.frame())
+        plt.subplot(1,3,3)
+        plt.imshow(self._sc.subapertures_id_map())
+        
+    def interactive_subaperture_selection(self):
+        '''
+        allows the user to interact with the ID subap
+        to add and remove subapertures
+        '''
+        id_map = self._sc.subapertures_id_map()
+        flux_map = self._sc.subapertures_flux_map()
+        subap_map = self._sc.subapertures_map()
+        frame = self._sc.frame()
+    
+        # Copy of the initial full subaperture set
+        from copy import deepcopy
+        full_subaps = deepcopy(self._subaps)
+        selected_ids = set()
+    
+        fig, axes = plt.subplots(1, 3, sharex=True, sharey=True)
+        ax_flux, ax_combined, ax_id = axes
+    
+        img_flux = ax_flux.imshow(flux_map)
+        img_combined = ax_combined.imshow(subap_map * 1000 + frame)
+        img_id = ax_id.imshow(id_map)
+    
+        ax_flux.set_title("Flux Map")
+        ax_combined.set_title("SH Frame")
+        ax_id.set_title("Subap ID Map (click to Add/Remove Subaps)")
+    
+        def onclick(event):
+            if event.inaxes != ax_id:
+                return
+    
+            x, y = int(event.xdata), int(event.ydata)
+    
+            # search of id_map from the initial full subapset to collect the correct ID 
+            temp_sc = PCSlopeComputer(full_subaps)
+            temp_sc.set_frame(self._wf_ref)
+            full_id_map = temp_sc.subapertures_id_map()
+            subap_id = full_id_map[y, x]
+    
+            if subap_id == 0:
+                return
+    
+            # Toggle selection
+            if subap_id in selected_ids:
+                selected_ids.remove(subap_id)
+            else:
+                selected_ids.add(subap_id)
+    
+            # serche the filtered subset
+            filtered_subaps = {
+                sid: subap for sid, subap in full_subaps.items() if sid not in selected_ids
+            }
+    
+            # new slope computer
+            self._subaps = deepcopy(filtered_subaps)
+            self._sc = PCSlopeComputer(self._subaps)
+            self._sc.set_frame(self._wf_ref)
+    
+            # updates maps
+            id_map_updated = self._sc.subapertures_id_map()
+            flux_map_updated = self._sc.subapertures_flux_map()
+            subap_map_updated = self._sc.subapertures_map()
+    
+            img_flux.set_data(flux_map_updated)
+            img_combined.set_data(subap_map_updated * 1000 + self._sc.frame())
+            img_id.set_data(id_map_updated)
+    
+            fig.canvas.draw_idle()
+    
+        fig.canvas.mpl_connect('button_press_event', onclick)
+        plt.show()
+
+   
 
 
-def main(wf_ref, corner_xy=(0, 0), nsubaps=50, flux_threshold=57000):
-    pixel_per_sub = 26
-    # nsubaps = 78  # 50
-    sgi = SubapertureGridInitialiser(
-        wf_ref, pixel_per_sub, nsubaps, centroid_threshold=70)
-
-    sgi.show_reference_wf()
-    # top left coords to be fair
-    ybll = corner_xy[1]
-    xbll = corner_xy[0]
-    sgi.define_subaperture_set(ybll, xbll)
-    sgi.show_subaperture_grid()
-
-    # sgi.shift_subaperture_grid_to_null_tilt()
-
-    sgi.show_subaperture_flux_histogram()
-
-    sgi.remove_low_flux_subaperturers(flux_threshold)
-    sgi.show_subaperture_flux_map()
-    sgi.show_subaperture_grid()
-    sgi.show_slopes_maps()
-    return sgi
+# def main(wf_ref, corner_xy=(0, 0), nsubaps=50, flux_threshold=57000):
+#     pixel_per_sub = 26
+#     # nsubaps = 78  # 50
+#     sgi = SubapertureGridInitialiser(
+#         wf_ref, pixel_per_sub, nsubaps, centroid_threshold=70)
+#
+#     sgi.show_reference_wf()
+#     # top left coords to be fair
+#     ybll = corner_xy[1]
+#     xbll = corner_xy[0]
+#     sgi.define_subaperture_set(ybll, xbll)
+#     sgi.show_subaperture_grid()
+#
+#     # sgi.shift_subaperture_grid_to_null_tilt()
+#
+#     sgi.show_subaperture_flux_histogram()
+#
+#     sgi.remove_low_flux_subaperturers(flux_threshold)
+#     sgi.show_subaperture_flux_map()
+#     sgi.show_subaperture_grid()
+#     sgi.show_slopes_maps()
+#     return sgi

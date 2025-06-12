@@ -493,7 +493,9 @@ class ShSubapertureSet(dict):
                               normC[i])
             subapSet.addSubap(s)
         return subapSet
-
+    
+    
+    
     # @staticmethod
     # def create(wfsTag, cc, nsub, appendTo=None):
     #     '''
