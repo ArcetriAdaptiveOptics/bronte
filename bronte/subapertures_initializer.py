@@ -1,7 +1,5 @@
 import numpy as np
 import matplotlib.pyplot as plt
-
-
 from bronte.wfs.slope_computer import PCSlopeComputer
 from bronte.wfs.subaperture_set import ShSubapertureSet
 #from bronte.mains.main250117subaperture_set_initialiser import ShSubapertureSet
@@ -32,24 +30,6 @@ class SubapertureGridInitialiser():
 
         self._sc = PCSlopeComputer(self._subaps)
         self._sc.set_frame(self._wf_ref)
-
-    # def shift_subaperture_grid_with_memory(self, grid_shiftYX=[0, 0]):
-    #     '''
-    #     maybe useless
-    #     '''
-    #
-    #     if self._last_grid_shiftYX is not None:
-    #         reset_shiftYX = [-self._last_grid_shiftYX[0], -
-    #                          self._last_grid_shiftYX[1]]
-    #         self._subaps.shiftSubap(self._subaps.keys(), reset_shiftYX)
-    #
-    #     self._last_grid_shiftYX = grid_shiftYX
-    #
-    #     self._subaps.shiftSubap(self._subaps.keys(), grid_shiftYX)
-    #     # self._last_grid_shiftYX = grid_shiftYX
-    #     self.show_subaperture_grid()
-    #     plt.title(
-    #         f"Grid Shift: Y, X = [{grid_shiftYX[0]} , {grid_shiftYX[1]}]")
 
     def shift_subaperture_grid(self, grid_shiftYX=[0, 0]):
 
@@ -196,11 +176,11 @@ class SubapertureGridInitialiser():
                 slope_computer.subapertures.keys(), [offset_y, offset_x])
             slope_computer._reset_all_computed_attributes()
 
-    def remove_subaps_beyond_radius(self, central_subap_id, radius):
+    def remove_subaps_beyond_radius(self, central_subap_id, radius_inNsubap):
         """
-        Remouves the subapertures over a certain distance from a central subaperture
-    
+        Removes the subapertures over a certain distance from a central subaperture
         """
+        radius = radius_inNsubap
         subap_set = self._subaps
         subaperture_size = self.get_pixel_per_subapertures
         frame_shape = self._wf_ref.shape
@@ -283,7 +263,9 @@ class SubapertureGridInitialiser():
     def interactive_subaperture_selection(self):
         '''
         allows the user to interact with the ID subap
-        to add and remove subapertures
+        to add and remove subapertures. It is possible
+        to add and remove only the actual subaperture set status
+        the one before this function is called
         '''
         id_map = self._sc.subapertures_id_map()
         flux_map = self._sc.subapertures_flux_map()
@@ -321,22 +303,30 @@ class SubapertureGridInitialiser():
             if subap_id == 0:
                 return
     
-            # Toggle selection
+            # toggle selection
             if subap_id in selected_ids:
                 selected_ids.remove(subap_id)
             else:
                 selected_ids.add(subap_id)
     
-            # serche the filtered subset
+            # search the filtered subset
             filtered_subaps = {
                 sid: subap for sid, subap in full_subaps.items() if sid not in selected_ids
             }
     
-            # new slope computer
-            self._subaps = deepcopy(filtered_subaps)
+            # # new slope computer
+            # self._subaps = deepcopy(filtered_subaps)
+            # self._sc = PCSlopeComputer(self._subaps)
+            # self._sc.set_frame(self._wf_ref)
+    
+            # crea copia modificabile e rimuovi le subaperture escluse
+            self._subaps = deepcopy(full_subaps)
+            self._subaps.removeSubap(list(selected_ids))
+
+            # aggiorna slope computer
             self._sc = PCSlopeComputer(self._subaps)
             self._sc.set_frame(self._wf_ref)
-    
+            
             # updates maps
             id_map_updated = self._sc.subapertures_id_map()
             flux_map_updated = self._sc.subapertures_flux_map()
