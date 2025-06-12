@@ -69,5 +69,8 @@ def main():
     
     sgi.remove_low_flux_subaperturers(threshold = 1.45e4)
     sgi.display_flux_and_grid_maps()
+    sgi.set_curret_subapset_as_backup()
+    sgi.remove_subaps_beyond_radius(central_subap_id=1125, radius_inNsubap=20.3)
     return sgi
-    #sgi._subaps.save(subaperture_set_folder()/ "250610_140500.fits", None)
+    #sgi.interactive_subaperture_selection()
+    #sgi._subaps.save(subaperture_set_folder()/ "250612_143100.fits", None)

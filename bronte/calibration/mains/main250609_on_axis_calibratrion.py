@@ -22,12 +22,12 @@ def main(ftag):
     calib_factory.FOV = 2*calib_factory.SOURCE_COORD[0] # diameter in arcsec
     calib_factory.SH_FRAMES2AVERAGE = 6 # the first 3 frames are discarded
     
-    # pp_amp_in_nm = 5000#1000
-    # j_noll_vector = np.arange(Nmodes) + 2
-    # radial_order = from_noll_to_radial_order(j_noll_vector)
-    # pp_vector_in_nm = pp_amp_in_nm /(radial_order)**2
+    pp_amp_in_nm = 5000#1000
+    j_noll_vector = np.arange(Nmodes) + 2
+    radial_order = from_noll_to_radial_order(j_noll_vector)
+    pp_vector_in_nm = pp_amp_in_nm /(radial_order)**2
     
-    pp_vector_in_nm = eris_like_calib()
+    #pp_vector_in_nm = eris_like_calib()
     plt.close('all')
     
     calib_factory.load_custom_pp_amp_vector(pp_vector_in_nm)
@@ -38,6 +38,7 @@ def main(ftag):
         pp_amp_in_nm = None)
     
     mcmc.run()
+    mcmc.save_calib_config()
     
 def eris_like_calib():
     

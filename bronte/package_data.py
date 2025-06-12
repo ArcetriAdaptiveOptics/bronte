@@ -52,6 +52,9 @@ def slope_offset_folder():
 def modal_offsets_folder():
     return data_root_dir() / "modal_offsets"
 
+def pp_amp_vector_folder():
+    return data_root_dir() / "push_pull_amplitude_vectors"
+
 def temp_folder():
     return data_root_dir() / "temp_trash"
 
