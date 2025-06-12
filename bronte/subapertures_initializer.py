@@ -14,6 +14,7 @@ class SubapertureGridInitialiser():
         self._pixel_per_sub = int(pixel_per_sub)
         self._Nsub = int(Nsub)
         self._last_grid_shiftYX = None
+        self._original_subaps = None
         self._centroid_threshold = centroid_threshold
 
     def define_subaperture_set(self, ybll=400, xbll=350):
@@ -340,8 +341,22 @@ class SubapertureGridInitialiser():
     
         fig.canvas.mpl_connect('button_press_event', onclick)
         plt.show()
-
-   
+    
+    def set_curret_subapset_as_backup(self):
+        from copy import deepcopy
+        self._original_subaps = deepcopy(self._subaps)
+    
+    def reset_subapertures_to_backup(self):
+        """
+        Restore to a backup subaperture set
+        """
+        from copy import deepcopy
+        if self._original_subaps is None:
+            raise ValueError("Subaperture set backup is not defined.")
+        
+        self._subaps = deepcopy(self._original_subaps)
+        self._sc = PCSlopeComputer(self._subaps)
+        self._sc.set_frame(self._wf_ref)
 
 
 # def main(wf_ref, corner_xy=(0, 0), nsubaps=50, flux_threshold=57000):
