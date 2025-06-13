@@ -1,19 +1,21 @@
 from bronte.startup import measured_calibration_startup
+from bronte.package_data import pp_amp_vector_folder
 from bronte.calibration.measured_control_matrix_calibration import MeasuredControlMatrixCalibrator
 from bronte.utils.noll_to_radial_order import from_noll_to_radial_order
 import numpy as np
 from bronte.calibration.display_slope_maps_from_intmat import DisplaySlopeMapsFromInteractionMatrix
 from bronte.startup import set_data_dir
+from bronte.calibration.experimental_push_pull_amplitude_computer import ExperimentalPushPullAmplitudeComputer
 import matplotlib.pyplot as plt 
 
-def main(ftag):
+def main(ftag, pp_tag = None):
     
     ftag_calib = ftag
     calib_factory = measured_calibration_startup()
     Nmodes = 200
     #SLM_RADIUS = 545 # set on base factory
     calib_factory.N_MODES_TO_CORRECT = Nmodes
-    calib_factory.SUBAPS_TAG = '250610_140500'
+    calib_factory.SUBAPS_TAG = '250612_143100'#250610_140500'
     calib_factory.SLOPE_OFFSET_TAG = None
     calib_factory.LOAD_HUGE_TILT_UNDER_MASK  = True
     calib_factory.SH_PIX_THR = 0  # in ADU
@@ -22,10 +24,14 @@ def main(ftag):
     calib_factory.FOV = 2*calib_factory.SOURCE_COORD[0] # diameter in arcsec
     calib_factory.SH_FRAMES2AVERAGE = 6 # the first 3 frames are discarded
     
-    pp_amp_in_nm = 5000#1000
-    j_noll_vector = np.arange(Nmodes) + 2
-    radial_order = from_noll_to_radial_order(j_noll_vector)
-    pp_vector_in_nm = pp_amp_in_nm /(radial_order)**2
+    if pp_tag is not None:
+        pp_vector_in_nm, _ = ExperimentalPushPullAmplitudeComputer.load_pp_vector(pp_tag)
+        pp_vector_in_nm[:2] = 5000
+    else:
+        pp_amp_in_nm = 5000 #1000
+        j_noll_vector = np.arange(Nmodes) + 2
+        radial_order = from_noll_to_radial_order(j_noll_vector)
+        pp_vector_in_nm = pp_amp_in_nm /(radial_order)**2
     
     #pp_vector_in_nm = eris_like_calib()
     plt.close('all')
@@ -38,7 +44,7 @@ def main(ftag):
         pp_amp_in_nm = None)
     
     mcmc.run()
-    mcmc.save_calib_config()
+    #mcmc.save_calib_config()
     
 def eris_like_calib():
     

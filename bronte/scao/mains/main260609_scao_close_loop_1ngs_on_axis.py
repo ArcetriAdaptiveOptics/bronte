@@ -10,9 +10,9 @@ def main(ftag='pippo'):
     sf.deformable_mirror.set_shape(flat)
     
     #SLM_RADIUS = 545 # set on base factory
-    sf.SUBAPS_TAG = '250610_140500'
-    sf.REC_MAT_TAG = '250611_155700'#'250611_123500' # Nmodes=200
-    sf.SLOPE_OFFSET_TAG = '250610_150900'
+    sf.SUBAPS_TAG = '250612_143100'#'250610_140500'
+    sf.REC_MAT_TAG = '250613_102700'#'250613_111400'#'250611_155700'#'250611_123500' # Nmodes=200
+    sf.SLOPE_OFFSET_TAG = '250613_140600'#'250610_150900'
     sf.LOAD_HUGE_TILT_UNDER_MASK = True
     
     sf.SH_PIX_THR = 0

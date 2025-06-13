@@ -2,6 +2,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from bronte.wfs.slope_computer import PCSlopeComputer
 from bronte.wfs.subaperture_set import ShSubapertureSet
+from bronte.package_data import subaperture_set_folder, shframes_folder
 #from bronte.mains.main250117subaperture_set_initialiser import ShSubapertureSet
 #from arte.types.slopes import Slopes
 
@@ -251,16 +252,85 @@ class SubapertureGridInitialiser():
         plt.axis('off')
         plt.show()
     
+    # def display_subaperture_status(self):
+    #
+    #     plt.subplots(1, 3, sharex=True, sharey=True)
+    #     plt.subplot(1,3,1)
+    #     plt.title("Flux Map")
+    #     plt.imshow(self._sc.subapertures_flux_map())
+    #     plt.axis('off')
+    #     plt.subplot(1,3,2)
+    #     plt.title("SH Frame")
+    #     plt.imshow(self._sc.subapertures_map()*1000+self._sc.frame())
+    #     plt.axis('off')
+    #     plt.subplot(1,3,3)
+    #     #plt.imshow(self._sc.subapertures_id_map())
+    #     id_map = self._sc.subapertures_id_map()
+    #     plt.imshow(id_map, cmap='nipy_spectral')
+    #     #plt.colorbar(label='Subaperture ID')
+    #     plt.title("Subaperture ID map")
+    #
+    #     unique_ids = np.unique(id_map)
+    #
+    #     for sub_id in unique_ids:
+    #         if sub_id == 0:
+    #             continue  
+    #
+    #         coords = np.argwhere(id_map == sub_id)
+    #         center_y, center_x = coords.mean(axis=0)
+    #
+    #         plt.text(center_x, center_y, str(np.int16(sub_id)),
+    #                  color='white', fontsize=5,
+    #                  ha='center', va='center')#,
+    #                 #weight='bold',
+    #                 #bbox=dict(facecolor='black', alpha=0.5, lw=0))
+    #
+    #     plt.axis('off')
+        
+
+
     def display_subaperture_status(self):
         
-        plt.subplots(1, 3, sharex=True, sharey=True)
-        plt.subplot(1,3,1)
-        plt.imshow(self._sc.subapertures_flux_map())
-        plt.subplot(1,3,2)
-        plt.imshow(self._sc.subapertures_map()*1000+self._sc.frame())
-        plt.subplot(1,3,3)
-        plt.imshow(self._sc.subapertures_id_map())
-        
+        fig, axes = plt.subplots(1, 3, figsize=(15, 5), sharex=True, sharey=True)
+    
+        # --- Plot 1: Flux Map ---
+        flux_map = self._sc.subapertures_flux_map()
+        im1 = axes[0].imshow(flux_map)
+        axes[0].set_title("Flux Map")
+        axes[0].axis('off')
+        cbar1 = fig.colorbar(im1, ax=axes[0], orientation='horizontal', fraction=0.046, pad=0.08, label='ADU')
+        cbar1.ax.tick_params(labelsize=6)
+    
+        # --- Plot 2: SH Frame ---
+        sh_frame = self._sc.subapertures_map() * 1000 + self._sc.frame()
+        im2 = axes[1].imshow(sh_frame)
+        axes[1].set_title("SH Frame")
+        axes[1].axis('off')
+        cbar2 = fig.colorbar(im2, ax=axes[1], orientation='horizontal', fraction=0.046, pad=0.08, label='ADU')
+        cbar2.ax.tick_params(labelsize=6)
+    
+        # --- Plot 3: Subaperture ID map ---
+        id_map = self._sc.subapertures_id_map()
+        im3 = axes[2].imshow(id_map, cmap='nipy_spectral')
+        axes[2].set_title("Subaperture ID map")
+    
+        unique_ids = np.unique(id_map)
+        for sub_id in unique_ids:
+            if sub_id == 0:
+                continue
+            coords = np.argwhere(id_map == sub_id)
+            center_y, center_x = coords.mean(axis=0)
+            axes[2].text(center_x, center_y, str(np.int16(sub_id)),
+                         color='white', fontsize=5,
+                         ha='center', va='center')
+    
+        axes[2].axis('off')
+    
+        plt.tight_layout()
+        plt.show()
+
+    
+    
     def interactive_subaperture_selection(self):
         '''
         allows the user to interact with the ID subap
@@ -381,3 +451,12 @@ class SubapertureGridInitialiser():
 #     sgi.show_subaperture_grid()
 #     sgi.show_slopes_maps()
 #     return sgi
+
+    #
+    # @staticmethod
+    # def restore(subap_tag, wf_ref):
+    #     from astropy.io import fits
+    #     subap_file_name = subaperture_set_folder()/(subap_tag + '.fits')
+    #     subap = ShSubapertureSet.restore(subap_file_name)
+    #     sc = PCSlopeComputer(subap)
+    #     sc.set_frame(wf_ref)
