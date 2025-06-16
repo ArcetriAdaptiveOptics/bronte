@@ -65,7 +65,8 @@ class BaseRealTimeCameraDisplay(QtWidgets.QMainWindow):
     
     def _get_frame_from_camera(self):
         
-        frame = self._camera.getFrameForDisplay().toNumpyArray()
+        frame = self._camera.getFutureFrames(1).toNumpyArray()
+        #frame = self._camera.getFrameForDisplay(1).toNumpyArray()
         if frame.size == 0:
             raise ValueError("Warning: Image to display not Acquired!")
         return frame
