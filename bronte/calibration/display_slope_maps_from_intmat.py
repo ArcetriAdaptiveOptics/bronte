@@ -41,12 +41,13 @@ class DisplaySlopeMapsFromInteractionMatrix():
         slope_maps_y = []
         idl_slope_mask = self._subapdata.single_mask()
         self._slope_mask = np.ones(idl_slope_mask.shape) - idl_slope_mask
-        
+        ifs_list = []
         for idx in range(n_modes):
             if self._pp_vec_in_nm is not None:
                 ifs = self._intmat._intmat[idx]*self._pp_vec_in_nm[idx]
             else:
                 ifs = self._intmat._intmat[idx]
+            ifs_list.append(ifs)
             slope_obj = Slopes(slopes = ifs)
             slope_obj.single_mask = self._subapdata.single_mask()
             slope_obj.display_map = self._subapdata.display_map
@@ -56,6 +57,7 @@ class DisplaySlopeMapsFromInteractionMatrix():
         
         self._slope_maps_y = np.ma.array(slope_maps_y)
         self._slope_maps_x = np.ma.array(slope_maps_x)
+        self._ifs = np.array(ifs_list)
         
     def get_slope_maps(self):
         return self._slope_maps_x, self._slope_maps_y
@@ -84,9 +86,8 @@ class DisplaySlopeMapsFromInteractionMatrix():
         fig.suptitle(f"Mode index {mode_index}")
         fig.tight_layout()
     
-    def display_all_slope_maps(self, size = 45, ncols = 3, nrows = 2, title = None):
-        
-        Nmodes = self._intmat._intmat.shape[0] 
+    def _compute_full_slopes_map(self, size = 45, ncols = 3, nrows = 2):
+        #Nmodes = self._intmat._intmat.shape[0] 
         Nx = 2 * size * ncols
         Ny = size * nrows
         full_map = np.zeros((Ny,Nx))
@@ -103,11 +104,15 @@ class DisplaySlopeMapsFromInteractionMatrix():
                 full_map_mask[row*size:(row+1)*size, (col*2)*size:(2*col+1)*size] = self._slope_mask[8:8+size, 14:14+size]
                 full_map_mask[row*size:(row+1)*size, (2*col+1)*size:(2*col+2)*size] = self._slope_mask[8:8+size, 14:14+size]
                 idx+=1
-        
                 
+        self._full_slopes_map = np.ma.array(data=full_map, mask=full_map_mask)
+        
+    def display_all_slope_maps(self, size = 45, ncols = 3, nrows = 2, title = None):
+               
+        self._compute_full_slopes_map(size, ncols, nrows)
         plt.figure()
         plt.clf()
-        plt.imshow(np.ma.array(data=full_map, mask=full_map_mask))
+        plt.imshow(self._full_slopes_map)
         plt.colorbar()
         if title is not None:
             plt.title(title)
