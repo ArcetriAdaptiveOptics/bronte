@@ -1,5 +1,5 @@
 from bronte.startup import measured_calibration_startup
-from bronte.package_data import pp_amp_vector_folder
+#from bronte.package_data import pp_amp_vector_folder
 from bronte.calibration.measured_control_matrix_calibration import MeasuredControlMatrixCalibrator
 from bronte.utils.noll_to_radial_order import from_noll_to_radial_order
 import numpy as np
@@ -12,7 +12,7 @@ def main(ftag, pp_tag = None):
     
     ftag_calib = ftag
     calib_factory = measured_calibration_startup()
-    Nmodes = 200
+    Nmodes = 10#100#200
     #SLM_RADIUS = 545 # set on base factory
     calib_factory.N_MODES_TO_CORRECT = Nmodes
     calib_factory.SUBAPS_TAG = '250612_143100'#250610_140500'
@@ -36,7 +36,7 @@ def main(ftag, pp_tag = None):
     #pp_vector_in_nm = eris_like_calib()
     plt.close('all')
     
-    calib_factory.load_custom_pp_amp_vector(pp_vector_in_nm)
+    calib_factory.load_custom_pp_amp_vector(pp_vector_in_nm[:Nmodes])
     
     mcmc = MeasuredControlMatrixCalibrator(
         calib_factory,

@@ -11,7 +11,7 @@ def main(ftag='pippo'):
     
     #SLM_RADIUS = 545 # set on base factory
     sf.SUBAPS_TAG = '250612_143100'#'250610_140500'
-    sf.REC_MAT_TAG = '250613_102700'#'250613_111400'#'250611_155700'#'250611_123500' # Nmodes=200
+    sf.REC_MAT_TAG = '250617_103800'#'250613_102700'#'250613_111400'#'250611_155700'#'250611_123500' # Nmodes=200
     sf.SLOPE_OFFSET_TAG = '250613_140600'#'250610_150900'
     sf.LOAD_HUGE_TILT_UNDER_MASK = True
     
@@ -35,10 +35,10 @@ def main(ftag='pippo'):
     
     #SETTING AO PARAMETERS
     sf.INT_DELAY = 2
-    sf.N_MODES_TO_CORRECT = 200
+    sf.N_MODES_TO_CORRECT = 100#200
     sf.TIME_STEP_IN_SEC = 0.001
     
-    sf.INT_GAIN =  -0.1*np.ones(sf.N_MODES_TO_CORRECT)
+    sf.INT_GAIN =  -0.2*np.ones(sf.N_MODES_TO_CORRECT)
     
     T = 3 #10 # in sec
     Nsteps = int(T/sf.TIME_STEP_IN_SEC)

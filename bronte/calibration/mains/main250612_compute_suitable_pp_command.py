@@ -53,15 +53,17 @@ def compare_calib_with_subapset_250612_143100():
     epp1 = ExperimentalPushPullAmplitudeComputer(subap_tag, intmat_tag1, pp_vect_in_nm1)
     epp2 = ExperimentalPushPullAmplitudeComputer(subap_tag, intmat_tag2, pp_vect_in_nm2)
     
-    im0 = epp0._dsm._intmat._intmat
-    im1 = epp1._dsm._intmat._intmat
-    im2 = epp2._dsm._intmat._intmat
+    im0 = epp0._dsm._intmat._intmat.T
+    im1 = epp1._dsm._intmat._intmat.T
+    im2 = epp2._dsm._intmat._intmat.T
     
     u0,s0,vh0 = np.linalg.svd(im0)
     u1,s1,vh1 = np.linalg.svd(im1)
     u2,s2,vh2 = np.linalg.svd(im2)
-       
     
+    print(f"{intmat_tag0}: Eigen-value ratio (MAX/MIN) = {s0.max()/s0.min()} ")
+    print(f"{intmat_tag1}: Eigen-value ratio (MAX/MIN) = {s1.max()/s1.min()} ")
+    print(f"{intmat_tag2}: Eigen-value ratio (MAX/MIN) = {s2.max()/s2.min()} ")
     j_noll_vector = np.arange(200) + 2
     
     plt.figure()
@@ -146,7 +148,7 @@ def _get_stuff_from_calib(subap_tag, intmat_tag):
     u,s,vh = np.linalg.svd(im)
     ss = (s - s.min())/(s.max() - s.min())
     mean_slope = epp._dsm._ifs.mean(axis=-1)
-    return pp_vect_in_nm, epp, im, ss, mean_slope
+    return pp_vect_in_nm, epp, im, ss, s,  mean_slope
 
 def compare_calib_iterations_with_subapset_250612_143100():
     
@@ -158,10 +160,10 @@ def compare_calib_iterations_with_subapset_250612_143100():
     intmat_tag2 = '250616_103300'
     intmat_tag3 = '250616_113900'
     
-    pp_vect_in_nm0, epp0, im0, ss0, mean_slope0 = _get_stuff_from_calib(subap_tag, intmat_tag0)
-    pp_vect_in_nm1, epp1, im1, ss1, mean_slope1 = _get_stuff_from_calib(subap_tag, intmat_tag1)
-    pp_vect_in_nm2, epp2, im2, ss2, mean_slope2 = _get_stuff_from_calib(subap_tag, intmat_tag2)
-    pp_vect_in_nm3, epp3, im3, ss3, mean_slope3 = _get_stuff_from_calib(subap_tag, intmat_tag3)
+    pp_vect_in_nm0, epp0, im0, ss0, s0, mean_slope0 = _get_stuff_from_calib(subap_tag, intmat_tag0)
+    pp_vect_in_nm1, epp1, im1, ss1, s1, mean_slope1 = _get_stuff_from_calib(subap_tag, intmat_tag1)
+    pp_vect_in_nm2, epp2, im2, ss2, s2, mean_slope2 = _get_stuff_from_calib(subap_tag, intmat_tag2)
+    pp_vect_in_nm3, epp3, im3, ss3, s3, mean_slope3 = _get_stuff_from_calib(subap_tag, intmat_tag3)
     
     Nmodes = im0.shape[0]
     j_noll_vector = np.arange(Nmodes) + 2
@@ -209,6 +211,11 @@ def compare_calib_iterations_with_subapset_250612_143100():
     plt.legend(loc='best')
     plt.xlabel('Eigen-Mode index')
     plt.ylabel('Eigen-Value [Normalized]')
+    
+    print(f"{intmat_tag0}: Eigen-value ratio (MAX/MIN) = {s0.max()/s0.min()} ")
+    print(f"{intmat_tag1}: Eigen-value ratio (MAX/MIN) = {s1.max()/s1.min()} ")
+    print(f"{intmat_tag2}: Eigen-value ratio (MAX/MIN) = {s2.max()/s2.min()} ")
+    print(f"{intmat_tag3}: Eigen-value ratio (MAX/MIN) = {s2.max()/s3.min()} ")
     
     epp0._dsm._compute_full_slopes_map(size=45, ncols=5, nrows=40)
     epp1._dsm._compute_full_slopes_map(size=45, ncols=5, nrows=40)
