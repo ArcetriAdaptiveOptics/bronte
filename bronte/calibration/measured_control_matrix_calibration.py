@@ -154,8 +154,6 @@ class MeasuredControlMatrixCalibrator():
         
         fits.writeto(file_name, self._factory._pp_ampl_vect, hdr)
 
-    @logEnterAndExit("Loading data...",
-       "Data loaded.", level='debug')
     @staticmethod
     def load_calib_config(ftag):
         set_data_dir()

@@ -44,7 +44,7 @@ def main(ftag, pp_tag = None):
         pp_amp_in_nm = None)
     
     mcmc.run()
-    #mcmc.save_calib_config()
+ 
     
 def eris_like_calib():
     
