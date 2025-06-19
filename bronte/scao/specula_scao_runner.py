@@ -112,6 +112,7 @@ class SpeculaScaoRunner():
         self._slopes_vector_list = []
         self._zc_delta_modal_command_list = []
         self._zc_integrated_modal_command_list = []
+        self._sh_frames_list = []
         
     @logEnterAndExit("Updating telemetry buffer...",
                   "Telemetry buffer updated.", level='debug')  
@@ -127,6 +128,9 @@ class SpeculaScaoRunner():
         specula_integrated_commands_in_nm = self._groups[6][0].out_comm.value
         self._zc_integrated_modal_command_list.append(
             specula_integrated_commands_in_nm*1e-9)
+        sh_fr = self._groups[3][0].output_frame.pixels.copy()
+        print(sh_fr.shape)
+        self._sh_frames_list.append(sh_fr)
         
     @logEnterAndExit("Starting Loop...",
               "Loop Terminated.", level='debug')
@@ -221,7 +225,8 @@ class SpeculaScaoRunner():
         hdr['INT_DEL'] = self._factory.INT_DELAY # in frames
         hdr['N_STEPS'] = self._n_steps
         hdr['N_MODES'] = self._factory.N_MODES_TO_CORRECT
-        
+        hdr['SOFF_TAG'] = self._factory.SLOPE_OFFSET_TAG
+        hdr['HUGE_TT']  = np.int8(self._factory.LOAD_HUGE_TILT_UNDER_MASK)
         #HARDWARE PARAMETERS
         hdr['SLM_RAD'] = self._factory.SLM_PUPIL_RADIUS # in pixels
         hdr['SLM_YX'] = str(self._factory.SLM_PUPIL_CENTER) # YX pixel coordinates
@@ -234,9 +239,11 @@ class SpeculaScaoRunner():
         fits.writeto(file_name, np.array(self._slopes_vector_list), hdr)
         fits.append(file_name, np.array(self._zc_delta_modal_command_list))
         fits.append(file_name, np.array(self._zc_integrated_modal_command_list))
+        fits.append(file_name, np.array(self._sh_frames_list))
         if isinstance(self._factory.INT_GAIN, np.ndarray):
             fits.append(file_name, self._factory.INT_GAIN)
-
+        
+        
     # @logEnterAndExit("Loading data...",
     #        "Data loaded.", level='debug')
     @staticmethod
@@ -249,5 +256,6 @@ class SpeculaScaoRunner():
         slopes_vect = hduList[0].data
         zc_delta_modal_commands = hduList[1].data
         zc_integrated_modal_commands  = hduList[2].data
+        sh_frames = hduList[3].data
         
-        return  header, slopes_vect, zc_delta_modal_commands, zc_integrated_modal_commands
+        return  header, slopes_vect, zc_delta_modal_commands, zc_integrated_modal_commands, sh_frames

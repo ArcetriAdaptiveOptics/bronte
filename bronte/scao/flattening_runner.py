@@ -217,8 +217,9 @@ class FlatteningRunner():
         hdr['PC_FPS'] = psf_camera_fps
         hdr['SH_TEXP'] = shwfs_texp # in ms
         hdr['SH_FPS'] = shwfs_fps
-        
+        hdr['HUGE_TT']  = np.int8(self._factory.LOAD_HUGE_TILT_UNDER_MASK)
         fits.writeto(file_name, np.array(self._slopes_vector_list), hdr)
+        
         fits.append(file_name, np.array(self._zc_delta_modal_command_list))
         fits.append(file_name, np.array(self._zc_integrated_modal_command_list))
         if isinstance(self._factory.INT_GAIN, np.ndarray):

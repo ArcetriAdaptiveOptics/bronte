@@ -26,6 +26,7 @@ class SyntheticCalibrationFactory(SyntheticBaseFactory):
     PP_AMP_IN_NM = 2000
     TEXP_SH_CAM_IN_S = 8e-3
     WL_IN_NM = 633
+
     
     def __init__(self):
         

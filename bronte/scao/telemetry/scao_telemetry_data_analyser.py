@@ -22,7 +22,7 @@ class ScaoTelemetryDataAnalyser():
     def __init__(self, ftag):
         set_data_dir()
         self._telemetry_tag = ftag
-        self._hdr, self._slopes_vect, self._delta_cmds, self._integ_cmds = SpeculaScaoRunner.load_telemetry(ftag)
+        self._hdr, self._slopes_vect, self._delta_cmds, self._integ_cmds, self._sh_frames = SpeculaScaoRunner.load_telemetry(ftag)
         self._load_data_from_header()
         self._first_idx_mode = 2 # j noll index mode
         self._compute_rms_slopes()
@@ -110,7 +110,7 @@ class ScaoTelemetryDataAnalyser():
         self._intmat = self._load_intmat(self._hdr['REC_TAG'])
         self._recmat = self._load_recmat(self._hdr['REC_TAG'])
         
-        if self.seeing == 'NA':
+        if self.seeing == 'NA' or self.seeing==0:
             self.r0 = 0
         else:
             self.r0 = 500e-9/(self.seeing*self.ARCSEC2RAD)

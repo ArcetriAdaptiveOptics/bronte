@@ -7,7 +7,7 @@ from specula.processing_objects.dm import DM
 from specula.processing_objects.modalrec import Modalrec
 from specula.data_objects.subap_data import SubapData
 from specula.data_objects.recmat import Recmat
-
+from specula.data_objects.slopes import Slopes
 
 from functools import cached_property
 from bronte.factories.base_factory import BaseFactory
@@ -20,14 +20,15 @@ class SpeculaFlatteningFactory(BaseFactory):
     SUBAPS_TAG = '250120_122000'
     MODAL_OFFSET_TAG = None 
     REC_MAT_TAG = '250307_140600'
-    
+    SLOPE_OFFSET_TAG = None
+    LOAD_HUGE_TILT_UNDER_MASK  = False
     #AO PARAMETERS
     MODAL_BASE_TYPE = 'Zernike'
     #N_MODES_TO_CORRECT = 200 
     INT_GAIN = -0.3
     INT_DELAY = 2                   # frames or ms
     SH_ABS_PIX_THR = 0               # threshold in ADU for pixels in subapertures
-    SH_THR_RATIO = 0.17                # threshold ratio per subap
+    SH_THR_RATIO = 0.18                # threshold ratio per subap
     TIME_STEP_IN_SEC = 0.008          # time step of the simulated loop in sec
     
     def __init__(self):
@@ -43,9 +44,13 @@ class SpeculaFlatteningFactory(BaseFactory):
     
     @cached_property
     def slope_computer(self):
-        slopec = ShSlopec(subapdata= self.subapertures_set, thr_value =  self.SH_ABS_PIX_THR)
-        slopec.thr_ratio_value = self.SH_THR_RATIO
-        return slopec 
+        if self.SLOPE_OFFSET_TAG is not None:
+            sn = Slopes(len(self.slope_offset), self.slope_offset)
+        else:
+            sn = None
+        slopec =  ShSlopec(subapdata= self.subapertures_set, thr_value =  self.SH_PIX_THR, sn = sn)
+        slopec.thr_ratio_value = self.PIX_THR_RATIO
+        return slopec
     
     @cached_property
     def reconstructor(self):

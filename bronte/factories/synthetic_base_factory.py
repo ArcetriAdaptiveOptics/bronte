@@ -7,6 +7,8 @@ class SyntheticBaseFactory():
     
     ELT_PUPIL_TAG = None    #'EELT480pp0.0803m_obs0.283_spider2023'
     #SH_FRAMES2AVERAGE  = 1
+    SLM_PUPIL_CENTER = (579, 968)#YX in pixel
+    SLM_PUPIL_RADIUS = 545
     
     def __init__(self):
         self._target_device_idx= -1
@@ -20,7 +22,7 @@ class SyntheticBaseFactory():
         logging.basicConfig(level=logging.DEBUG, format=FORMAT)   
 
     def _create_slm_pupil_mask(self):
-        spm = SlmPupilMaskGenerator()
+        spm = SlmPupilMaskGenerator(self.SLM_PUPIL_RADIUS, self.SLM_PUPIL_CENTER)
         if self.ELT_PUPIL_TAG is not None:
             return spm.elt_pupil_mask(
                 package_data.elt_pupil_folder()/(self.ELT_PUPIL_TAG + '.fits'))

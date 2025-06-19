@@ -1,4 +1,4 @@
-from bronte.calibration.display_slope_maps_from_intmat import DisplaySlopeMapsFromInteractionMatrix
+from bronte.calibration.utils.display_slope_maps_from_intmat import DisplaySlopeMapsFromInteractionMatrix
 from bronte.startup import set_data_dir
 import numpy as np 
 import matplotlib.pyplot as plt

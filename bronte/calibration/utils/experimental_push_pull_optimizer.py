@@ -1,11 +1,11 @@
 from bronte.startup import set_data_dir
 from bronte.package_data import subaperture_set_folder, reconstructor_folder, pp_amp_vector_folder
-from bronte.calibration.display_slope_maps_from_intmat import DisplaySlopeMapsFromInteractionMatrix
+from bronte.calibration.utils.display_slope_maps_from_intmat import DisplaySlopeMapsFromInteractionMatrix
 import matplotlib.pyplot as plt
 import numpy as np
 from astropy.io import fits 
 
-class ExperimentalPushPullAmplitudeComputer():
+class ExperimentalPushPullOptimizer():
     '''
     like for eris. this class is meant to correct
     a pp amplitude vector looking at the slope std

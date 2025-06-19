@@ -1,6 +1,6 @@
 from bronte.startup import set_data_dir
 from bronte.package_data import reconstructor_folder
-from bronte.calibration.experimental_push_pull_amplitude_computer import ExperimentalPushPullAmplitudeComputer
+from bronte.calibration.utils.experimental_push_pull_optimizer import ExperimentalPushPullOptimizer
 from astropy.io import fits
 from bronte.calibration.mains.main250609_on_axis_calibratrion import eris_like_calib
 import matplotlib.pyplot as plt
@@ -17,7 +17,7 @@ def main():
     config_data = fits.open(file_name)
     pp_vect_in_nm = config_data[0].data
     #pp_vect_in_nm = eris_like_calib()
-    epp = ExperimentalPushPullAmplitudeComputer(subap_tag, intmat_tag, pp_vect_in_nm)
+    epp = ExperimentalPushPullOptimizer(subap_tag, intmat_tag, pp_vect_in_nm)
     
     epp.display_ifs_std()
     epp.compute_rescaled_pp_vector(target_val = 0.10)
@@ -49,9 +49,9 @@ def compare_calib_with_subapset_250612_143100():
     pp_vect_in_nm1 = _get_pp_vector_in_nm(intmat_tag1)
     pp_vect_in_nm2 = _get_pp_vector_in_nm(intmat_tag2)
     
-    epp0 = ExperimentalPushPullAmplitudeComputer(subap_tag, intmat_tag0, pp_vect_in_nm0)
-    epp1 = ExperimentalPushPullAmplitudeComputer(subap_tag, intmat_tag1, pp_vect_in_nm1)
-    epp2 = ExperimentalPushPullAmplitudeComputer(subap_tag, intmat_tag2, pp_vect_in_nm2)
+    epp0 = ExperimentalPushPullOptimizer(subap_tag, intmat_tag0, pp_vect_in_nm0)
+    epp1 = ExperimentalPushPullOptimizer(subap_tag, intmat_tag1, pp_vect_in_nm1)
+    epp2 = ExperimentalPushPullOptimizer(subap_tag, intmat_tag2, pp_vect_in_nm2)
     
     im0 = epp0._dsm._intmat._intmat.T
     im1 = epp1._dsm._intmat._intmat.T
@@ -143,7 +143,7 @@ def compare_calib_with_subapset_250612_143100():
 def _get_stuff_from_calib(subap_tag, intmat_tag):
     
     pp_vect_in_nm = _get_pp_vector_in_nm(intmat_tag)
-    epp = ExperimentalPushPullAmplitudeComputer(subap_tag, intmat_tag, pp_vect_in_nm)
+    epp = ExperimentalPushPullOptimizer(subap_tag, intmat_tag, pp_vect_in_nm)
     im = epp._dsm._intmat._intmat
     u,s,vh = np.linalg.svd(im)
     ss = (s - s.min())/(s.max() - s.min())
@@ -203,10 +203,10 @@ def compare_calib_iterations_with_subapset_250612_143100():
     
     plt.figure()
     plt.clf()
-    plt.plot(ss0, label = intmat_tag0)
-    plt.plot(ss1, label = intmat_tag1)
-    plt.plot(ss2, label = intmat_tag2)
-    plt.plot(ss3, label = intmat_tag3)
+    plt.plot(s0, label = intmat_tag0)
+    plt.plot(s1, label = intmat_tag1)
+    plt.plot(s2, label = intmat_tag2)
+    plt.plot(s3, label = intmat_tag3)
     plt.grid('--', alpha=0.3)
     plt.legend(loc='best')
     plt.xlabel('Eigen-Mode index')

@@ -1,18 +1,19 @@
 from bronte.startup import measured_calibration_startup
-from bronte.calibration.measured_pp_modes_reconstructor import PushPullModesMeasurer
+from bronte.calibration.runners.measured_pp_modes_reconstructor import PushPullModesMeasurer
 from bronte.package_data import reconstructor_folder
 from astropy.io import fits
+import numpy as np
 
 def main(ftag = 'pippo'):
     
     calib_factory = measured_calibration_startup()
-    recmat_tag = '250617_170100'
+    recmat_tag = '250619_141800'#'250616_103300'#'250617_170100'
     
     calib_tag = '_bronte_calib_config'
     file_name = reconstructor_folder() / (recmat_tag + calib_tag + '.fits')
     config_data = fits.open(file_name)
     pp_vector_in_nm = config_data[0].data
-    Nmodes = len(pp_vector_in_nm)
+    Nmodes = len(pp_vector_in_nm)#200
    
     #SLM_RADIUS = 545 # set on base factory
     calib_factory.N_MODES_TO_CORRECT = Nmodes
@@ -33,3 +34,31 @@ def main(ftag = 'pippo'):
     ppm.save(ftag)
     
     return ppm
+
+
+def check_reconstructed_modes(ftag):
+    import matplotlib.pyplot as plt
+    rec_modes, pp_vector_in_nm, slopes_vector, hdr = PushPullModesMeasurer.load(ftag)
+    
+    Nmodes = len(pp_vector_in_nm)
+   
+    rec_modes_push = np.zeros((Nmodes,Nmodes))
+    rec_modes_pull = np.zeros((Nmodes,Nmodes))
+    even_index = np.arange(0, 2*Nmodes, 2)
+    odd_index = np.arange(1, 2*Nmodes, 2)
+  
+    for idx in range(Nmodes):
+        
+        rec_modes_push[idx,:] = rec_modes[even_index[idx],:]/pp_vector_in_nm[idx]
+        rec_modes_pull[idx,:] = rec_modes[odd_index[idx],:]/(-1*pp_vector_in_nm[idx])
+        
+    plt.figure()
+    plt.clf()
+    plt.imshow(0.5*(rec_modes_push+rec_modes_pull))
+    plt.colorbar()
+    
+    plt.figure()
+    plt.clf()
+    plt.imshow(rec_modes_push)
+    plt.colorbar()
+    

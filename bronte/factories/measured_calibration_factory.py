@@ -22,7 +22,7 @@ class MeasuredCalibrationFactory(BaseFactory):
     SUBAPS_TAG = '250120_122000'
     SLOPE_OFFSET_TAG = None
     LOAD_HUGE_TILT_UNDER_MASK  = False
-    MODAL_BASE_TYPE = 'Zernike'
+    MODAL_BASE_TYPE = 'zernike'#'zernike'
     PP_VCT_LOADED = False
     #N_MODES_TO_CORRECT = 200 in BaseFactory
     #TELESCOPE_PUPIL_DIAMETER = 568*2*9.2e-6   # m
@@ -80,7 +80,7 @@ class MeasuredCalibrationFactory(BaseFactory):
     
     @cached_property
     def virtual_deformable_mirror(self):
-        virtual_dm = DM(type_str='zernike',
+        virtual_dm = DM(type_str=self.MODAL_BASE_TYPE,
                 pixel_pitch = self._pupil_pixel_pitch,
                 nmodes = self.N_MODES_TO_CORRECT,
                 npixels = self._pupil_diameter_in_pixel,                    # linear dimension of DM phase array

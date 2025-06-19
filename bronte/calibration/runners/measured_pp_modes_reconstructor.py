@@ -92,7 +92,7 @@ class PushPullModesMeasurer():
     def run(self):
         
         self.time_step = self._factory.TIME_STEP_IN_SEC
-        self._n_steps = 2 * self._Nmodes
+        self._n_steps = 2 * self._Nmodes *2
         tf = (self._n_steps - 1) * self.time_step
         
         for group in self._groups:
@@ -126,8 +126,10 @@ class PushPullModesMeasurer():
         hdr['SOFF_TAG'] = self._factory.SLOPE_OFFSET_TAG
         rec_modes = np.array(self._rec_modes_list)
         pp_vector_in_nm = self._factory._pp_ampl_vect
+        slopes_vector = np.array(self._slopes_vector_list)
         fits.writeto(file_name, rec_modes, hdr)
         fits.append(file_name, pp_vector_in_nm)
+        fits.append(file_name, slopes_vector)
         
     @staticmethod
     def load(ftag):
@@ -137,4 +139,5 @@ class PushPullModesMeasurer():
         hduList = fits.open(file_name)
         rec_modes = hduList[0].data
         pp_vector_in_nm = hduList[1].data
-        return rec_modes, pp_vector_in_nm, hdr
+        slopes_vector = hduList[2].data
+        return rec_modes, pp_vector_in_nm, slopes_vector, hdr
