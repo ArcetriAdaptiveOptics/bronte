@@ -9,8 +9,8 @@ import numpy as np
 def main():
     set_data_dir()
     
-    subap_tag = '250612_143100'#'250610_140500'#
-    intmat_tag = '250613_094300'#'250616_103300'#'250613_102700'#'250613_094300'#'250612_150500'#'250611_155700'#
+    subap_tag = '250612_143100'#'250617_165500'#'250612_143100'#'250610_140500'#
+    intmat_tag = '250617_165500'#'250616_103300'#'250613_102700'#'250613_094300'#'250612_150500'#'250611_155700'#
     calib_tag = '_bronte_calib_config'
     
     file_name = reconstructor_folder() / (intmat_tag + calib_tag + '.fits')
@@ -23,7 +23,7 @@ def main():
     epp.compute_rescaled_pp_vector(target_val = 0.10)
     epp.display_pp_amplitude_vector()
     
-    epp._dsm.display_all_slope_maps(size = 45, ncols=5, nrows=4)
+    epp._dsm.display_all_slope_maps(size = 45, ncols=2, nrows=1)
     
     return epp
     #epp.save_rescaled_pp_vector(ftag='250612_161500')

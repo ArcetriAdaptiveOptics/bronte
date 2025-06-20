@@ -127,6 +127,7 @@ class MeasuredControlMatrixCalibrator():
         hdr['SUB_TAG'] = self._factory.SUBAPS_TAG
         hdr['REC_TAG'] = self._ftag 
         hdr['IM_TAG'] = self._ftag 
+        hdr['SOFF_TAG'] = self._factory.SLOPE_OFFSET_TAG
         
         if self._factory.ELT_PUPIL_TAG is not None:
             hdr['ELT_TAG'] = self._factory.ELT_PUPIL_TAG

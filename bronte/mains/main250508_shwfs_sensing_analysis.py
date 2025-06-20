@@ -15,7 +15,7 @@ def z2_scan_analysis():
     '''
     set_data_dir()
     # loading TT scan data
-    ftag ='250512_102100' #'250512_102100'#'250430_144800' # Z2 data
+    ftag ='250430_144800' #'250512_102100'#'250430_144800' # Z2 data
     file_name = shframes_folder() / (ftag + '.fits')
     hdr = fits.getheader(file_name)
     jnoll_index = hdr['NOLL_J']
@@ -26,7 +26,7 @@ def z2_scan_analysis():
     ref_frame[ref_frame<0] = 0
     c_vector = hdl[2].data
     
-    subap_tag = '250120_122000'
+    subap_tag = '250612_143100'#'250120_122000'
     sva = SlopesVectorAnalyser(subap_tag)
     sva.reload_slope_pc(pix_thr_ratio = 0.18, abs_pix_thr = 0)
     Nsubap = sva._subapertures_set.n_subaps

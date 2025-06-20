@@ -222,6 +222,7 @@ class SpeculaScaoRunner():
         hdr['TSTEP_S'] = self.time_step # in seconds
         if np.isscalar(self._factory.INT_GAIN):
             hdr['INT_GAIN'] = self._factory.INT_GAIN
+            self._factory.INT_GAIN * np.ones(self._factory.N_MODES_TO_CORRECT)
         hdr['INT_DEL'] = self._factory.INT_DELAY # in frames
         hdr['N_STEPS'] = self._n_steps
         hdr['N_MODES'] = self._factory.N_MODES_TO_CORRECT
@@ -258,4 +259,5 @@ class SpeculaScaoRunner():
         zc_integrated_modal_commands  = hduList[2].data
         sh_frames = hduList[3].data
         
-        return  header, slopes_vect, zc_delta_modal_commands, zc_integrated_modal_commands, sh_frames
+        #int_gain = hduList[-1].data
+        return  header, slopes_vect, zc_delta_modal_commands, zc_integrated_modal_commands, sh_frames#, int_gain

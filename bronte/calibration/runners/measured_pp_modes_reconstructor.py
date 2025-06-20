@@ -92,7 +92,7 @@ class PushPullModesMeasurer():
     def run(self):
         
         self.time_step = self._factory.TIME_STEP_IN_SEC
-        self._n_steps = 2 * self._Nmodes *2
+        self._n_steps = self._Nmodes *2
         tf = (self._n_steps - 1) * self.time_step
         
         for group in self._groups:

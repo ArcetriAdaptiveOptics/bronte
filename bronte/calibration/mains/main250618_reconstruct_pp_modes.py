@@ -7,7 +7,7 @@ import numpy as np
 def main(ftag = 'pippo'):
     
     calib_factory = measured_calibration_startup()
-    recmat_tag = '250619_141800'#'250616_103300'#'250617_170100'
+    recmat_tag = '250619_141800'#'250617_165500'#'250616_103300'#'250617_170100'
     
     calib_tag = '_bronte_calib_config'
     file_name = reconstructor_folder() / (recmat_tag + calib_tag + '.fits')
@@ -29,11 +29,12 @@ def main(ftag = 'pippo'):
     calib_factory.load_custom_pp_amp_vector(pp_vector_in_nm[:Nmodes])
     
     ppm = PushPullModesMeasurer(calib_factory, recmat_tag)
+    return ppm
     ppm.run()
     
     ppm.save(ftag)
     
-    return ppm
+    #return ppm
 
 
 def check_reconstructed_modes(ftag):
@@ -42,23 +43,37 @@ def check_reconstructed_modes(ftag):
     
     Nmodes = len(pp_vector_in_nm)
    
-    rec_modes_push = np.zeros((Nmodes,Nmodes))
-    rec_modes_pull = np.zeros((Nmodes,Nmodes))
+    rec_modes_push_norm = np.zeros((Nmodes,Nmodes))
+    rec_modes_pull_norm = np.zeros((Nmodes,Nmodes))
     even_index = np.arange(0, 2*Nmodes, 2)
     odd_index = np.arange(1, 2*Nmodes, 2)
   
     for idx in range(Nmodes):
         
-        rec_modes_push[idx,:] = rec_modes[even_index[idx],:]/pp_vector_in_nm[idx]
-        rec_modes_pull[idx,:] = rec_modes[odd_index[idx],:]/(-1*pp_vector_in_nm[idx])
+        rec_modes_push_norm[idx,:] = rec_modes[even_index[idx],:]/pp_vector_in_nm[idx]
+        rec_modes_pull_norm[idx,:] = rec_modes[odd_index[idx],:]/(-1*pp_vector_in_nm[idx])
         
     plt.figure()
     plt.clf()
-    plt.imshow(0.5*(rec_modes_push+rec_modes_pull))
-    plt.colorbar()
+    plt.title(f'Push/Pull ({ftag})')
+    plt.imshow(0.5*(rec_modes_push_norm+rec_modes_pull_norm))
+    plt.colorbar(label='Normalized')
+    plt.xlabel('Mode index')
+    plt.ylabel('Reconstructed Mode Index')
+    plt.figure()
+    plt.clf()
+    plt.title(f'Reconstructed Push modal commands ({ftag})')
+    plt.imshow(rec_modes_push_norm)
+    plt.colorbar(label='Normalized')
+    plt.xlabel('Mode index')
+    plt.ylabel('Reconstructed Mode Index')
     
     plt.figure()
     plt.clf()
-    plt.imshow(rec_modes_push)
-    plt.colorbar()
+    plt.title(f'Reconstructed Pull modal commands ({ftag})')
+    plt.imshow(rec_modes_pull_norm)
+    plt.colorbar(label='Normalized')
+    plt.xlabel('Mode index')
+    plt.ylabel('Reconstructed Mode Index')
+    
     
