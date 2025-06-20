@@ -43,4 +43,28 @@ def main():
     
     stda = ScaoTelemetryDataAnalyser(telemetry_ftag)
     
+    stda.display_rms_slopes()
+    stda.display_delta_cmds_temporal_evolution()
+    
+    Nstep_conv = 30 # from rms slopes temporal evolution
+    integ_modal_cmd = stda._integ_cmds[Nstep_conv:,:]/1e-9
+    mean_integ_modal_cmd = integ_modal_cmd.mean(axis=0)
+    
+    wf_final = sf.slm_rasterizer.zernike_coefficients_to_raster(mean_integ_modal_cmd).toNumpyArray()
+    
+    plt.figure()
+    plt.clf()
+    plt.imshow(wf_final)
+    plt.colorbar(label = 'nm rms wf')
+    
+    res_wf = wf_ref + wf_final
+    fit_err = (res_wf).std()
+    plt.figure()
+    plt.clf()
+    plt.imshow(wf_ref + wf_final)
+    plt.colorbar(label = 'nm rms wf')
+    plt.title(f'fitting error {fit_err} nm rms wf')
+    
+    fit_err = (wf_ref + wf_final).std()
+    
     return slope_offset, rec_mat, stda
