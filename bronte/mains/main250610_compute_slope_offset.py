@@ -10,7 +10,7 @@ def main():
     subap_tag = '250612_143100'#'250610_140500'
     #load file
     set_data_dir()
-    fname = shframes_folder() / ('250610_143100.fits')
+    fname = shframes_folder() / ('250625_144900.fits')#('250610_143100.fits')
     hduList = fits.open(fname)
     frame_cube = hduList[0].data
     
@@ -49,4 +49,5 @@ def main():
     scma._sva.display2Dslope_maps_from_slope_vector(s_average)
     
     #scma.save_average_slopes_as_slope_offset('250610_150900')
-    scma.save_average_slopes_as_slope_offset('250613_140600')
+    #scma.save_average_slopes_as_slope_offset('250613_140600')
+    scma.save_average_slopes_as_slope_offset('250625_145500')

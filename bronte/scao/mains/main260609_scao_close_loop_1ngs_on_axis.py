@@ -11,7 +11,7 @@ def main(ftag='pippo'):
     
     #SLM_RADIUS = 545 # set on base factory
     sf.SUBAPS_TAG = '250612_143100'#'250610_140500'
-    sf.REC_MAT_TAG = '250619_141800'#'250616_103300'#'250617_103800'#'250613_102700'#'250613_111400'#'250611_155700'#'250611_123500' # Nmodes=200
+    sf.REC_MAT_TAG = '250616_103300'#'250619_141800'#'250616_103300'#'250617_103800'#'250613_102700'#'250613_111400'#'250611_155700'#'250611_123500' # Nmodes=200
     sf.SLOPE_OFFSET_TAG = None #'250613_140600'#'250610_150900'
     sf.LOAD_HUGE_TILT_UNDER_MASK = True
     
@@ -23,7 +23,7 @@ def main(ftag='pippo'):
     sf.TELESCOPE_PUPIL_DIAMETER = 8
     sf._pupil_pixel_pitch = sf.TELESCOPE_PUPIL_DIAMETER/sf._pupil_diameter_in_pixel
     sf.OUTER_SCALE_L0 = 40             # m
-    sf.SEEING = 1                  # arcsec
+    sf.SEEING = 0#1                  # arcsec
     sf.WIND_SPEED_LIST = [5.0]
     sf.WIND_DIR_LIST = [0, 0]
     sf.LAYER_HEIGHTS_LIST = [0.0] # in m
@@ -36,14 +36,21 @@ def main(ftag='pippo'):
     
     #SETTING AO PARAMETERS
     sf.INT_DELAY = 2
-    sf.N_MODES_TO_CORRECT = 25#200
+    sf.N_MODES_TO_CORRECT = 200# 25#
     sf.TIME_STEP_IN_SEC = 0.001
     
-    sf.INT_GAIN =  -0.2*np.ones(sf.N_MODES_TO_CORRECT)
+    gain_vector =  -0.1*np.ones(sf.N_MODES_TO_CORRECT)
+    gain_vector[:3] = -0.10
+    gain_vector[3:53] = -0.10
+    gain_vector[53:100] = -0.08#-0.025
+    gain_vector[100:] = -0.01
     
-    T = 0.05 #10 # in sec
+    
+    sf.INT_GAIN = gain_vector
+    
+    T = 0.1#0.05 #10 # in sec
     Nsteps = int(T/sf.TIME_STEP_IN_SEC)
     
-    ssr = SpeculaScaoRunner(sf)
+    ssr = SpeculaScaoRunner(sf) 
     ssr.run(Nsteps)
     ssr.save_telemetry(ftag)

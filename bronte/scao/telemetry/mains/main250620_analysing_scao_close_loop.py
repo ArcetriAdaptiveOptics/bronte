@@ -2,13 +2,18 @@ from bronte import startup
 from bronte.scao.telemetry.scao_telemetry_data_analyser import ScaoTelemetryDataAnalyser
 import numpy as np
 import matplotlib.pyplot as plt
+from arte.types.wavefront import Wavefront
 
-def main():
+def main(telemetry_ftag,
+          slope_offset_tag = '250625_145500',
+          subap_tag = '250612_143100',
+          rec_tag = '250616_103300'
+          ):
     
-    subap_tag = '250612_143100'
-    slope_offset_tag = '250613_140600'
-    rec_tag = '250619_141800'
-    telemetry_ftag = '250619_171100'
+    #subap_tag = '250612_143100'
+    #slope_offset_tag = '250625_145500'#'250613_140600'
+    #rec_tag = '250616_103300'#'250619_141800'
+    #telemetry_ftag = '250625_143500'#'250625_113600'#'250625_102000'#'250625_095600'#'250625_102000'#'250625_095600'#'250619_171100'
     
     sf = startup.specula_startup()
     sf.SUBAPS_TAG = subap_tag
@@ -38,6 +43,7 @@ def main():
     
     plt.figure()
     plt.clf()
+    plt.title('Reference WF')
     plt.imshow(wf_ref)
     plt.colorbar(label = 'nm rms wf')
     
@@ -46,7 +52,7 @@ def main():
     stda.display_rms_slopes()
     stda.display_delta_cmds_temporal_evolution()
     
-    Nstep_conv = 30 # from rms slopes temporal evolution
+    Nstep_conv = 40#30 # from rms slopes temporal evolution
     integ_modal_cmd = stda._integ_cmds[Nstep_conv:,:]/1e-9
     mean_integ_modal_cmd = integ_modal_cmd.mean(axis=0)
     
@@ -54,8 +60,21 @@ def main():
     
     plt.figure()
     plt.clf()
+    plt.title('WF Integ')
     plt.imshow(wf_final)
     plt.colorbar(label = 'nm rms wf')
+    
+    vmin = np.min((wf_ref.min(),wf_final.min()))
+    vmax = np.max((wf_ref.max(),wf_final.max()))
+    plt.subplots(1,2,sharex=True, sharey=True)
+    plt.subplot(1,2,1)
+    plt.imshow(wf_ref, vmin=vmin, vmax=vmax)
+    plt.colorbar(label = 'nm rms wf')
+    plt.title('Reference WF')
+    plt.subplot(1,2,2)
+    plt.imshow(wf_final, vmin=vmin, vmax=vmax)
+    plt.colorbar(label = 'nm rms wf')
+    plt.title('Integ')
     
     res_wf = wf_ref + wf_final
     fit_err = (res_wf).std()
@@ -64,6 +83,14 @@ def main():
     plt.imshow(wf_ref + wf_final)
     plt.colorbar(label = 'nm rms wf')
     plt.title(f'fitting error {fit_err} nm rms wf')
+    
+    resWF = Wavefront(res_wf)
+    res_coeff = sf.slm_rasterizer._zernike_modal_decomposer.measureModalCoefficientsFromWavefront(resWF, sf.slm_rasterizer.slm_pupil_mask, sf.slm_rasterizer.slm_pupil_mask)   
+    plt.figure()
+    plt.clf()
+    plt.plot( res_coeff.toNumpyArray(), '.-', label='decomposed res WF')
+    plt.xlabel('mode index')
+    plt.ylabel('cj nm rms wf')
     
     fit_err = (wf_ref + wf_final).std()
     
