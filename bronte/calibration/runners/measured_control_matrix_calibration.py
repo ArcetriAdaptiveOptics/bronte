@@ -147,7 +147,7 @@ class MeasuredControlMatrixCalibrator():
         #HARDWARE PARAMETERS
         hdr['SLM_RAD'] = self._factory.SLM_PUPIL_RADIUS # in pixels
         hdr['SLM_YX'] = str(self._factory.SLM_PUPIL_CENTER) # YX pixel coordinates
-        hdr['SHPX_THR'] = np.min((self._factory.SH_PIX_THR, self._factory.PIX_THR_RATIO)) 
+        hdr['SHPX_THR'] = np.max((self._factory.SH_PIX_THR, self._factory.PIX_THR_RATIO)) 
         hdr['PC_TEXP'] = 'NA' # in ms
         hdr['PC_FPS'] = 'NA'
         hdr['SH_TEXP'] = shwfs_texp # in ms
