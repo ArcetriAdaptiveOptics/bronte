@@ -129,7 +129,7 @@ class SpeculaScaoRunner():
         self._zc_integrated_modal_command_list.append(
             specula_integrated_commands_in_nm*1e-9)
         sh_fr = self._groups[3][0].output_frame.pixels.copy()
-        self._sh_frames_list.append(sh_fr)
+        #self._sh_frames_list.append(sh_fr)
         
     @logEnterAndExit("Starting Loop...",
               "Loop Terminated.", level='debug')

@@ -28,7 +28,7 @@ class ScaoTelemetryDataAnalyser():
         self._compute_rms_slopes()
         self._ol_cmds = None
         self._compute_pseudo_open_loop_modal_cmds()
-        
+        self._compute_residual_wavefront()
         
     def get_slope_map_cubes(self):
         return self._compute_slope_maps
@@ -59,15 +59,35 @@ class ScaoTelemetryDataAnalyser():
     def _compute_rms_slopes(self):
         
         slope_map_cube_x, slope_map_cube_y = self._compute_slope_maps
-        self._rms_slopes_x = np.sqrt(np.mean(slope_map_cube_x**2, axis=(1,2)))
-        self._rms_slopes_y = np.sqrt(np.mean(slope_map_cube_y**2, axis=(1,2)))
+        self._rms_slopes_x = self._rootm_mean_squared(slope_map_cube_x, axis=(1,2))
+        self._rms_slopes_y = self._rootm_mean_squared(slope_map_cube_y, axis=(1,2))
     
-    # def _get_total_wavefront_error_reconstruction(self):
-    #
-    #     var = self._integ_cmds[-1]**2
-    #     tot_wf_err_in_m = np.sqrt(var.sum())
-    #     return tot_wf_err_in_m
-    #
+    def _compute_residual_wavefront(self):
+        
+        self._residual_wf = self._root_squared_sum(self._delta_cmds, axis=1)
+    
+    def _rootm_mean_squared(self, x, **kwargs):
+        return np.sqrt(np.mean(x**2, **kwargs))
+        
+    def _root_squared_sum(self, x, **kwargs):
+        return np.sqrt(np.sum(x**2, **kwargs))
+    
+    def display_residual_wavefront(self, display_ol = False):
+        
+        residual_wf_in_nm = self._residual_wf/1e-9
+        N = len(residual_wf_in_nm)
+        time_vector = np.arange(N)*self.loop_time_step
+        plt.figure()
+        plt.clf()
+        plt.plot(time_vector, residual_wf_in_nm, label='CL')
+        if display_ol is True:
+            self._ol_residual_wf = self._root_squared_sum(self._ol_cmds, axis=1)
+            ol_t_vector = np.arange(len(self._ol_residual_wf))*self.loop_time_step
+            plt.plot(ol_t_vector, self._ol_residual_wf/1e-9, label = 'OL')
+        plt.xlabel('Time [s]')
+        plt.ylabel('Residual Wavefront [nm] rms')
+        plt.grid('--', alpha=0.3)
+        plt.legend(loc='best')
     # def _get_residual_wavefront_after_perfect_compensation(self):
     #
     #     J = self.corrected_modes + self._first_idx_mode + 1
@@ -255,24 +275,36 @@ class ScaoTelemetryDataAnalyser():
         plt.ylabel('rms slopes [au]')
         plt.xlabel('step')
         
-    def show_modal_plot(self):
+    def show_modal_plot(self, cl_delta_cmds, rms_or_std = 'std'):
         '''
         displays the temporal standard deviation of the modal coefficients
+        cl_delta_cmds is a 2Darray [Nstep,Nmodes] in the loop convergence domain
         '''
-
-        delta_cmd_std = self._delta_cmds.std(axis=0)
-        pseudo_open_loop_cmd_std = self._pol_modal_cmds.std(axis=0)
+        def compute_modal_evolution(delta_cmds, rms_or_std):
+            if rms_or_std == 'std':
+                return delta_cmds.std(axis=0)
+            else:
+                return self._rootm_mean_squared(delta_cmds, axis=0)
+                
+        
+        delta_cmd_std = compute_modal_evolution(cl_delta_cmds, rms_or_std)
+        #pseudo_open_loop_cmd_std = self._pol_modal_cmds.std(axis=0)
         mode_index_list = np.arange(self._first_idx_mode,
                                          self.corrected_modes + self._first_idx_mode)
         plt.figure()
         plt.clf()
-        plt.loglog(mode_index_list, pseudo_open_loop_cmd_std, 'r-', label = 'P-OL')
+        #plt.loglog(mode_index_list, pseudo_open_loop_cmd_std, 'r-', label = 'P-OL')
         plt.loglog(mode_index_list, delta_cmd_std, label='CL')
         if self._ol_cmds is not None:
-            ol_cmd_std = self._ol_cmds.std(axis=0)
-            plt.loglog(mode_index_list, ol_cmd_std[:self.corrected_modes],'g--', label='OL')
+            ol_cmd_std = compute_modal_evolution(self._ol_cmds, rms_or_std)
+            if rms_or_std == 'rms':
+                ol_label = 'OL (rms)'
+            else:
+                ol_label = 'OL (std)'
+                
+            plt.loglog(mode_index_list, ol_cmd_std[:self.corrected_modes],'g--', label=ol_label)
         plt.xlabel('j Noll index')
-        plt.ylabel('modal temporal std '+ r'$\sigma_{std}$' + ' [m rms wf]')
+        plt.ylabel('modal temporal variation '+ r'$\sigma_{std or rms}$' + ' [m rms wf]')
         plt.legend(loc='best')
         plt.grid('--', alpha=0.3)
     
@@ -291,7 +323,7 @@ class ScaoTelemetryDataAnalyser():
         self._check_headers(hdr)
     
     def load_open_loop_modal_commands(self, ftag):
-        self._ol_hdr, self._ol_slopes, self._ol_cmds, _ = SpeculaScaoRunner.load_telemetry(ftag)
+        _, _, self._ol_cmds,_,_ = SpeculaScaoRunner.load_telemetry(ftag)
         
     #TODO: check if the parameters are the same
     def _check_headers(self, hdr):

@@ -122,8 +122,6 @@ def compare_slope_offset(
         rec_tag = '250619_141800',
         subap_tag = '250612_143100'):
     
-    
-
     slope_offset_tag_old = '250613_140600'
     slope_offset_tag_new = '250625_145500'
     
@@ -189,3 +187,6 @@ def compare_slope_offset(
     plt.imshow(wf_diff)
     plt.colorbar(label = 'nm rms wf')
     plt.title(f'Difference std %g nm rms'%wf_diff.std())
+    
+    print(c_offset_new_in_nm[:12])
+    print(c_offset_old_in_nm[:12])

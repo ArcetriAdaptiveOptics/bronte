@@ -3,7 +3,7 @@ from arte.utils.zernike_decomposer import ZernikeModalDecomposer
 import logging
 from arte.utils.decorator import logEnterAndExit
 from arte.types.zernike_coefficients import ZernikeCoefficients
-from functools import cached_property
+from functools import cache
 
 
 
@@ -44,9 +44,8 @@ class SlmRasterizer():
         wf_on_pupil.fill_value = 0
         return wf_on_pupil
     
-    #@cached_property
+    @cache
     def _get_tilt_over_slm_full_frame(self, c2_m_rms = 60e-6):
-        
         c2 = c2_m_rms * 0.5 * self.slm_pupil_mask.shape()[1]/self.slm_pupil_mask.radius()
         tilt_profile = np.linspace(-2*c2, 2*c2, self.slm_pupil_mask.shape()[1])
         tilt_over_the_full_frame = self.reshape_vector2map(np.tile(tilt_profile, self.slm_pupil_mask.shape()[0]))
@@ -76,7 +75,9 @@ class SlmRasterizer():
     
     def get_zernike_coefficients_from_numpy_array(self, coef_array):
         return ZernikeCoefficients.fromNumpyArray(coef_array)
-    
+
+    @logEnterAndExit("Recentering wavefront on slm pupil",
+                     "Wavefront recentered on the slm pupil", level='debug')     
     def get_recentered_phase_screen_on_slm_pupil_frame(self, phase_screen):
         # TODO: rise error if the shift exceed the slm frame size
         new_size = 2 * self.slm_pupil_mask.radius()

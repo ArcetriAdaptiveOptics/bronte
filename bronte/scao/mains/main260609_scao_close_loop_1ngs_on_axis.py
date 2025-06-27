@@ -2,7 +2,7 @@ from bronte.startup import specula_startup
 from bronte.scao.specula_scao_runner import SpeculaScaoRunner
 import numpy as np 
 
-def main(ftag='pippo'):
+def main(ftag='pippo', seeing=0, gain_vector=None, total_time=0.1):
     
     sf = specula_startup()
     
@@ -23,7 +23,7 @@ def main(ftag='pippo'):
     sf.TELESCOPE_PUPIL_DIAMETER = 8
     sf._pupil_pixel_pitch = sf.TELESCOPE_PUPIL_DIAMETER/sf._pupil_diameter_in_pixel
     sf.OUTER_SCALE_L0 = 40             # m
-    sf.SEEING = 0#1                  # arcsec
+    sf.SEEING = seeing #1                  # arcsec
     sf.WIND_SPEED_LIST = [5.0]
     sf.WIND_DIR_LIST = [0, 0]
     sf.LAYER_HEIGHTS_LIST = [0.0] # in m
@@ -39,18 +39,40 @@ def main(ftag='pippo'):
     sf.N_MODES_TO_CORRECT = 200# 25#
     sf.TIME_STEP_IN_SEC = 0.001
     
-    gain_vector =  -0.1*np.ones(sf.N_MODES_TO_CORRECT)
-    gain_vector[:3] = -0.10
-    gain_vector[3:53] = -0.10
-    gain_vector[53:100] = -0.08#-0.025
-    gain_vector[100:] = -0.01
-    
+    if gain_vector is None:
+        gain_vector =  -0.1*np.ones(sf.N_MODES_TO_CORRECT)    
     
     sf.INT_GAIN = gain_vector
     
-    T = 0.1#0.05 #10 # in sec
-    Nsteps = int(T/sf.TIME_STEP_IN_SEC)
+    Nsteps = int(total_time/sf.TIME_STEP_IN_SEC)
     
     ssr = SpeculaScaoRunner(sf) 
     ssr.run(Nsteps)
     ssr.save_telemetry(ftag)
+    
+def main_cl_s10():
+    main('250626_184100', seeing=1)
+    
+def main_cl_s05():
+    main('250626_184200', seeing=0.5)
+    
+def main_ol_s05():
+    main('250626_184300', seeing=0.5, gain_vector=0)
+    
+def main_cl_s025():
+    main('250626_184400', seeing=0.25)
+    
+def main_cl_50m():
+    g=np.zeros(200)
+    g[0:50]=-0.1
+    main('250626_184500', seeing=0.5, gain_vector=g)
+    
+    
+def main_cl_50m_2():
+    g=np.zeros(200)
+    g[0:50]=-0.1
+    main('250627_114600', seeing=0.5, gain_vector=g)
+    
+def main_ol_no_trub250627_141900():
+    g = 0
+    main('250627_142500', seeing = 0, gain_vector=g)
