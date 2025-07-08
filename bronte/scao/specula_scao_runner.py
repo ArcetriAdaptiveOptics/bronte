@@ -230,7 +230,7 @@ class SpeculaScaoRunner():
         #HARDWARE PARAMETERS
         hdr['SLM_RAD'] = self._factory.SLM_PUPIL_RADIUS # in pixels
         hdr['SLM_YX'] = str(self._factory.SLM_PUPIL_CENTER) # YX pixel coordinates
-        hdr['SHPX_THR'] = np.min((self._factory.SH_PIX_THR, self._factory.PIX_THR_RATIO))#self._factory.SH_PIX_THR # in ADU
+        hdr['SHPX_THR'] = np.max((self._factory.SH_PIX_THR, self._factory.PIX_THR_RATIO))#self._factory.SH_PIX_THR # in ADU
         hdr['PC_TEXP'] = psf_camera_texp # in ms
         hdr['PC_FPS'] = psf_camera_fps
         hdr['SH_TEXP'] = shwfs_texp # in ms
@@ -257,6 +257,8 @@ class SpeculaScaoRunner():
         zc_delta_modal_commands = hduList[1].data
         zc_integrated_modal_commands  = hduList[2].data
         sh_frames = hduList[3].data
-        
-        #int_gain = hduList[-1].data
-        return  header, slopes_vect, zc_delta_modal_commands, zc_integrated_modal_commands, sh_frames#, int_gain
+        try:
+            int_gain = hduList[-1].data
+        except:
+            int_gain = 'NA'
+        return  header, slopes_vect, zc_delta_modal_commands, zc_integrated_modal_commands, sh_frames, int_gain

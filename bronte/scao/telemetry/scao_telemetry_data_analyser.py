@@ -13,6 +13,8 @@ from functools import cached_property
 import matplotlib.pyplot as plt
 from mpl_toolkits.axes_grid1 import make_axes_locatable
 from astropy.io import fits
+from bronte.wfs.slm_rasterizer import SlmRasterizer
+from bronte.types.slm_pupil_mask_generator import SlmPupilMaskGenerator
 
 class ScaoTelemetryDataAnalyser():
     
@@ -22,7 +24,7 @@ class ScaoTelemetryDataAnalyser():
     def __init__(self, ftag):
         set_data_dir()
         self._telemetry_tag = ftag
-        self._hdr, self._slopes_vect, self._delta_cmds, self._integ_cmds, self._sh_frames = SpeculaScaoRunner.load_telemetry(ftag)
+        self._hdr, self._slopes_vect, self._delta_cmds, self._integ_cmds, self._sh_frames, self._int_gain = SpeculaScaoRunner.load_telemetry(ftag)
         self._load_data_from_header()
         self._first_idx_mode = 2 # j noll index mode
         self._compute_rms_slopes()
@@ -33,6 +35,14 @@ class ScaoTelemetryDataAnalyser():
     def get_slope_map_cubes(self):
         return self._compute_slope_maps
     
+    def get_circular_mask(self, radius=545, coord_yx=(579, 968)):
+        spmg = SlmPupilMaskGenerator(pupil_radius = radius, pupil_center=coord_yx)
+        cmask = spmg.circular_pupil_mask()
+        return cmask
+    
+    def load_slm_rasterizer(self, slm_pupil_mask, Nmodes = 200):
+        self._slm_rasterizer = SlmRasterizer(slm_pupil_mask, Nmodes)
+        
     @cached_property
     def _compute_slope_maps(self):
         
