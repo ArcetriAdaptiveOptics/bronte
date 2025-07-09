@@ -1,8 +1,13 @@
+import specula
+specula.init(-1, precision=1)  # Default target=-1 (CPU), float32=1
+from specula import np
+from specula.processing_objects.modalrec import Modalrec
+from specula.data_objects.recmat import Recmat
 from bronte.utils.slopes_vector_analyser import SlopesVectorAnalyser
-import numpy as np 
+
 import matplotlib.pyplot as plt
 from bronte.startup import set_data_dir
-from bronte.package_data import slope_offset_folder
+from bronte.package_data import slope_offset_folder, reconstructor_folder
 from astropy.io import fits
 
 
@@ -110,6 +115,26 @@ class SlopesCovariaceMatrixAnalyser():
         hdr['REL_THR'] = self._pix_thr_ratio
         slope_offset = self._average_slopes
         fits.writeto(file_name, slope_offset, hdr)
+        
+    def load_reconstructor(self, ftag):
+        
+        recmat = Recmat.restore(reconstructor_folder() / (ftag + "_bronte_rec.fits"))
+        #added factor 2 missed on IFs normalization
+        N_pp = 2
+        recmat.recmat = N_pp*recmat.recmat  
+        Nmodes = recmat.recmat.shape[0]
+        self._modalrec =  Modalrec(Nmodes, recmat=recmat)
+        
+    def compute_delta_modal_command(self):
+        Nmodes = self._modalrec.recmat.recmat.shape[0]
+        Nstep = self._slopes_cube.shape[0]
+        self._delta_modal_cmd_in_nm = np.zeros((Nstep, Nmodes))
+        
+        for step in np.arange(Nstep):
+            self._delta_modal_cmd_in_nm[step, :] = np.dot(self._modalrec.recmat.recmat,self._slopes_cube[step,:])
+    
+    def get_delta_modal_command(self):
+        return self._delta_modal_cmd_in_nm        
     
     @staticmethod
     def load_slope_offset(ftag):

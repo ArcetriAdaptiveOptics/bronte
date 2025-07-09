@@ -1,4 +1,5 @@
 import specula
+
 specula.init(-1, precision=1)  # Default target=-1 (CPU), float32=1
 from specula import np
 from specula.data_objects.slopes import Slopes
@@ -29,6 +30,8 @@ class ScaoTelemetryDataAnalyser():
         self._first_idx_mode = 2 # j noll index mode
         self._compute_rms_slopes()
         self._ol_cmds = None
+        self._ol_rms_slopes_x = None
+        self._ol_rms_slopes_y = None
         self._compute_pseudo_open_loop_modal_cmds()
         self._compute_residual_wavefront()
         
@@ -274,15 +277,23 @@ class ScaoTelemetryDataAnalyser():
         fig.suptitle(f"Step {n_th_step}-th")
         fig.tight_layout()
     
-    def display_rms_slopes(self):
+    def display_rms_slopes(self, display_ol=False):
         
         plt.figure()
         plt.clf()
         plt.plot(self._rms_slopes_x, label='slope-x')
         plt.plot(self._rms_slopes_y, label='slope-y')
+        
+        if display_ol is True:
+            plt.clf()
+            plt.plot(self._rms_slopes_x, label='CL slope-x')
+            plt.plot(self._rms_slopes_y, label='CL slope-y')
+            plt.plot(self._ol_rms_slopes_x, label='OL slope-x')
+            plt.plot(self._ol_rms_slopes_y, label='OL slope-y')
+            
         plt.grid(alpha = 0.3, ls='--')
         plt.legend(loc = 'best')
-        plt.ylabel('rms slopes [au]')
+        plt.ylabel('rms slopes [normalized]')
         plt.xlabel('step')
         
     def show_modal_plot(self, cl_delta_cmds, rms_or_std = 'std'):
@@ -307,10 +318,10 @@ class ScaoTelemetryDataAnalyser():
         plt.loglog(mode_index_list, delta_cmd_std, label='CL')
         if self._ol_cmds is not None:
             ol_cmd_std = compute_modal_evolution(self._ol_cmds, rms_or_std)
-            if rms_or_std == 'rms':
-                ol_label = 'OL (rms)'
-            else:
+            if rms_or_std == 'std':
                 ol_label = 'OL (std)'
+            else:
+                ol_label = 'OL (rms)'
                 
             plt.loglog(mode_index_list, ol_cmd_std[:self.corrected_modes],'g--', label=ol_label)
         plt.xlabel('j Noll index')
