@@ -26,7 +26,7 @@ class SlopesDataManager(QtCore.QObject):
         
         try:
             frame = self._gui_master._bkg_sub_frame
-            self._slope_vector, self.flux_per_sub_vector  = self._sva.get_slopes_from_frame(
+            self.slope_vector, self.flux_per_sub_vector  = self._sva.get_slopes_from_frame(
                 frame = frame,
                 fluxperSub = True)
         except Exception as e:
@@ -34,7 +34,11 @@ class SlopesDataManager(QtCore.QObject):
     
     def get_slope_vector(self):
         
-        return self._slope_vector
+        return self.slope_vector
+    
+    def get_slopes2D(self,):
+        
+        return self._sva.get2Dslope_maps_from_slopes_vector(self.slope_vector)
     
     def get_flux_map(self):
         
