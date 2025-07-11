@@ -9,14 +9,14 @@ from bronte.wfs.slope_computer import PCSlopeComputer
 from bronte.wfs.subaperture_set import ShSubapertureSet
 from bronte.utils.from_slope_vector_to_slope_maps import SlopeVectorTo2DMap
 from bronte.startup import set_data_dir
-from bronte.package_data import subaperture_set_folder
-
+from bronte.package_data import subaperture_set_folder, reconstructor_folder
+from specula.data_objects.recmat import Recmat
 import matplotlib.pyplot as plt
 
 class SlopesVectorAnalyser():
     
-    ABSOLUTE_PIX_THR = 200
-    RELATIVE_PIX_THR_RATIO = 0
+    ABSOLUTE_PIX_THR = 0
+    RELATIVE_PIX_THR_RATIO = 0.18
     
     def __init__(self, subap_tag):
         set_data_dir()
@@ -27,6 +27,7 @@ class SlopesVectorAnalyser():
         self._slopec = None
         self._load_slope_pc()
         self._frame = None
+        self._slope_offset = None
         
     def _load_subaperture_set(self, subap_tag):
         self._s2map_display = SlopeVectorTo2DMap(self._subap_tag)
@@ -113,7 +114,31 @@ class SlopesVectorAnalyser():
     def display_subap_mask(self):
         plt.figure()
         plt.clf()
-        plt.imshow(self._subapertures_set._single_mask)
+        plt.imshow(self._subapertures_set.single_mask())
         plt.colorbar()
-        
     
+    def load_reconstructor(self, ftag):
+        
+        self._recmat = Recmat.restore(reconstructor_folder() / (ftag + "_bronte_rec.fits"))
+        #added factor 2 missed on IFs normalization
+        N_pp = 2
+        self._recmat.recmat = N_pp*self._recmat.recmat  
+        self._Nmodes = self._recmat.recmat.shape[0]
+        #self._modalrec =  Modalrec(Nmodes, recmat=self._recmat)
+    
+    def get_modes(self, slope_vector):
+        
+        self._modal_coefficients  = np.dot(self._recmat.recmat, slope_vector)
+        return self._modal_coefficients
+    
+    def set_slope_offset(self, slope_vector):
+        self._slope_offset = slope_vector
+        
+    def get_2Dflux_map(self, flux_per_sub_vector):
+        
+        nx = self._subapertures_set.nx 
+        ny = self._subapertures_set.ny
+        numpy_subap_mask = 1 - self._subapertures_set.single_mask()
+        flux_map = np.ma.array(data = np.zeros((nx, ny)), mask = numpy_subap_mask)
+        flux_map[flux_map.mask == False] = flux_per_sub_vector
+        return flux_map

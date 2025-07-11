@@ -236,3 +236,37 @@ def main250709_turb_loop():
     stda_cl._ol_rms_slopes_y = stda_ol._rms_slopes_y
     
     stda_cl.display_rms_slopes(display_ol = True)
+    
+def main250710_inspect_sampling(slm_rasterizer, mode_index):
+    
+    amp = 100e-9
+    zc = np.zeros(200)
+    zc[mode_index] = amp
+    yc = 579
+    xc = 968
+    R = 545
+    wf =  slm_rasterizer.zernike_coefficients_to_raster(zc).toNumpyArray()
+    #wf_shape = wf.shape
+    
+    plt.figure(101)
+    plt.clf()
+    plt.imshow(wf)
+    plt.colorbar()
+    
+    subap_size_on_slm = 26
+
+    plt.figure(102)
+    plt.clf()
+    plt.title('Mode index %d X profile'%mode_index)
+    plt.plot(wf[yc,:])
+    vline_vect_alongx = np.arange(-R, R+subap_size_on_slm, subap_size_on_slm) + xc
+    plt.vlines(x=vline_vect_alongx, ymin = wf[yc,:].min(), ymax=wf[yc,:].max(), colors='g', linestyles='--')
+    plt.grid('--', alpha=0.3)
+    
+    plt.figure(103)
+    plt.clf()
+    plt.title('Mode index %d Y profile'%mode_index)
+    plt.plot(wf[:,xc])
+    vline_vect_alongy = np.arange(-R, R+subap_size_on_slm, subap_size_on_slm) + yc
+    plt.vlines(x=vline_vect_alongy, ymin = wf[:,xc].min(), ymax=wf[:,xc].max(), colors='g', linestyles='--')
+    plt.grid('--', alpha=0.3)
