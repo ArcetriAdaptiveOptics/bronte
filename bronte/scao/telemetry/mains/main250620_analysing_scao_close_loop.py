@@ -186,21 +186,34 @@ def main250709_noturb_loop():
     plt.title('OL Res WF')
     plt.imshow(ol_wf)
     plt.colorbar(orientation='horizontal', label='nm rms wf')
+    print(f"OL Mean WF: PtV = {np.ptp(ol_wf)} nm rms wf \t Amp = {ol_wf.std()} nm rms wf")
     
     plt.subplot(1, 2, 2)
     plt.title('OL Res WF Filtered')
     plt.imshow(ol_wf_filtered)
     plt.colorbar(orientation='horizontal', label='nm rms wf')
+    print(f"OL Mean WF (Filtered): PtV = {np.ptp(ol_wf_filtered)} nm rms wf \t Amp = {ol_wf_filtered.std()} nm rms wf")
     
     stda_cl._ol_cmds = ol_delta_cmds_cube_in_nm*1e-9
     stda_cl.display_residual_wavefront(display_ol = True)
+    print(f"Residual WF nm rms: OL = {stda_cl._ol_residual_wf.mean()/1e-9} \t CL = {stda_cl._residual_wf[60:].mean(axis=0)/1e-9}")
+    
     
     stda_cl._ol_rms_slopes_x = ol_rms_slopes_x_cube
     stda_cl._ol_rms_slopes_y = ol_rms_slopes_y_cube
     stda_cl.display_rms_slopes(display_ol = True)
     
-    cl_delta_cmds = stda_cl._delta_cmds[40:,:]
+    cl_delta_cmds = stda_cl._delta_cmds[60:,:]
     stda_cl.show_modal_plot(cl_delta_cmds, 'rms')
+    
+    cl_rms_delta_cmds = stda_cl._rootm_mean_squared(cl_delta_cmds, axis=0)
+    ol_rms_delta_cmds = stda_cl._rootm_mean_squared(stda_cl._ol_cmds, axis = 0)
+    plt.figure()
+    plt.clf()
+    plt.loglog(j_vector, ol_rms_delta_cmds/cl_rms_delta_cmds, '.-')
+    plt.ylabel('Rejection ratio')
+    plt.xlabel('j mode')
+    plt.grid('--', alpha=0.3)
     
     last_integ_cmd_in_nm = stda_cl._integ_cmds[-1,:]/1e-9
     cl_integ_wf = stda_cl._slm_rasterizer.zernike_coefficients_to_raster(last_integ_cmd_in_nm).toNumpyArray()
@@ -213,11 +226,37 @@ def main250709_noturb_loop():
     plt.title('CL Integ WF')
     plt.imshow(cl_integ_wf)
     plt.colorbar(orientation='horizontal', label='nm rms wf')
+    print(f"CL Integ WF: PtV = {np.ptp(cl_integ_wf)} nm rms wf \t Amp = {cl_integ_wf.std()} nm rms wf")
     
     plt.subplot(1, 2, 2)
     plt.title('CL Integ WF Filtered')
     plt.imshow(cl_integ_wf_filtered)
     plt.colorbar(orientation='horizontal', label='nm rms wf')
+    print(f"CL Integ WF (Filtered): PtV = {np.ptp(cl_integ_wf_filtered)} nm rms wf \t Amp = {cl_integ_wf_filtered.std()} nm rms wf")
+    
+    
+    mean_cl_delta_cmds = cl_delta_cmds.mean(axis=0)
+    cl_res_wf = stda_cl._slm_rasterizer.zernike_coefficients_to_raster(mean_cl_delta_cmds).toNumpyArray()/1e-9
+    #mean_cl_delta_cmds_filterd = mean_cl_delta_cmds.copy()
+    #mean_cl_delta_cmds_filterd[:3] = 0
+    #cl_res_wf_filtered = stda_cl._slm_rasterizer.zernike_coefficients_to_raster(mean_cl_delta_cmds_filterd).toNumpyArray()/1e-9
+    
+    plt.figure()
+    plt.clf()
+    plt.title('CL Res WF')
+    plt.imshow(cl_res_wf)
+    plt.colorbar(orientation='horizontal', label='nm rms wf')
+    print(f"CL Res WF: PtV = {np.ptp(cl_res_wf)} nm rms wf \t Amp = {cl_res_wf.std()} nm rms wf")
+    
+
+    
+    plt.figure()
+    plt.clf()
+    plt.plot(j_vector, mean_cl_delta_cmds/1e-9, '.-', label='CL')
+    plt.xlabel('j mode')
+    plt.ylabel(r'$< \Delta c >_t$'+'[nm rms wf]')
+    plt.grid('--', alpha=0.3)
+    plt.legend(loc='best')
     
     return stda_cl
 
@@ -225,6 +264,8 @@ def main250709_turb_loop():
     
     cl_ftag = '250626_184200'
     ol_ftag = '250626_184300'
+    Nmodes = 200
+    j_vector = np.arange(Nmodes)+2
     
     stda_cl = ScaoTelemetryDataAnalyser(cl_ftag)
     stda_ol = ScaoTelemetryDataAnalyser(ol_ftag)
@@ -236,6 +277,22 @@ def main250709_turb_loop():
     stda_cl._ol_rms_slopes_y = stda_ol._rms_slopes_y
     
     stda_cl.display_rms_slopes(display_ol = True)
+
+    cl_delta_cmds  = stda_cl._delta_cmds[50:,]
+    stda_cl.show_modal_plot(cl_delta_cmds,'rms')
+    
+    cl_rms_delta_cmds = stda_cl._rootm_mean_squared(cl_delta_cmds, axis=0)
+    ol_rms_delta_cmds = stda_cl._rootm_mean_squared(stda_cl._ol_cmds, axis = 0)
+    plt.figure()
+    plt.clf()
+    plt.loglog(j_vector, ol_rms_delta_cmds/cl_rms_delta_cmds, '.-')
+    plt.ylabel('Rejection ratio')
+    plt.xlabel('j mode')
+    plt.grid('--', alpha=0.3)
+    
+    print(f"Residual WF nm rms: OL = {stda_cl._ol_residual_wf.mean()/1e-9} \t CL = {stda_cl._residual_wf[50:].mean(axis=0)/1e-9}")
+    
+    return stda_cl, stda_ol
     
 def main250710_inspect_sampling(slm_rasterizer, mode_index):
     
