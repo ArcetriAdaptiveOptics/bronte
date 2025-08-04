@@ -152,9 +152,9 @@ def load_ol_noturb_data():
     
 def main250709_noturb_loop():
     
-    rec_tag = '250616_103300'
-    subap_tag = '250612_143100'
-    slope_offset_tag = '250625_145500' # used ONLY for OL data
+    #rec_tag = '250616_103300'
+    #subap_tag = '250612_143100'
+    #slope_offset_tag = '250625_145500' # used ONLY for OL data
     cl_tag = '250625_102000'
     Nmodes = 200
     j_vector = np.arange(Nmodes)+2
@@ -208,9 +208,10 @@ def main250709_noturb_loop():
     
     cl_rms_delta_cmds = stda_cl._rootm_mean_squared(cl_delta_cmds, axis=0)
     ol_rms_delta_cmds = stda_cl._rootm_mean_squared(stda_cl._ol_cmds, axis = 0)
+    rejection_ratio = ol_rms_delta_cmds/cl_rms_delta_cmds
     plt.figure()
     plt.clf()
-    plt.loglog(j_vector, ol_rms_delta_cmds/cl_rms_delta_cmds, '.-')
+    plt.loglog(j_vector, rejection_ratio, '.-')
     plt.ylabel('Rejection ratio')
     plt.xlabel('j mode')
     plt.grid('--', alpha=0.3)
@@ -258,8 +259,128 @@ def main250709_noturb_loop():
     plt.grid('--', alpha=0.3)
     plt.legend(loc='best')
     
-    return stda_cl
+    return stda_cl, rejection_ratio
 
+def main250804_noturb_openloop_comparison():
+    
+    Nmodes = 200
+    j_vector = np.arange(Nmodes)+2
+    
+    old_slope_offset_tag = '250625_145500'
+    
+    ol_ftag_new = '250804_111500'
+    new_stda_ol = ScaoTelemetryDataAnalyser(ol_ftag_new)
+    mean_new_delta_cmd_in_nm = new_stda_ol._delta_cmds.mean(axis=0)/1e-9
+    
+    old_slopes_cube, old_delta_cmds_cube_in_nm, old_rms_slopes_x_cube, old_rms_slopes_y_cube, oldhdr = load_ol_noturb_data()
+    mean_old_delta_cmd_in_nm = old_delta_cmds_cube_in_nm.mean(axis=0)
+    
+    plt.figure()
+    plt.clf()
+    plt.plot(j_vector, mean_old_delta_cmd_in_nm, '.-', label=old_slope_offset_tag)
+    plt.plot(j_vector, mean_new_delta_cmd_in_nm, '.-', label=ol_ftag_new)
+    plt.xlabel('j mode')
+    plt.ylabel(r'$< \Delta c >_t$'+'[nm rms wf]')
+    plt.grid('--', alpha=0.3)
+    plt.legend(loc='best')
+    plt.title('Reconstructed OL modes')
+    
+    cmask = new_stda_ol.get_circular_mask(radius=545, coord_yx=(579,968))
+    new_stda_ol.load_slm_rasterizer(cmask, Nmodes=Nmodes)
+    
+    new_ol_wf = new_stda_ol._slm_rasterizer.zernike_coefficients_to_raster(mean_new_delta_cmd_in_nm).toNumpyArray()
+    mean_new_delta_cmd_in_nm_filtered = mean_new_delta_cmd_in_nm.copy()
+    mean_new_delta_cmd_in_nm_filtered[:3] = 0
+    new_ol_wf_filtered = new_stda_ol._slm_rasterizer.zernike_coefficients_to_raster(mean_new_delta_cmd_in_nm_filtered).toNumpyArray()
+    
+    old_ol_wf = new_stda_ol._slm_rasterizer.zernike_coefficients_to_raster(mean_old_delta_cmd_in_nm).toNumpyArray()
+    mean_old_delta_cmd_in_nm_filtered = mean_old_delta_cmd_in_nm.copy()
+    mean_old_delta_cmd_in_nm_filtered[:3] = 0
+    old_ol_wf_filtered = new_stda_ol._slm_rasterizer.zernike_coefficients_to_raster(mean_old_delta_cmd_in_nm_filtered).toNumpyArray()
+    
+    wf_diff = old_ol_wf - new_ol_wf
+    plt.figure()
+    plt.clf()
+    plt.imshow(wf_diff)
+    plt.colorbar()
+    print(wf_diff.std())
+    print(np.ptp(wf_diff))
+    
+    wf_filtered_diff = old_ol_wf_filtered - new_ol_wf_filtered
+    plt.figure()
+    plt.clf()
+    plt.imshow(wf_filtered_diff)
+    plt.colorbar()
+    print(wf_filtered_diff.std())
+    print(np.ptp(wf_filtered_diff))
+    
+def main250804_noturb_loop():
+    cl_ftag = '250804_112600'#'250804_151500'#
+    ol_ftag = '250804_111500'
+    
+    Nmodes = 200
+    j_vector = np.arange(Nmodes)+2
+    
+    stda_cl = ScaoTelemetryDataAnalyser(cl_ftag)
+    stda_ol = ScaoTelemetryDataAnalyser(ol_ftag)
+    
+    stda_cl._ol_cmds = stda_ol._delta_cmds
+    stda_cl.display_residual_wavefront(display_ol = True)
+    
+    stda_cl._ol_rms_slopes_x = stda_ol._rms_slopes_x
+    stda_cl._ol_rms_slopes_y = stda_ol._rms_slopes_y
+    
+    stda_cl.display_rms_slopes(display_ol = True)
+
+    cl_delta_cmds  = stda_cl._delta_cmds[50:,]
+    stda_cl.show_modal_plot(cl_delta_cmds,'rms')
+    
+    cl_rms_delta_cmds = stda_cl._rootm_mean_squared(cl_delta_cmds, axis=0)
+    ol_rms_delta_cmds = stda_cl._rootm_mean_squared(stda_cl._ol_cmds, axis = 0)
+    rejection_ratio = ol_rms_delta_cmds/cl_rms_delta_cmds
+    plt.figure()
+    plt.clf()
+    plt.loglog(j_vector, rejection_ratio, '.-')
+    plt.ylabel('Rejection ratio')
+    plt.xlabel('j mode')
+    plt.grid('--', alpha=0.3)
+    
+    print(f"Residual WF nm rms: OL = {stda_cl._ol_residual_wf.mean()/1e-9} \t CL = {stda_cl._residual_wf[50:].mean(axis=0)/1e-9}")
+    
+    cmask = stda_cl.get_circular_mask(radius=545, coord_yx=(579,968))
+    stda_cl.load_slm_rasterizer(cmask, Nmodes=Nmodes)
+    cl_delta_cmds = stda_cl._delta_cmds[60:,:]
+    mean_cl_delta_cmds = cl_delta_cmds.mean(axis=0)
+    cl_res_wf = stda_cl._slm_rasterizer.zernike_coefficients_to_raster(mean_cl_delta_cmds).toNumpyArray()/1e-9
+
+    plt.figure()
+    plt.clf()
+    plt.title('CL Res WF')
+    plt.imshow(cl_res_wf)
+    plt.colorbar(orientation='horizontal', label='nm rms wf')
+    print(f"CL Res WF: PtV = {np.ptp(cl_res_wf)} nm rms wf \t Amp = {cl_res_wf.std()} nm rms wf")
+    
+    
+    return rejection_ratio
+
+def main250804_noturb_ol_rejection_ratio_comparison():
+    
+    _, rejection_ratio_old = main250709_noturb_loop()
+    rejection_ratio_new = main250804_noturb_loop()
+    
+    Nmodes = 200
+    j_vector = np.arange(Nmodes)+2
+    plt.figure()
+    plt.clf()
+    plt.loglog(j_vector, rejection_ratio_old, '.-', label = '250625')
+    plt.loglog(j_vector, rejection_ratio_new, '.-', label = '250804')
+    plt.ylabel('Rejection ratio')
+    plt.xlabel('j mode')
+    plt.grid('--', alpha=0.3)
+    plt.legend(loc='best')
+    
+    return rejection_ratio_new, rejection_ratio_old
+    
 def main250709_turb_loop():
     
     cl_ftag = '250626_184200'
@@ -291,6 +412,18 @@ def main250709_turb_loop():
     plt.grid('--', alpha=0.3)
     
     print(f"Residual WF nm rms: OL = {stda_cl._ol_residual_wf.mean()/1e-9} \t CL = {stda_cl._residual_wf[50:].mean(axis=0)/1e-9}")
+    
+    cl_delta_cmds = stda_cl._delta_cmds[60:,:]
+    mean_cl_delta_cmds = cl_delta_cmds.mean(axis=0)
+    cl_res_wf = stda_cl._slm_rasterizer.zernike_coefficients_to_raster(mean_cl_delta_cmds).toNumpyArray()/1e-9
+
+    plt.figure()
+    plt.clf()
+    plt.title('CL Res WF')
+    plt.imshow(cl_res_wf)
+    plt.colorbar(orientation='horizontal', label='nm rms wf')
+    print(f"CL Res WF: PtV = {np.ptp(cl_res_wf)} nm rms wf \t Amp = {cl_res_wf.std()} nm rms wf")
+    
     
     return stda_cl, stda_ol
     

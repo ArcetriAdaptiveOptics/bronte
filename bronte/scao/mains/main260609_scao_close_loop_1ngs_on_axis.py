@@ -76,3 +76,22 @@ def main_cl_50m_2():
 def main_ol_no_trub250627_141900():
     g = 0
     main('250627_142500', seeing = 0, gain_vector=g)
+
+def main_ol_no_trub250804_111500():
+    g = 0
+    main('250804_111500', seeing = 0, gain_vector=g)
+    
+def main_cl_no_trub250804_112600():
+    g = -0.1
+    main('250804_112600', seeing = 0, gain_vector=g)
+    
+def main_cl_no_turb250804_151500():
+    from astropy.io import fits
+    fname = "C:\\Users\\labot\\Desktop\\misure_tesi_slm\\bronte\\other_data\\250804_151400.fits"
+    hduList = fits.open(fname)
+    rejection_ratio = hduList[0].data
+    index_of_noisy_modes = np.where(rejection_ratio < 2)[0]
+    
+    g = -0.1*np.ones(200)
+    g[index_of_noisy_modes] = 0
+    main('250804_151500', seeing = 0, gain_vector=g)

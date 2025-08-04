@@ -5,8 +5,8 @@ from specula import np
 from specula.data_objects.intmat import Intmat
 from specula.data_objects.recmat import Recmat
 from bronte.package_data import reconstructor_folder
-from bronte.calibration.runners.measured_control_matrix_calibration.MeasuredControlMatrixCalibrator import load_calib_config
-
+from bronte.calibration.runners.measured_control_matrix_calibration import MeasuredControlMatrixCalibrator# load_calib_config
+from bronte.startup import set_data_dir
 
 class ControlMatrixEditor():
     
@@ -34,13 +34,23 @@ class ControlMatrixEditor():
         self._specula_recmat.im_tag = self._specula_intmat._norm_factor
         
         
-    def filter_modes_from_intmat(self, index_list):
-        pass
+    def filter_modes_from_intmat(self, index_list, remove_cols = False):
+        
+        #Nmodes = self._specula_intmat._intmat.shape[0]
+        #Nslopes = self._specula_intmat._intmat.shape[1]
+        #filtered_modes = Nmodes - len(index_list)
+        if remove_cols is True:
+            filtered_intmat = np.delete(self._specula_intmat._intmat, index_list, axis=0)
+            self._specula_intmat._intmat = filtered_intmat
+        else:
+            for idx in index_list:
+                self._specula_intmat._intmat[idx, :]  = 0
+        
     
     def save_control_matrices(self, ftag):
         
         from astropy.io import  fits
-        config_hdr, pp_vector_in_nm = load_calib_config(self._intmat_tag)
+        config_hdr, pp_vector_in_nm = MeasuredControlMatrixCalibrator.load_calib_config(self._intmat_tag)
         
         config_hdr['REC_TAG'] = ftag 
         
@@ -58,3 +68,8 @@ class ControlMatrixEditor():
         self._specula_intmat = self._load_specula_intmat(self._intmat_tag)
         self._specula_recmat = None
     
+    @staticmethod
+    def load_recmat(ftag):
+        set_data_dir()
+        specula_recmat = Recmat.restore(reconstructor_folder() / (ftag + "_bronte_rec.fits"))
+        return specula_recmat
