@@ -60,3 +60,6 @@ def temp_folder():
 
 def other_folder():
     return data_root_dir() / "other_data"
+
+def ifs_folder():
+    return data_root_dir() / "ifs"
