@@ -56,7 +56,7 @@ class KarhunenLoeveGenerator():
         
         #zern_modes is the number of zernike modes to be included on the modal basis 
         ifs = self._ifunc.influence_function.T
-        
+        self._oversampling = oversampling
         self._kl_basis, self._m2c, self._singular_values = make_modal_base_from_ifs_fft(
             pupil_mask = self._pupil_mask_idl,
             diameter = self._telescope_diameter_in_m,
@@ -76,6 +76,14 @@ class KarhunenLoeveGenerator():
             mask = self._pupil_mask_idl)
         fname  = ifs_folder() / (ftag + '.fits')
         ifunc_obj.save(fname)
+        
+    def get_2Dmode(self, mode_index):
+        
+        pup_size = self._pupil_diameter_in_pixels*self._oversampling
+        mode = np.zeros((pup_size,pup_size))
+        ma_mode = np.ma.array(data = mode, mask = 1 - self._pupil_mask_idl)
+        ma_mode[ma_mode.mask == False] = self._kl_basis[mode_index]
+        return ma_mode
     
     @staticmethod
     def load_modal_ifs(ftag):

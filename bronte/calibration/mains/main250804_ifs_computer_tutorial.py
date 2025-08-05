@@ -6,7 +6,7 @@ import os
 from specula.lib.compute_zonal_ifunc import compute_zonal_ifunc
 from specula.lib.modal_base_generator import make_modal_base_from_ifs_fft
 from specula.data_objects.ifunc import IFunc
-#from specula.data_objects.ifunc_inv import IFuncInv
+from specula.data_objects.ifunc_inv import IFuncInv
 from specula.data_objects.m2c import M2C
 from specula import cpuArray
 
