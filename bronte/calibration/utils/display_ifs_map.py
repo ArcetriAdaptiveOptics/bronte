@@ -35,7 +35,7 @@ class DisplayInfluenceFunctionsMap():
         
         return ma_if2Dmap
     
-    def display_actuator_if(self, if_index):
+    def display_if_map(self, if_index):
         
         if_map = self.get_if_2Dmap(if_index)
         plt.figure()
