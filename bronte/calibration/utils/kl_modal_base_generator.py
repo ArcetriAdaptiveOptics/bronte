@@ -3,11 +3,12 @@ specula.init(-1, precision=1)  # Default target=-1 (CPU), float32=1
 from specula import np
 from specula.lib.modal_base_generator import make_modal_base_from_ifs_fft
 from specula.data_objects.ifunc import IFunc
-#from specula.data_objects.m2c import M2C
+from specula.data_objects.m2c import M2C
 from specula import cpuArray
 from bronte.startup import set_data_dir
 from bronte.package_data import ifs_folder
 from bronte.calibration.utils.zonal_influence_function_computer import ZonalInfluenceFunctionComputer
+from astropy.io import fits
 
 class KarhunenLoeveGenerator():
     
@@ -57,25 +58,65 @@ class KarhunenLoeveGenerator():
         #zern_modes is the number of zernike modes to be included on the modal basis 
         ifs = self._ifunc.influence_function.T
         self._oversampling = oversampling
+        self._zern_modes = zern_modes
+        self._if_max_condition_number = if_max_condition_number
         self._kl_basis, self._m2c, self._singular_values = make_modal_base_from_ifs_fft(
             pupil_mask = self._pupil_mask_idl,
             diameter = self._telescope_diameter_in_m,
             influence_functions = ifs,
             r0 = self._r0,
             L0 = self._L0,
-            zern_modes = zern_modes,
+            zern_modes = self._zern_modes,
             oversampling = oversampling,
-            if_max_condition_number = if_max_condition_number,
+            if_max_condition_number = self._if_max_condition_number,
             xp = specula.xp,
             dtype = self._dtype)
         
     def save_kl_modes_as_modal_ifs(self, ftag):
         set_data_dir()
+        
         ifunc_obj = IFunc(
             ifunc = self._kl_basis,
             mask = self._pupil_mask_idl)
         fname  = ifs_folder() / (ftag + '.fits')
         ifunc_obj.save(fname)
+        
+        self._save_singular_values(ftag)
+        self._save_M2C(ftag)
+        self._save_kl_base_config_parameters(ftag)
+        
+    
+    def _save_M2C(self, ftag):
+        
+        m2c_obj = M2C(m2c = self._m2c)
+        fname = ifs_folder() / (ftag + '_m2c_.fits')
+        m2c_obj.save(fname)
+    
+    def _save_singular_values(self, ftag):
+        
+        s1 = self._singular_values['S1'] # IF covariance
+        s2 = self._singular_values['S2'] # Turbulence covariance
+        
+        fname = ifs_folder() / (ftag + '_singular_values_.fits')
+        
+        fits.writeto(fname, s1, None)
+        fits.append(fname, s2)
+    
+    def _save_kl_base_config_parameters(self, ftag):
+        
+        hdr = fits.Header()
+        hdr['ZIF_TAG'] = self._ifs_tag
+        hdr['R0_M'] = self._r0
+        hdr['L0_M'] = self._L0
+        hdr['DTEL_M'] = self._telescope_diameter_in_m
+        hdr['ZMODES'] = self._zern_modes
+        hdr['OV_SAMP'] = self._oversampling
+        hdr['IF_CN'] = 'None' if self._if_max_condition_number is None else self._if_max_condition_number
+        hdr['DTYPE'] = str(self._dtype)
+        
+        fname = ifs_folder() / (ftag + '_kl_base_config_.fits')
+        fits.writeto(fname, np.array([0]), hdr)
+        
         
     def get_2Dmode(self, mode_index):
         
@@ -90,3 +131,20 @@ class KarhunenLoeveGenerator():
         set_data_dir()
         fname = ifs_folder() / (ftag + '.fits')
         return IFunc.restore(fname)
+    
+    @staticmethod
+    def loadM2C(ftag):
+        set_data_dir()
+        fname = ifs_folder() / (ftag + '_m2c_.fits')
+        return M2C.restore(fname)
+    
+    @staticmethod
+    def load_singular_values(ftag):
+        set_data_dir()
+        fname = ifs_folder() / (ftag + '_singular_values_.fits')
+        hduList = fits.open(fname)
+        s1 = hduList[0].data # IF covariance
+        s2 = hduList[1].data # Turbulence covariance
+        return s1, s2
+    
+    

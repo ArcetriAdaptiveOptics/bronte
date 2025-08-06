@@ -37,7 +37,7 @@ class DisplayInfluenceFunctionsMap():
     
     def display_actuator_if(self, if_index):
         
-        if_map = self.get_actuator_if_2Dmap(if_index)
+        if_map = self.get_if_2Dmap(if_index)
         plt.figure()
         plt.clf()
         plt.title("IF#%d"%if_index)
