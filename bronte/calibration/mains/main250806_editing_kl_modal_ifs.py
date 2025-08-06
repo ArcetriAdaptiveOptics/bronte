@@ -32,3 +32,12 @@ def main250806_170800():
     ftag = '250806_170800'
     
     return main(ifs_ftag, Nmodes, new_frame_size, ftag)
+
+def main250806_171900():
+    
+    ifs_ftag = '250806_115800'
+    Nmodes = 200
+    new_frame_size = 2*545
+    ftag = '250806_171900'
+    
+    return main(ifs_ftag, Nmodes, new_frame_size, ftag)
