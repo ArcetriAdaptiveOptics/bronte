@@ -78,7 +78,8 @@ class SlmPupilMaskGenerator():
                                 self.PUPIL_CENTER, self.OBSTRUCTION_RADIUS)
         return emask
     
-    def _get_elt_pupil_from_idl_file_data(self, fname):
+    @staticmethod
+    def _get_elt_pupil_from_idl_file_data(fname):
         from astropy.io import fits
         #TODO: could be useful to save the pixel pitch of the original file
         # and rescaled for the new slm pupil mask
@@ -105,9 +106,9 @@ class SlmPupilMaskGenerator():
         return pupil_on_slm_frame
 
     def _interpolate_2d_array(self, original_pupil_mask, new_size):
-        x_original = np.linspace(0, 1, original_pupil_mask.shape[0])
-        y_original = np.linspace(0, 1, original_pupil_mask.shape[1])
-        original_grid = (x_original, y_original)
+        x_original = np.linspace(0, 1, original_pupil_mask.shape[1])
+        y_original = np.linspace(0, 1, original_pupil_mask.shape[0])
+        original_grid = (y_original, x_original)
         
         x_new = np.linspace(0, 1, new_size)
         y_new = np.linspace(0, 1, new_size)
