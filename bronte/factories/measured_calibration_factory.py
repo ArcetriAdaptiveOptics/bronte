@@ -17,6 +17,7 @@ from functools import cached_property
 from bronte.utils.noll_to_radial_order import from_noll_to_radial_order
 from bronte.types.testbench_device_manager import TestbenchDeviceManager
 from bronte.utils.slopes_covariance_matrix_analyser import SlopesCovariaceMatrixAnalyser
+from bronte.types.slm_pupil_mask_generator import SlmPupilMaskGenerator
 
 class MeasuredCalibrationFactory(BaseFactory):
     
@@ -94,6 +95,8 @@ class MeasuredCalibrationFactory(BaseFactory):
         if self.MODAL_BASE_TYPE == 'kl':
             
             kl_modal_ifs = self.load_kl_modal_ifs()
+            ifs_mask = kl_modal_ifs.mask_inf_func
+            self._update_slm_pupil_mask_with_ifs_mask(ifs_mask)
             virtual_dm = DM(
                 pixel_pitch= self._pupil_pixel_pitch,
                 height = 0,
@@ -101,6 +104,16 @@ class MeasuredCalibrationFactory(BaseFactory):
         
         return virtual_dm
     
+    def _update_slm_pupil_mask_with_ifs_mask(self, ifs_mask_idl):
+        
+        spg = SlmPupilMaskGenerator(
+            pupil_radius = self.SLM_PUPIL_RADIUS, 
+            pupil_center= self.SLM_PUPIL_CENTER)
+        
+        mask = (1 - ifs_mask_idl).astype(bool)
+        rescaled_mask = spg._get_rescaled_mask_to_slm_frame(mask)
+        self.slm_rasterizer.slm_pupil_mask._mask = rescaled_mask
+        
     @cached_property
     def slope_offset(self):
         if self.SLOPE_OFFSET_TAG is None:

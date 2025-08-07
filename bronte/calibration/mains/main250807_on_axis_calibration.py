@@ -26,7 +26,9 @@ def main(calib_factory, ftag):
     
 
 def main250807_142000():
-    
+    '''
+    example of calibration of 4 kl modes on elt pupil
+    '''
     ftag = '250807_142000'
     calib_factory = measured_calibration_startup()
     Nmodes = 4
@@ -43,9 +45,38 @@ def main250807_142000():
     calib_factory.FOV = 2*calib_factory.SOURCE_COORD[0] # diameter in arcsec
     calib_factory.SH_FRAMES2AVERAGE = 6
     
-    pp_tag = '250613_102900'
+    pp_tag = '250616_102900'
     pp_vector_in_nm, _ = ExperimentalPushPullOptimizer.load_pp_vector(pp_tag)
     pp_vector_in_nm[:2] = 5000
     
     calib_factory.load_custom_pp_amp_vector(pp_vector_in_nm[:Nmodes])
+    #return calib_factory
+    main(calib_factory, ftag)
+    
+def main250807_173600():
+    '''
+    example of calibration of 10 kl modes on circular pupil
+    '''
+    ftag = '250807_173600'
+    calib_factory = measured_calibration_startup()
+    Nmodes = 10
+    
+    calib_factory.N_MODES_TO_CORRECT = Nmodes
+    calib_factory.MODAL_BASE_TYPE = 'kl'
+    calib_factory.KL_MODAL_IFS_TAG = '250806_165000'
+    calib_factory.SUBAPS_TAG = '250612_143100'
+    calib_factory.SLOPE_OFFSET_TAG = None
+    calib_factory.LOAD_HUGE_TILT_UNDER_MASK  = True
+    calib_factory.SH_PIX_THR = 0  # in ADU
+    calib_factory.PIX_THR_RATIO = 0.18
+    calib_factory.SOURCE_COORD = [0.0, 0.0] # [radius(in_arcsec), angle(in_deg)]
+    calib_factory.FOV = 2*calib_factory.SOURCE_COORD[0] # diameter in arcsec
+    calib_factory.SH_FRAMES2AVERAGE = 6
+    
+    pp_tag = '250616_102900'
+    pp_vector_in_nm, _ = ExperimentalPushPullOptimizer.load_pp_vector(pp_tag)
+    pp_vector_in_nm[:2] = 5000
+    
+    calib_factory.load_custom_pp_amp_vector(pp_vector_in_nm[:Nmodes])
+    #return calib_factory
     main(calib_factory, ftag)
