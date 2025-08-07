@@ -17,6 +17,13 @@ def main(calib_factory, ftag):
     
     mcmc.run()
     
+# def _get_pp_vector_in_nm(intmat_tag):
+#     calib_tag = '_bronte_calib_config'
+#     file_name = reconstructor_folder() / (intmat_tag + calib_tag + '.fits')
+#     config_data = fits.open(file_name)
+#     pp_vect_in_nm = config_data[0].data
+#     return pp_vect_in_nm
+    
 
 def main250807_142000():
     
