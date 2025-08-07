@@ -45,9 +45,12 @@ def main250806_171900():
     return main(ifs_ftag, Nmodes, new_frame_size, ftag)
 
 def main_250806_173200():
-    
+    '''
+    comparison btw original modal base to the rescaled one
+    to check correctness
+    '''
     rescaled_ifs_tag = '250806_171900'
-    original_ifs_tag = '250806_115800'
+    original_ifs_tag = '250806_115800' 
     
     disp_rescaled_ifs = DisplayInfluenceFunctionsMap(rescaled_ifs_tag)
     disp_original_ifs = DisplayInfluenceFunctionsMap(original_ifs_tag)
@@ -90,5 +93,63 @@ def main_250806_173200():
     print('amp relative error std')
     print(((amp_original - amp_rescaled)/amp_original).std())
     
+    # for the comparison cut the original ifs to the rescaled modes
+    original_ifs = disp_original_ifs._ifunc.influence_function[:,:Nmodes]
+    Npt_orig = original_ifs.shape[0]
+    cov_m_ifs_original = np.dot(original_ifs.T, original_ifs)/Npt_orig
     
+    rescaled_ifs = disp_rescaled_ifs._ifunc.influence_function
+    Npt_rescaled = rescaled_ifs.shape[0]
+    cov_m_ifs_rescaled = np.dot(rescaled_ifs.T, rescaled_ifs)/Npt_rescaled
     
+    #return original_ifs, rescaled_ifs
+
+    plt.subplots(1,2, sharex=True, sharey=True)
+    plt.subplot(1,2,1)
+    plt.title('original')
+    plt.imshow(cov_m_ifs_original)
+    plt.colorbar()
+    plt.subplot(1,2,2)
+    plt.title('rescaled')
+    plt.imshow(cov_m_ifs_rescaled)
+    plt.colorbar()
+    
+    plt.figure()
+    plt.clf()
+    plt.title('Covariance Martrix Difference')
+    plt.imshow(cov_m_ifs_original-cov_m_ifs_rescaled)
+    plt.colorbar()
+    
+    plt.figure()
+    plt.clf()
+    plt.title('Covariance Matrix diagonal')
+    plt.plot(cov_m_ifs_original.diagonal(), '.-', label ='original')
+    plt.plot(cov_m_ifs_rescaled.diagonal(), '.-', label='rescaled')
+    plt.xlabel('KL mode index')
+    plt.ylabel('$C_{ii}$')
+    plt.legend(loc='best')
+    plt.grid('--',alpha=0.3)
+    
+def main250807_100700():
+    '''
+    editing and rescaling kl modal ifs defined on complex
+    elt like pupil (keeping first 4 modes and rescalind to slm pup size)
+    '''
+    ifs_ftag = '250807_100300' # kl modal ifs
+    Nmodes = 4
+    new_frame_size = 2*545
+    ftag = '250807_100700'
+    
+    return main(ifs_ftag, Nmodes, new_frame_size, ftag)
+
+def main250807_XXXX00():
+    '''
+    editing and rescaling kl modal ifs defined on complex
+    elt like pupil (keeping first 200 modes and rescalind to slm pup size)
+    '''
+    ifs_ftag = '250807_121900' # kl modal ifs
+    Nmodes = 200
+    new_frame_size = 2*545
+    ftag = '250807_XXXX00'
+    
+    return main(ifs_ftag, Nmodes, new_frame_size, ftag)

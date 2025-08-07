@@ -45,17 +45,37 @@ def main_slm_frame_size():
 
 def main250807_084700():
     '''
-    defining zonal ifs in a elt-like complex pupil
+    defining zonal ifs of 2x2 (but actualy 6 why) in a elt-like complex pupil
     '''
     puptag = 'EELT480pp0.0803m_obs0.283_spider2023'
     fname = elt_pupil_folder()/(puptag + '.fits')
     
     elt_pupil_mask_idl = 1 - SlmPupilMaskGenerator._get_elt_pupil_from_idl_file_data(fname)
     
+    #return elt_pupil_mask_idl
+    #pup_size480
+    pupil_diameter_in_pixel = elt_pupil_mask_idl.shape[0]
+    Nact_on_diameter  = 2
+    ftag  = '250807_090200'
+    
+    zifc = main(pupil_diameter_in_pixel, Nact_on_diameter, ftag, elt_pupil_mask_idl)
+    return zifc
+
+
+def main250807_114200():
+    '''
+    defining zonal ifs of 41x41 acts in a elt-like complex pupil
+    '''
+    puptag = 'EELT480pp0.0803m_obs0.283_spider2023'
+    fname = elt_pupil_folder()/(puptag + '.fits')
+    
+    elt_pupil_mask_idl = 1 - SlmPupilMaskGenerator._get_elt_pupil_from_idl_file_data(fname)
+    
+    #return elt_pupil_mask_idl
     #pup_size480
     pupil_diameter_in_pixel = elt_pupil_mask_idl.shape[0]
     Nact_on_diameter  = 41
-    ftag  = '250807_090200'
+    ftag  = '250807_114200'
     
     zifc = main(pupil_diameter_in_pixel, Nact_on_diameter, ftag, elt_pupil_mask_idl)
     return zifc

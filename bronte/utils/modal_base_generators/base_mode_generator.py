@@ -4,7 +4,7 @@ import numpy as np
 class BaseModesGenerator():
     
     def __init__(self, pupil, covariance_matrix = None):
-        self._pupil = pupil
+        self._pupil = pupil # cmask arte
         self._dictDxCache = {}
         self._dictDyCache = {}
         if covariance_matrix is not None:

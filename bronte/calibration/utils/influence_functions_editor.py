@@ -3,7 +3,7 @@ specula.init(-1, precision=1)  # Default target=-1 (CPU), float32=1
 from specula import np
 from specula.data_objects.ifunc import IFunc
 from bronte.calibration.utils.display_ifs_map import DisplayInfluenceFunctionsMap
-from bronte.calibration.utils.kl_modal_base_generator import KarhunenLoeveGenerator
+from bronte.calibration.utils.kl_modal_base_computer import KarhunenLoeveGenerator
 from bronte.startup import set_data_dir
 from bronte.package_data import ifs_folder
 from scipy.interpolate import RegularGridInterpolator
