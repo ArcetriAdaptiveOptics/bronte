@@ -143,7 +143,9 @@ class MeasuredControlMatrixCalibrator():
         hdr['TSTEP_S'] = self.time_step
         hdr['N_MODES'] = self._factory.N_MODES_TO_CORRECT
         hdr['MOD_BASE'] = self._factory.MODAL_BASE_TYPE
-        
+        if self._factory.KL_MODAL_IFS_TAG is None:
+            self._factory.KL_MODAL_IFS_TAG  = 'NA'
+        hdr['KL_MIFS']  = self._factory.KL_MODAL_IFS_TAG
         #HARDWARE PARAMETERS
         hdr['SLM_RAD'] = self._factory.SLM_PUPIL_RADIUS # in pixels
         hdr['SLM_YX'] = str(self._factory.SLM_PUPIL_CENTER) # YX pixel coordinates

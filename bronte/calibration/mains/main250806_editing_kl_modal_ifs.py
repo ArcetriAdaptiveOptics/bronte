@@ -142,7 +142,7 @@ def main250807_100700():
     
     return main(ifs_ftag, Nmodes, new_frame_size, ftag)
 
-def main250807_XXXX00():
+def main250807_135400():
     '''
     editing and rescaling kl modal ifs defined on complex
     elt like pupil (keeping first 200 modes and rescalind to slm pup size)
@@ -150,6 +150,6 @@ def main250807_XXXX00():
     ifs_ftag = '250807_121900' # kl modal ifs
     Nmodes = 200
     new_frame_size = 2*545
-    ftag = '250807_XXXX00'
+    ftag = '250807_135400'
     
     return main(ifs_ftag, Nmodes, new_frame_size, ftag)

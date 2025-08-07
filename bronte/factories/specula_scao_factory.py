@@ -52,7 +52,7 @@ class SpeculaScaoFactory(BaseFactory):
     LGS_WL_IN_NM = 589
     
     #AO PARAMETERS
-    MODAL_BASE_TYPE = 'Zernike'
+    MODAL_BASE_TYPE = 'zernike'
     #N_MODES_TO_CORRECT = 200 # moved to base factory
     INT_GAIN = -0.3
     INT_DELAY = 2                   # frames or ms

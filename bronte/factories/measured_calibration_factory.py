@@ -11,7 +11,8 @@ from specula.data_objects.subap_data import SubapData
 from specula.processing_objects.sh_slopec import ShSlopec
 from specula.processing_objects.dm import DM
 from specula.data_objects.slopes import Slopes
-from bronte.package_data import subaperture_set_folder, reconstructor_folder
+from specula.data_objects.ifunc import IFunc
+from bronte.package_data import subaperture_set_folder, reconstructor_folder, ifs_folder
 from functools import cached_property
 from bronte.utils.noll_to_radial_order import from_noll_to_radial_order
 from bronte.types.testbench_device_manager import TestbenchDeviceManager
@@ -24,6 +25,7 @@ class MeasuredCalibrationFactory(BaseFactory):
     LOAD_HUGE_TILT_UNDER_MASK  = False
     MODAL_BASE_TYPE = 'zernike'#'zernike'
     PP_VCT_LOADED = False
+    KL_MODAL_IFS_TAG = None
     #N_MODES_TO_CORRECT = 200 in BaseFactory
     #TELESCOPE_PUPIL_DIAMETER = 568*2*9.2e-6   # m
     SH_PIX_THR = 0#200 # in ADU
@@ -80,12 +82,23 @@ class MeasuredCalibrationFactory(BaseFactory):
     
     @cached_property
     def virtual_deformable_mirror(self):
-        virtual_dm = DM(type_str=self.MODAL_BASE_TYPE,
-                pixel_pitch = self._pupil_pixel_pitch,
-                nmodes = self.N_MODES_TO_CORRECT,
-                npixels = self._pupil_diameter_in_pixel,                    # linear dimension of DM phase array
-                obsratio = 0,                    # obstruction dimension ratio w.r.t. diameter
-                height =  0)     # DM height [m]
+        
+        if self.MODAL_BASE_TYPE == 'zernike':
+            virtual_dm = DM(type_str=self.MODAL_BASE_TYPE,
+                    pixel_pitch = self._pupil_pixel_pitch,
+                    nmodes = self.N_MODES_TO_CORRECT,
+                    npixels = self._pupil_diameter_in_pixel,                    # linear dimension of DM phase array
+                    obsratio = 0,                    # obstruction dimension ratio w.r.t. diameter
+                    height =  0)     # DM height [m]
+        
+        if self.MODAL_BASE_TYPE == 'kl':
+            
+            kl_modal_ifs = self.load_kl_modal_ifs()
+            virtual_dm = DM(
+                pixel_pitch= self._pupil_pixel_pitch,
+                height = 0,
+                ifunc = kl_modal_ifs)
+        
         return virtual_dm
     
     @cached_property
@@ -139,6 +152,10 @@ class MeasuredCalibrationFactory(BaseFactory):
     @cached_property
     def modal_offset(self):
         return None
+    
+    def load_kl_modal_ifs(self):
+        fname = ifs_folder() / (self.KL_MODAL_IFS_TAG + '.fits')
+        return IFunc.restore(fname)
     
     def load_custom_pp_amp_vector(self, pp_vector_in_nm):
         self.PP_VCT_LOADED = True
