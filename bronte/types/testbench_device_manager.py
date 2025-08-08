@@ -147,5 +147,7 @@ class TestbenchDeviceManager(BaseProcessingObj):
     def _get_offset_command(self, modal_offset):
         wfz_offset = self._slm_raster.zernike_coefficients_to_raster(modal_offset)
         wf_offset = wfz_offset.toNumpyArray()
+        if self._load_tilt_under_mask is True:
+            wf_offset = self._slm_raster.load_a_tilt_under_pupil_mask(wf_offset)
         cmd_offset = self._slm_raster.reshape_map2vector(wf_offset)
         return cmd_offset
