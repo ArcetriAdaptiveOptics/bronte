@@ -6,7 +6,6 @@ from arte.types.zernike_coefficients import ZernikeCoefficients
 from functools import cache
 
 
-
 class SlmRasterizer():
     '''
     Input: modal coefficients vector, pupil

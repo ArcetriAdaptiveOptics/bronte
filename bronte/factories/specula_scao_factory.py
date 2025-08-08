@@ -14,7 +14,7 @@ from specula.processing_objects.dm import DM
 from specula.processing_objects.modalrec import Modalrec
 from specula.data_objects.subap_data import SubapData
 from specula.data_objects.recmat import Recmat
-
+from specula.data_objects.ifunc import IFunc
 from functools import cached_property
 from bronte.factories.base_factory import BaseFactory
 from bronte import package_data
@@ -23,6 +23,7 @@ from bronte.wfs.subaperture_set import ShSubapertureSet
 from bronte.telemetry_trash.display_telemetry_data import DisplayTelemetryData
 from bronte.utils.slopes_covariance_matrix_analyser import SlopesCovariaceMatrixAnalyser
 from bronte.types.slm_pupil_mask_generator import SlmPupilMaskGenerator
+from bronte.package_data import ifs_folder
 
 class SpeculaScaoFactory(BaseFactory):
     
@@ -141,7 +142,11 @@ class SpeculaScaoFactory(BaseFactory):
         mask = (1 - ifs_mask_idl).astype(bool)
         rescaled_mask = spg._get_rescaled_mask_to_slm_frame(mask)
         self.slm_rasterizer.slm_pupil_mask._mask = rescaled_mask
-     
+    
+    def load_kl_modal_ifs(self):
+        fname = ifs_folder() / (self.KL_MODAL_IFS_TAG + '.fits')
+        return IFunc.restore(fname)
+    
     
     @cached_property
     def modal_offset(self):
