@@ -8,6 +8,7 @@ from bronte.utils.data_cube_cleaner import DataCubeCleaner
 import matplotlib.pyplot as plt
 from bronte.utils.set_basic_logging import get_logger
 from arte.utils.decorator import logEnterAndExit, override
+from bronte.wfs.kl_slm_rasterizer import KLSlmRasterizer
 
 class TestbenchDeviceManager(BaseProcessingObj):
     
@@ -145,9 +146,18 @@ class TestbenchDeviceManager(BaseProcessingObj):
         plt.pause(0.001)
     
     def _get_offset_command(self, modal_offset):
-        wfz_offset = self._slm_raster.zernike_coefficients_to_raster(modal_offset)
-        wf_offset = wfz_offset.toNumpyArray()
-        if self._load_tilt_under_mask is True:
-            wf_offset = self._slm_raster.load_a_tilt_under_pupil_mask(wf_offset)
-        cmd_offset = self._slm_raster.reshape_map2vector(wf_offset)
-        return cmd_offset
+        #TODO: add option in case ok KL modal IFS
+        if self._factory.MODAL_BASE_TYPE == 'zernike':
+            wfz_offset = self._slm_raster.zernike_coefficients_to_raster(modal_offset)
+            wf_offset = wfz_offset.toNumpyArray()
+            if self._load_tilt_under_mask is True:
+                wf_offset = self._slm_raster.load_a_tilt_under_pupil_mask(wf_offset)
+            cmd_offset = self._slm_raster.reshape_map2vector(wf_offset)
+            return cmd_offset
+        
+        if self._factory.MODAL_BASE_TYPE == 'kl':
+            
+            kl_raster = KLSlmRasterizer(self._slm_raster.slm_pupil_mask,
+                                         self._factory.KL_MODAL_IFS_TAG)
+            cmd_offset =  kl_raster.m2c(modal_offset, applyTiltUnderMask = self._load_tilt_under_mask)
+            return cmd_offset
