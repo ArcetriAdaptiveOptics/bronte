@@ -25,8 +25,7 @@ class KLSlmRasterizer():
         
         spg = SlmPupilMaskGenerator(
             pupil_radius = self.slm_pupil_mask.radius(), 
-            pupil_center = self.slm_pupil_mask.center(),
-            frameShape =  self.slm_pupil_mask._shape)
+            pupil_center = self.slm_pupil_mask.center())
         
         mask = (1 - ifs_mask_idl).astype(bool)
         rescaled_mask = spg._get_rescaled_mask_to_slm_frame(mask)
@@ -38,7 +37,7 @@ class KLSlmRasterizer():
         
         wfkl = 0
     
-        for idx, coeff in np.ndenumerate(kl_coeff):
+        for idx, coeff in enumerate(kl_coeff):
             if coeff == 0.:
                 pass
             else:
@@ -94,7 +93,7 @@ class KLSlmRasterizer():
     @logEnterAndExit("Converting KL coefficients to slm command",
                      "KL coefficients converted to slm command", level='debug') 
     def m2c(self, kl_coeffs, applyTiltUnderMask = False):
-        wf2raster = self.zkl_coefficients_to_raster(kl_coeffs)
+        wf2raster = self.kl_coefficients_to_raster(kl_coeffs)
         if applyTiltUnderMask is True:
             wf2raster = self.load_a_tilt_under_pupil_mask(wf2raster)
         command_vector = self.reshape_map2vector(wf2raster)
