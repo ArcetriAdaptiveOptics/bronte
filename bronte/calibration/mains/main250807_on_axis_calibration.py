@@ -111,19 +111,48 @@ def main250808_083900():
     main(calib_factory, ftag)
     
 
-def main250808_112000():
+def main250808_123600():
     '''
     Calibration of 200 kl modes defined in a circular pupil
-    using modal influence function (250806_171900)
+    using modal influence function (250808_092602)
     for which L0=40m, D=8m, seeing=0.5 arcec, wl=633nm
     '''
-    ftag = '250807_173600'
+    ftag = '250808_123600'
     calib_factory = measured_calibration_startup()
     Nmodes = 200
     
     calib_factory.N_MODES_TO_CORRECT = Nmodes
     calib_factory.MODAL_BASE_TYPE = 'kl'
-    calib_factory.KL_MODAL_IFS_TAG = '250806_171900'
+    calib_factory.KL_MODAL_IFS_TAG = '250808_092602'
+    calib_factory.SUBAPS_TAG = '250612_143100'
+    calib_factory.SLOPE_OFFSET_TAG = None
+    calib_factory.LOAD_HUGE_TILT_UNDER_MASK  = True
+    calib_factory.SH_PIX_THR = 0  # in ADU
+    calib_factory.PIX_THR_RATIO = 0.18
+    calib_factory.SOURCE_COORD = [0.0, 0.0] # [radius(in_arcsec), angle(in_deg)]
+    calib_factory.FOV = 2*calib_factory.SOURCE_COORD[0] # diameter in arcsec
+    calib_factory.SH_FRAMES2AVERAGE = 6
+    
+    pp_tag = '250616_102900'
+    pp_vector_in_nm, _ = ExperimentalPushPullOptimizer.load_pp_vector(pp_tag)
+    pp_vector_in_nm[:2] = 5000
+    
+    calib_factory.load_custom_pp_amp_vector(pp_vector_in_nm[:Nmodes])
+    main(calib_factory, ftag)
+    
+def main250808_144900():
+    '''
+    Calibration of 200 kl modes defined in a circular pupil
+    using modal influence function (250806_170800)
+    for which L0=25m, D=8.2m, r0=0.15, wl=500nm
+    '''
+    ftag = '250808_144900'
+    calib_factory = measured_calibration_startup()
+    Nmodes = 200
+    
+    calib_factory.N_MODES_TO_CORRECT = Nmodes
+    calib_factory.MODAL_BASE_TYPE = 'kl'
+    calib_factory.KL_MODAL_IFS_TAG = '250806_170800'
     calib_factory.SUBAPS_TAG = '250612_143100'
     calib_factory.SLOPE_OFFSET_TAG = None
     calib_factory.LOAD_HUGE_TILT_UNDER_MASK  = True

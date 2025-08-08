@@ -13,18 +13,45 @@ def main(sf, total_time, ftag):
     ssr.save_telemetry(ftag)
 
 
-def main250808_XXXXXX():
-    
-    sf  = _factory_setup250808_XXXXXX()
+def main250808_134700():
+    '''
+    open loop, no turb, with KL modes
+    100 step ad dt 1ms
+    '''
+    sf  = _factory_setup250808_130000()
     total_time = 0.1 #sec
-    ftag = '250808_XXXXXX'
+    ftag = '250808_134700'
     
     # load control matrices zc or kl
-    sf.REC_MAT_TAG = 'XXXX'
+    sf.REC_MAT_TAG = '250808_123600'
     sf.MODAL_BASE_TYPE = 'kl'
-    sf.KL_MODAL_IFS_TAG = 'XXXXXXX'
+    sf.KL_MODAL_IFS_TAG = '250808_092602'
     
     sf.SH_FRAMES2AVERAGE = 1
+    
+    #opening or closing the loop with/without turb
+    sf.SEEING  = 0
+    gain_vector =  0 #0-0.1*np.ones(sf.N_MODES_TO_CORRECT)
+    sf.INT_GAIN = gain_vector 
+    
+    main(sf, total_time, ftag)
+
+
+def main250808_135900():
+    '''
+    closed loop, no turb, with KL modes
+    100 step ad dt 1ms
+    '''
+    sf  = _factory_setup250808_130000()
+    total_time = 0.1 #sec
+    ftag = '250808_135900'
+    
+    # load control matrices zc or kl
+    sf.REC_MAT_TAG = '250808_123600'
+    sf.MODAL_BASE_TYPE = 'kl'
+    sf.KL_MODAL_IFS_TAG = '250808_092602'
+    
+    sf.SH_FRAMES2AVERAGE = 6
     
     #opening or closing the loop with/without turb
     sf.SEEING  = 0
@@ -33,8 +60,325 @@ def main250808_XXXXXX():
     
     main(sf, total_time, ftag)
 
+def main250808_140700():
+    '''
+    open loop, with turb seeing 0.5, with KL modes
+    100 step ad dt 1ms
+    '''
+    sf  = _factory_setup250808_130000()
+    total_time = 0.1 #sec
+    ftag = '250808_140700'
+    
+    # load control matrices zc or kl
+    sf.REC_MAT_TAG = '250808_123600'
+    sf.MODAL_BASE_TYPE = 'kl'
+    sf.KL_MODAL_IFS_TAG = '250808_092602'
+    
+    sf.SH_FRAMES2AVERAGE = 1
+    
+    #opening or closing the loop with/without turb
+    sf.SEEING  = 0.5
+    gain_vector =  0 
+    sf.INT_GAIN = gain_vector 
+    
+    main(sf, total_time, ftag)
+
+def main250808_141500():
+    '''
+    closed loop, with turb seeing 0.5, with KL modes
+    100 step ad dt 1ms
+    gain =-0.3
+    '''
+    sf  = _factory_setup250808_130000()
+    total_time = 0.1 #sec
+    ftag = '250808_141500'
+    
+    # load control matrices zc or kl
+    sf.REC_MAT_TAG = '250808_123600'
+    sf.MODAL_BASE_TYPE = 'kl'
+    sf.KL_MODAL_IFS_TAG = '250808_092602'
+    
+    sf.SH_FRAMES2AVERAGE = 6
+    
+    #opening or closing the loop with/without turb
+    sf.SEEING  = 0.5
+    gain_vector =  -0.1*np.ones(sf.N_MODES_TO_CORRECT)
+    sf.INT_GAIN = gain_vector 
+    
+    main(sf, total_time, ftag)
+
+def main250808_142500():
+    '''
+    closed loop, with turb seeing 0.5, with KL modes
+    100 step ad dt 1ms
+    gain  =-0.3
+    '''
+    sf  = _factory_setup250808_130000()
+    total_time = 0.1 #sec
+    ftag = '250808_142500'
+    
+    # load control matrices zc or kl
+    sf.REC_MAT_TAG = '250808_123600'
+    sf.MODAL_BASE_TYPE = 'kl'
+    sf.KL_MODAL_IFS_TAG = '250808_092602'
+    
+    sf.SH_FRAMES2AVERAGE = 6
+    
+    #opening or closing the loop with/without turb
+    sf.SEEING  = 0.5
+    gain_vector =  -0.3*np.ones(sf.N_MODES_TO_CORRECT)
+    sf.INT_GAIN = gain_vector 
+    
+    main(sf, total_time, ftag)
+
+def main250808_143900():
+    '''
+    closed loop, with turb seeing 0.5, with KL modes
+    1000 step ad dt 1ms
+    gain  =-0.3
+    '''
+    sf  = _factory_setup250808_130000()
+    total_time = 1 #sec
+    ftag = '250808_143900'
+    
+    # load control matrices zc or kl
+    sf.REC_MAT_TAG = '250808_123600'
+    sf.MODAL_BASE_TYPE = 'kl'
+    sf.KL_MODAL_IFS_TAG = '250808_092602'
+    
+    sf.SH_FRAMES2AVERAGE = 6
+    
+    #opening or closing the loop with/without turb
+    sf.SEEING  = 0.5
+    gain_vector =  -0.3*np.ones(sf.N_MODES_TO_CORRECT)
+    sf.INT_GAIN = gain_vector 
+    
+    main(sf, total_time, ftag)
+
+def main250808_151100():
+    '''
+    open loop, no turb, with KL modes
+    100 step ad dt 1ms
+    L0=25m, r0=0.15m,D=8.2m
+    '''
+    sf  = _factory_setup250808_130000()
+    total_time = 0.1 #sec
+    ftag = '250808_151100'
+    
+    # load control matrices zc or kl
+    sf.REC_MAT_TAG = '250808_144900'
+    sf.MODAL_BASE_TYPE = 'kl'
+    sf.KL_MODAL_IFS_TAG = '250806_170800'
+    
+    sf.SH_FRAMES2AVERAGE = 1
+    
+    #opening or closing the loop with/without turb
+    sf.SEEING  = 0
+    gain_vector =  0 
+    sf.INT_GAIN = gain_vector 
+    
+    main(sf, total_time, ftag)
+
+
+def main250808_151500():
+    '''
+    closed loop, no turb, with KL modes
+    100 step ad dt 1ms
+    L0=25m, r0=0.15m,D=8.2m
+    '''
+    sf  = _factory_setup250808_130000()
+    total_time = 0.1 #sec
+    ftag = '250808_151500'
+    
+    # load control matrices zc or kl
+    sf.REC_MAT_TAG = '250808_144900'
+    sf.MODAL_BASE_TYPE = 'kl'
+    sf.KL_MODAL_IFS_TAG = '250806_170800'
+    
+    sf.SH_FRAMES2AVERAGE = 6
+    
+    #opening or closing the loop with/without turb
+    sf.SEEING  = 0
+    gain_vector =  -0.3*np.ones(sf.N_MODES_TO_CORRECT)
+    sf.INT_GAIN = gain_vector 
+    
+    main(sf, total_time, ftag)
+    
+def main250808_152700():
+    '''
+    open loop, with turb, with KL modes
+    300 step ad dt 1ms
+    L0=25m, r0=0.15m,D=8.2m
+    '''
+    sf  = _factory_setup250808_130000()
+    total_time = 0.3 #sec
+    ftag = '250808_152700'
+    
+    # load control matrices zc or kl
+    sf.REC_MAT_TAG = '250808_144900'
+    sf.MODAL_BASE_TYPE = 'kl'
+    sf.KL_MODAL_IFS_TAG = '250806_170800'
+    
+    sf.SH_FRAMES2AVERAGE = 1
+    
+    #opening or closing the loop with/without turb
+    sf.TELESCOPE_PUPIL_DIAMETER = 8.2
+    sf.OUTER_SCALE_L0 = 25            # m
+    wl  = 500e-9
+    r0 = 0.15
+    seeing = (wl/r0)*(180/np.pi)*60*60
+    sf.SEEING = seeing
+    gain_vector =  0 
+    sf.INT_GAIN = gain_vector 
+    
+    main(sf, total_time, ftag)
+    
+def main250808_153900():
+    '''
+    close loop, with turb, with KL modes
+    300 step ad dt 1ms
+    L0=25m, r0=0.15m,D=8.2m
+    '''
+    sf  = _factory_setup250808_130000()
+    total_time = 0.3 #sec
+    ftag = '250808_153900'
+    
+    # load control matrices zc or kl
+    sf.REC_MAT_TAG = '250808_144900'
+    sf.MODAL_BASE_TYPE = 'kl'
+    sf.KL_MODAL_IFS_TAG = '250806_170800'
+    
+    sf.SH_FRAMES2AVERAGE = 6
+    
+    #opening or closing the loop with/without turb
+    sf.TELESCOPE_PUPIL_DIAMETER = 8.2
+    sf.OUTER_SCALE_L0 = 25            # m
+    wl  = 500e-9
+    r0 = 0.15
+    seeing = (wl/r0)*(180/np.pi)*60*60
+    sf.SEEING = seeing
+    gain_vector =  -0.3*np.ones(sf.N_MODES_TO_CORRECT)
+    sf.INT_GAIN = gain_vector 
+    
+    main(sf, total_time, ftag)
+    
+    
+def main250808_155500():
+    '''
+    open loop, with turb, with Zernike modes
+    300 step ad dt 1ms
+    L0=25m, r0=0.15m,D=8.2m
+    '''
+    sf  = _factory_setup250808_130000()
+    total_time = 0.3 #sec
+    ftag = '250808_155500'
+    
+    # load control matrices zc or kl
+    sf.REC_MAT_TAG = '250616_103300'
+    sf.MODAL_BASE_TYPE = 'zernike'
+    sf.KL_MODAL_IFS_TAG = None
+    
+    sf.SH_FRAMES2AVERAGE = 1
+    
+    #opening or closing the loop with/without turb
+    sf.TELESCOPE_PUPIL_DIAMETER = 8.2
+    sf.OUTER_SCALE_L0 = 25            # m
+    wl  = 500e-9
+    r0 = 0.15
+    seeing = (wl/r0)*(180/np.pi)*60*60
+    sf.SEEING = seeing
+    gain_vector =  0 
+    sf.INT_GAIN = gain_vector 
+    
+    main(sf, total_time, ftag)
+    
+def main250808_160500():
+    '''
+    close loop, with turb, with Zernike modes
+    100 step ad dt 1ms
+    L0=25m, r0=0.15m,D=8.2m
+    '''
+    sf  = _factory_setup250808_130000()
+    total_time = 0.3 #sec
+    ftag = '250808_160500'
+    
+    # load control matrices zc or kl
+    sf.REC_MAT_TAG = '250616_103300'
+    sf.MODAL_BASE_TYPE = 'zernike'
+    sf.KL_MODAL_IFS_TAG = None
+    
+    sf.SH_FRAMES2AVERAGE = 6
+    
+    #opening or closing the loop with/without turb
+    sf.TELESCOPE_PUPIL_DIAMETER = 8.2
+    sf.OUTER_SCALE_L0 = 25            # m
+    wl  = 500e-9
+    r0 = 0.15
+    seeing = (wl/r0)*(180/np.pi)*60*60
+    sf.SEEING = seeing
+    gain_vector =  -0.3*np.ones(sf.N_MODES_TO_CORRECT)
+    sf.INT_GAIN = gain_vector 
+    
+    main(sf, total_time, ftag)
+    
+def main250808_161900():
+    '''
+    open loop, no turb, with Zernike modes
+    300 step ad dt 1ms
+    L0=25m, r0=0.15m,D=8.2m
+    '''
+    sf  = _factory_setup250808_130000()
+    total_time = 0.3 #sec
+    ftag = '250808_161900'
+    
+    # load control matrices zc or kl
+    sf.REC_MAT_TAG = '250616_103300'
+    sf.MODAL_BASE_TYPE = 'zernike'
+    sf.KL_MODAL_IFS_TAG = None
+    
+    sf.SH_FRAMES2AVERAGE = 1
+    
+    #opening or closing the loop with/without turb
+    sf.TELESCOPE_PUPIL_DIAMETER = 8.2
+    sf.OUTER_SCALE_L0 = 25            # m
+    seeing = 0
+    sf.SEEING = seeing
+    gain_vector =  0 
+    sf.INT_GAIN = gain_vector 
+    
+    main(sf, total_time, ftag)
+    
+def main250808_162500():
+    '''
+    close loop, with turb, with Zernike modes
+    100 step ad dt 1ms
+    L0=25m, r0=0.15m,D=8.2m
+    '''
+    sf  = _factory_setup250808_130000()
+    total_time = 0.3 #sec
+    ftag = '250808_162500'
+    
+    # load control matrices zc or kl
+    sf.REC_MAT_TAG = '250616_103300'
+    sf.MODAL_BASE_TYPE = 'zernike'
+    sf.KL_MODAL_IFS_TAG = None
+    
+    sf.SH_FRAMES2AVERAGE = 6
+    
+    #opening or closing the loop with/without turb
+    sf.TELESCOPE_PUPIL_DIAMETER = 8.2
+    sf.OUTER_SCALE_L0 = 25            # m
+   
+    seeing = 0
+    sf.SEEING = seeing
+    gain_vector =  -0.3*np.ones(sf.N_MODES_TO_CORRECT)
+    sf.INT_GAIN = gain_vector 
+    
+    main(sf, total_time, ftag)
+
+###################################################################
 #### Get a factory setup
-def _factory_setup250808_XXXXXX():
+def _factory_setup250808_130000():
     '''
     Using kl modes on circular pupil
     correcting 200 modes
@@ -43,9 +387,9 @@ def _factory_setup250808_XXXXXX():
     
     #SLM_RADIUS = 545 # set on base factory
     sf.SUBAPS_TAG = '250612_143100'
-    sf.REC_MAT_TAG = 'XXXX'
+    sf.REC_MAT_TAG = '250808_123600'
     sf.MODAL_BASE_TYPE = 'kl'
-    sf.KL_MODAL_IFS_TAG = 'XXXXXXX'
+    sf.KL_MODAL_IFS_TAG = None
     sf.SLOPE_OFFSET_TAG = None 
     sf.LOAD_HUGE_TILT_UNDER_MASK = True
     
