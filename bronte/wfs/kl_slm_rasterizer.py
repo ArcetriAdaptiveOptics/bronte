@@ -1,14 +1,7 @@
 import numpy as np
-#import specula
-#specula.init(-1, precision=1)  # Default target=-1 (CPU), float32=1
-#from specula import np
-from arte.utils.zernike_decomposer import ZernikeModalDecomposer
 import logging
 from arte.utils.decorator import logEnterAndExit
-from arte.types.zernike_coefficients import ZernikeCoefficients
 from functools import cache
-# from specula.data_objects.ifunc import IFunc
-# from bronte.package_data import ifs_folder
 from bronte.types.slm_pupil_mask_generator import SlmPupilMaskGenerator
 from bronte.calibration.utils.display_ifs_map import DisplayInfluenceFunctionsMap
 
