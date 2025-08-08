@@ -1,7 +1,8 @@
 from bronte.calibration.utils.zonal_influence_function_computer import ZonalInfluenceFunctionComputer
 from bronte.package_data import elt_pupil_folder
-from bronte.startup import set_data_dir
+
 from bronte.types.slm_pupil_mask_generator import SlmPupilMaskGenerator
+
 def main(
         pupil_diameter_in_pixel,
         Nact_on_diameter,
@@ -32,15 +33,15 @@ def main250805_103600():
     
     return zifc
 
-def main_slm_frame_size():
-    
-    pupil_diameter_in_pixel = 2*545
-    Nact_on_diameter  = 41
-    ftag  = '250806_000000'
-    
-    zifc = main(pupil_diameter_in_pixel, Nact_on_diameter, ftag)
-    
-    return zifc
+# def main_slm_frame_size():
+#
+#     pupil_diameter_in_pixel = 2*545
+#     Nact_on_diameter  = 41
+#     ftag  = '250806_000000'
+#
+#     zifc = main(pupil_diameter_in_pixel, Nact_on_diameter, ftag)
+#
+#     return zifc
 
 
 def main250807_084700():
@@ -79,3 +80,5 @@ def main250807_114200():
     
     zifc = main(pupil_diameter_in_pixel, Nact_on_diameter, ftag, elt_pupil_mask_idl)
     return zifc
+
+

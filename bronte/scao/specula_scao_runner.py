@@ -200,6 +200,11 @@ class SpeculaScaoRunner():
             hdr['OFF_TAG'] = self._factory.MODAL_OFFSET_TAG
         else:
             hdr['OFF_TAG'] = 'NA'
+            
+        hdr['MOD_BASE'] = self._factory.MODAL_BASE_TYPE
+        if self._factory.KL_MODAL_IFS_TAG is None:
+            self._factory.KL_MODAL_IFS_TAG  = 'NA'
+        hdr['KL_MIFS']  = self._factory.KL_MODAL_IFS_TAG
         
         # ATMO PARAMETERS
         hdr['ATM_SEED'] = self._factory.ATMO_SEED

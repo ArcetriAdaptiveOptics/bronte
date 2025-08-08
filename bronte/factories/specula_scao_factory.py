@@ -22,6 +22,7 @@ from bronte.wfs.slope_computer import PCSlopeComputer
 from bronte.wfs.subaperture_set import ShSubapertureSet
 from bronte.telemetry_trash.display_telemetry_data import DisplayTelemetryData
 from bronte.utils.slopes_covariance_matrix_analyser import SlopesCovariaceMatrixAnalyser
+from bronte.types.slm_pupil_mask_generator import SlmPupilMaskGenerator
 
 class SpeculaScaoFactory(BaseFactory):
     
@@ -53,6 +54,7 @@ class SpeculaScaoFactory(BaseFactory):
     
     #AO PARAMETERS
     MODAL_BASE_TYPE = 'zernike'
+    KL_MODAL_IFS_TAG  = None
     #N_MODES_TO_CORRECT = 200 # moved to base factory
     INT_GAIN = -0.3
     INT_DELAY = 2                   # frames or ms
@@ -110,13 +112,36 @@ class SpeculaScaoFactory(BaseFactory):
     @cached_property
     def virtual_deformable_mirror(self):
         
-        virtual_dm = DM(type_str='zernike',
-                pixel_pitch = self._pupil_pixel_pitch,
-                nmodes = self.N_MODES_TO_CORRECT,
-                npixels = self._pupil_diameter_in_pixel,                    # linear dimension of DM phase array
-                obsratio = 0,                    # obstruction dimension ratio w.r.t. diameter
-                height =  0)     # DM height [m]
+        if self.MODAL_BASE_TYPE == 'zernike':
+            virtual_dm = DM(type_str=self.MODAL_BASE_TYPE,
+                    pixel_pitch = self._pupil_pixel_pitch,
+                    nmodes = self.N_MODES_TO_CORRECT,
+                    npixels = self._pupil_diameter_in_pixel,                    # linear dimension of DM phase array
+                    obsratio = 0,                    # obstruction dimension ratio w.r.t. diameter
+                    height =  0)     # DM height [m]
+        
+        if self.MODAL_BASE_TYPE == 'kl':
+            
+            kl_modal_ifs = self.load_kl_modal_ifs()
+            ifs_mask = kl_modal_ifs.mask_inf_func
+            self._update_slm_pupil_mask_with_ifs_mask(ifs_mask)
+            virtual_dm = DM(
+                pixel_pitch= self._pupil_pixel_pitch,
+                height = 0,
+                ifunc = kl_modal_ifs)
+        
         return virtual_dm
+    
+    def _update_slm_pupil_mask_with_ifs_mask(self, ifs_mask_idl):
+        
+        spg = SlmPupilMaskGenerator(
+            pupil_radius = self.SLM_PUPIL_RADIUS, 
+            pupil_center= self.SLM_PUPIL_CENTER)
+        
+        mask = (1 - ifs_mask_idl).astype(bool)
+        rescaled_mask = spg._get_rescaled_mask_to_slm_frame(mask)
+        self.slm_rasterizer.slm_pupil_mask._mask = rescaled_mask
+     
     
     @cached_property
     def modal_offset(self):
