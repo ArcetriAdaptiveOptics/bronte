@@ -74,7 +74,8 @@ class ScaoTelemetryDataAnalyser():
         slope_map_cube_x, slope_map_cube_y = self._compute_slope_maps
         self._rms_slopes_x = self._rootm_mean_squared(slope_map_cube_x, axis=(1,2))
         self._rms_slopes_y = self._rootm_mean_squared(slope_map_cube_y, axis=(1,2))
-    
+        
+        
     def _compute_residual_wavefront(self):
         
         self._residual_wf = self._root_squared_sum(self._delta_cmds, axis=1)
