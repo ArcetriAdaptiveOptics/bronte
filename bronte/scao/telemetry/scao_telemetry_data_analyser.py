@@ -85,7 +85,7 @@ class ScaoTelemetryDataAnalyser():
     def _root_squared_sum(self, x, **kwargs):
         return np.sqrt(np.sum(x**2, **kwargs))
     
-    def display_residual_wavefront(self, display_ol = False):
+    def display_residual_wavefront(self, display_ol = False, res_wf_thr = None):
         
         residual_wf_in_nm = self._residual_wf/1e-9
         N = len(residual_wf_in_nm)
@@ -94,13 +94,27 @@ class ScaoTelemetryDataAnalyser():
         plt.clf()
         plt.plot(time_vector, residual_wf_in_nm, label='CL')
         if display_ol is True:
+            
             self._ol_residual_wf = self._root_squared_sum(self._ol_cmds, axis=1)
             ol_t_vector = np.arange(len(self._ol_residual_wf))*self.loop_time_step
             plt.plot(ol_t_vector, self._ol_residual_wf/1e-9, label = 'OL')
+        
+        if res_wf_thr is not None:
+            
+            convergence_idx = self._get_convergence_idx_from_res_wf_thr(res_wf_thr)
+            plt.axhline(res_wf_thr, color="red", linestyle="--", label=f"Threshold {res_wf_thr:.0f} nm")
+            plt.axvspan(time_vector[convergence_idx], time_vector[-1], color="green", alpha=0.2)
+        
         plt.xlabel('Time [s]')
         plt.ylabel('Residual Wavefront [nm] rms')
         plt.grid('--', alpha=0.3)
         plt.legend(loc='best')
+        plt.title('Residual Wavefront Evolution')
+        
+    def _get_convergence_idx_from_res_wf_thr(self, res_wf_thr):
+        residual_wf_in_nm = self._residual_wf/1e-9
+        convergence_idx = np.max(np.where(residual_wf_in_nm > res_wf_thr))+1
+        return convergence_idx
     # def _get_residual_wavefront_after_perfect_compensation(self):
     #
     #     J = self.corrected_modes + self._first_idx_mode + 1
