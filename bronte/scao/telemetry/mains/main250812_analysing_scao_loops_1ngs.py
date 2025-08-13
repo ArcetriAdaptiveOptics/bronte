@@ -22,9 +22,11 @@ def main_kl_loop(ol_ftag, cl_ftag, base, ifs_ftag, k):
     
     # Inspecting temporal evolution of residual WF
     ol_dcmd_std = stda_ol._delta_cmds.std(axis=0)#in nm
+    # this is true only for OL without turbulence
     measurement_error_in_res_wf = stda_ol._root_squared_sum(ol_dcmd_std, axis=0)
     # convergence thr
     res_wf_thr_in_nm = k*measurement_error_in_res_wf/1e-9
+    print(f"Measurement Error(rms(ol_dcmds.std())): {measurement_error_in_res_wf/1e-9:.2f}[nm rms]")
     stda_cl.display_residual_wavefront(display_ol = True, res_wf_thr=res_wf_thr_in_nm)
     conv_idx = stda_cl._get_convergence_idx_from_res_wf_thr(res_wf_thr_in_nm)
     
@@ -206,7 +208,7 @@ def main250813_101300():
     ol_ftag = '250808_152700' # Nstep=300 dt=1ms Nmodes=200
     cl_ftag = '250808_153900' # gain=-0.3
     ifs_ftag = '250806_170800'# L0=25m,r0=15cm,D=8.2m
-    stda_cl, stda_ol = main_kl_loop(ol_ftag, cl_ftag, modal_base, ifs_ftag, k=1/4)
+    stda_cl, stda_ol = main_kl_loop(ol_ftag, cl_ftag, modal_base, ifs_ftag, k=3)
     
     return stda_cl, stda_ol 
 
@@ -274,3 +276,16 @@ def main250813_125400():
     stda_cl, stda_ol = main_kl_loop(ol_ftag, cl_ftag, modal_base, ifs_ftag, k=3)
     
     return stda_cl, stda_ol
+
+def main250813_151700():
+    '''
+    Telemetry data analysis with turbulence using measured
+    KL control matrices of 200 modes
+    '''
+    modal_base = 'kl'
+    ol_ftag = '250808_140700' # Nstep=100 dt=1ms Nmodes=200
+    cl_ftag = '250808_142500' # gain=-0.3
+    ifs_ftag = '250808_092602'# #L0=40,seeng=0.5arcsec,D=8m 
+    stda_cl, stda_ol = main_kl_loop(ol_ftag, cl_ftag, modal_base, ifs_ftag, k=1.5)
+    
+    return stda_cl, stda_ol 
