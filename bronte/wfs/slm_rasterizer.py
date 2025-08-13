@@ -14,6 +14,7 @@ class SlmRasterizer():
     Assumes that the modal basis is a Zernike base
     '''
     
+    
     def __init__(self, slm_pupil_mask, Nmodes = 200, modal_coefficients = None):
         
         self._logger = logging.getLogger("SlmRasterizer")
@@ -34,6 +35,7 @@ class SlmRasterizer():
         
         wfz = self._zernike_modal_decomposer.recomposeWavefrontFromModalCoefficients(
             zernike_coeffs, self.slm_pupil_mask)
+     
         return wfz
  
     def get_wavefront_on_pupil(self, wf):

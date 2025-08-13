@@ -1,20 +1,17 @@
 from bronte.scao.telemetry.scao_telemetry_data_analyser import ScaoTelemetryDataAnalyser
 import numpy as np
 import matplotlib.pyplot as plt
-#from astropy.io import fits
-#from bronte.utils.slopes_covariance_matrix_analyser import SlopesCovariaceMatrixAnalyser
+from bronte.types.slm_pupil_mask_generator import SlmPupilMaskGenerator
+from bronte.wfs.kl_slm_rasterizer import KLSlmRasterizer
+from bronte.wfs.slm_rasterizer import SlmRasterizer
 
 
-def main250812_084900():
+def main_kl_loop(ol_ftag, cl_ftag, base, ifs_ftag, k):
     '''
-    Telemetry data without turbulence using measured
-    KL control matrices of 200 modes
+    Telemetry data using measured KL control matrices
     '''
     
     ## loading data sets
-    ol_ftag = '250808_151100'
-    cl_ftag = '250808_151500'
-    
     stda_cl = ScaoTelemetryDataAnalyser(cl_ftag)
     stda_ol = ScaoTelemetryDataAnalyser(ol_ftag)
     
@@ -27,7 +24,7 @@ def main250812_084900():
     ol_dcmd_std = stda_ol._delta_cmds.std(axis=0)#in nm
     measurement_error_in_res_wf = stda_ol._root_squared_sum(ol_dcmd_std, axis=0)
     # convergence thr
-    res_wf_thr_in_nm = 3*measurement_error_in_res_wf/1e-9
+    res_wf_thr_in_nm = k*measurement_error_in_res_wf/1e-9
     stda_cl.display_residual_wavefront(display_ol = True, res_wf_thr=res_wf_thr_in_nm)
     conv_idx = stda_cl._get_convergence_idx_from_res_wf_thr(res_wf_thr_in_nm)
     
@@ -64,20 +61,8 @@ def main250812_084900():
     stda_cl.display_rms_slopes(display_ol = True)
     Nsub = stda_ol._slopes_vect.shape[-1]//2
     #computing temporal fluctuation of sloeps in each subap as temporal std
-    sigma_ol_sx = stda_ol._slopes_vect[:,:Nsub].std(axis=0)
-    sigma_ol_sy = stda_ol._slopes_vect[:,Nsub:].std(axis=0)
-    
-    # plt.subplots(1,2)
-    # plt.subplot(1,2,1)
-    # plt.hist(sigma_ol_sx, bins=30, alpha=0.7, label='X slopes')
-    # plt.xlabel('Std temporale (slope units)')
-    # plt.ylabel('Count')
-    #
-    #
-    # plt.subplot(1,2,2)
-    # plt.hist( sigma_ol_sy, bins=30, alpha=0.7, color='orange', label='Y slopes')
-    # plt.xlabel('Std temporale (slope units)')
-    # plt.legend()
+    sigma_ol_sx = stda_ol._slopes_vect[:, :Nsub].std(axis=0)
+    sigma_ol_sy = stda_ol._slopes_vect[:, Nsub:].std(axis=0)
     
     
     #computing rms along subaps of slopes temporal fluctuations
@@ -98,5 +83,166 @@ def main250812_084900():
     
     print(f"RMS Fluctuant CL = {rms_fluc}")
     
+    # Inspecting residual and integrated WF map
+
+    
+    ol_delta_kl_coeff = stda_ol._delta_cmds.mean(axis=0)/1e-9
+    ol_delta_kl_coeff_filtered = filter_tt_and_focus(ol_delta_kl_coeff)
+    
+    cl_integ_kl_coeff = stda_cl._integ_cmds[conv_idx:,:].mean(axis=0)/1e-9
+    cl_integ_kl_coeff_filtered = filter_tt_and_focus(cl_integ_kl_coeff)
+    cl_delta_kl_coeff = stda_cl._delta_cmds[-1,:]/1e-9#stda_cl._delta_cmds[conv_idx:,:].mean(axis=0)/1e-9
+    cl_delta_kl_coeff_filtered = filter_tt_and_focus(cl_delta_kl_coeff)
+    
+    slm_radius = 545
+    slm_pup_center = (579, 968)
+    spg = SlmPupilMaskGenerator(pupil_radius = slm_radius, pupil_center = slm_pup_center)
+    slm_pupil_mask = spg.circular_pupil_mask()
+    mc2r = ModalCoefficients2Raster(slm_pupil_mask, base, Nmodes, ifs_ftag)
+    coeff2rast = mc2r.get_wf_from_modal_coefficients
+    
+    ol_wf = coeff2rast(ol_delta_kl_coeff)
+    ol_wf_filtered = coeff2rast(ol_delta_kl_coeff_filtered)
+    display_filtered_and_full_wf(ol_wf, ol_wf_filtered, 'Open-Loop')
+    print(f"OL WF: PtV = {np.ptp(ol_wf):.0f} nm rms wf \t Amp = {ol_wf.std():.0f} nm rms wf")
+    print(f"OL WF (Filtered): PtV = {np.ptp(ol_wf_filtered):.0f} nm rms wf \t Amp = {ol_wf_filtered.std():.0f} nm rms wf")
+    
+    cl_integ_wf = coeff2rast(cl_integ_kl_coeff)
+    cl_integ_wf_filtered = coeff2rast(cl_integ_kl_coeff_filtered)
+    display_filtered_and_full_wf(cl_integ_wf, cl_integ_wf_filtered,'CL-Integrated WF')
+    print(f"CL INTEG WF: PtV = {np.ptp(cl_integ_wf):.0f} nm rms wf \t Amp = {cl_integ_wf.std():.0f} nm rms wf")
+    print(f"CL INTEG WF (Filtered): PtV = {np.ptp(cl_integ_wf_filtered):.0f} nm rms wf \t Amp = {cl_integ_wf_filtered.std():.0f} nm rms wf")
+    
+    cl_delta_wf = coeff2rast(cl_delta_kl_coeff)
+    cl_delta_wf_filtered = coeff2rast(cl_delta_kl_coeff_filtered)
+    display_filtered_and_full_wf(cl_delta_wf, cl_delta_wf_filtered,'CL-Residual WF')
+    print(f"CL RES WF: PtV = {np.ptp(cl_delta_wf):.0f} nm rms wf \t Amp = {cl_delta_wf.std():.2f} nm rms wf")
+    print(f"CL RES WF (Filtered): PtV = {np.ptp(cl_delta_wf_filtered):.0f} nm rms wf \t Amp = {cl_delta_wf_filtered.std():.2f} nm rms wf")
+    
+    
     return stda_cl, stda_ol
-   
+
+
+def display_filtered_and_full_wf(full_wf_in_nm, filtered_wf_in_nm, sup_title_str='CL'):
+    
+    plt.subplots(1, 2, sharex = True, sharey= True)
+    plt.suptitle(sup_title_str)
+    plt.subplot(1, 2, 1)
+    plt.title('Full WF')
+    plt.imshow(full_wf_in_nm)
+    plt.colorbar(orientation='horizontal', label='nm rms wf')
+    plt.subplot(1, 2, 2)
+    plt.title('Filtered WF')
+    plt.imshow(filtered_wf_in_nm)
+    plt.colorbar(orientation='horizontal', label='nm rms wf')
+    
+def filter_tt_and_focus(modal_coeff):
+    temp = modal_coeff.copy()
+    temp[:3] = 0.
+    filtered_modal_cmd = temp
+    return filtered_modal_cmd
+
+def load_coefficients2raster(slm_pupil_mask, base = 'kl', Nmodes=200, ifs_ftag=None):
+    
+    if base == 'kl':
+        kl_sr =  KLSlmRasterizer(slm_pupil_mask, ifs_ftag)
+        return kl_sr.kl_coefficients_to_raster
+    
+    if base == 'zernike':
+        zc_sr = SlmRasterizer(slm_pupil_mask, Nmodes)
+        zc_sr.RAST_AS_NUMPY = True
+        return zc_sr.zernike_coefficients_to_raster
+
+class ModalCoefficients2Raster():
+    
+    def __init__(self, slm_pupil_mask, base = 'kl', Nmodes=200, ifs_ftag=None):
+        
+        self._modal_base = base
+        self._slm_pupil_mask = slm_pupil_mask
+        self._Nmodes = Nmodes
+        self._ifs_ftag = ifs_ftag
+        
+        if self._modal_base == 'kl':
+            kl_sr =  KLSlmRasterizer(self._slm_pupil_mask, self._ifs_ftag)
+            self._coef2rast = kl_sr.kl_coefficients_to_raster
+    
+        if self._modal_base == 'zernike':
+            zc_sr = SlmRasterizer(self._slm_pupil_mask, self._Nmodes)
+            self._coef2rast = zc_sr.zernike_coefficients_to_raster
+    
+    def get_wf_from_modal_coefficients(self, modal_coeff):
+        
+        wf = self._coef2rast(modal_coeff)
+        
+        if isinstance(wf, np.ndarray):
+            return wf
+        else:
+            return wf.toNumpyArray()
+        
+            
+#####___________mains____________
+
+def main250812_084900():
+    '''
+    Telemetry data without turbulence using measured
+    KL control matrices of 200 modes
+    '''
+    modal_base = 'kl'
+    ol_ftag = '250808_151100' # Nstep=300 dt=1ms Nmodes=200
+    cl_ftag = '250808_151500' # gain=-0.3
+    ifs_ftag = '250806_170800' # L0=25m,r0=15cm,D=8.2m
+    stda_cl, stda_ol = main_kl_loop(ol_ftag, cl_ftag, modal_base, ifs_ftag, k=3)
+    
+    return stda_cl, stda_ol 
+
+def main250813_101300():
+    '''
+    Telemetry data analysis with turbulence using measured
+    KL control matrices of 200 modes
+    '''
+    modal_base = 'kl'
+    ol_ftag = '250808_152700' # Nstep=300 dt=1ms Nmodes=200
+    cl_ftag = '250808_153900' # gain=-0.3
+    ifs_ftag = '250806_170800'# L0=25m,r0=15cm,D=8.2m
+    stda_cl, stda_ol = main_kl_loop(ol_ftag, cl_ftag, modal_base, ifs_ftag, k=1/4)
+    
+    return stda_cl, stda_ol 
+
+def main250813_110600():
+    '''
+    Telemetry data without turbulence using measured
+    Zernike control matrices of 200 modes
+    '''
+    modal_base = 'zernike'
+    ol_ftag = '250808_161900' # Nstep=300 dt=1ms Nmodes=200
+    cl_ftag = '250808_162500' # gain=-0.3
+    ifs_ftag = None 
+    stda_cl, stda_ol = main_kl_loop(ol_ftag, cl_ftag, modal_base, ifs_ftag, k=12)
+    
+    return stda_cl, stda_ol
+
+def main250813_113300():
+    '''
+    Telemetry data with turbulence using measured
+    Zernike control matrices of 200 modes
+    '''
+    modal_base = 'zernike'
+    ol_ftag = '250808_155500' # Nstep=300 dt=1ms Nmodes=200
+    cl_ftag = '250808_160500' # gain=-0.3 # L0=25m,r0=15cm,D=8.2m
+    ifs_ftag = None 
+    stda_cl, stda_ol = main_kl_loop(ol_ftag, cl_ftag, modal_base, ifs_ftag, k=12)
+    
+    return stda_cl, stda_ol 
+
+def main250813_114600():
+    '''
+    Telemetry data without turbulence using measured
+    Zernike control matrices of 200 modes
+    '''
+    modal_base = 'zernike'
+    ol_ftag = '250808_134700' # Nstep=300 dt=1ms Nmodes=200
+    cl_ftag = '250808_135900' # gain=-0.1
+    ifs_ftag = None 
+    stda_cl, stda_ol = main_kl_loop(ol_ftag, cl_ftag, modal_base, ifs_ftag, k=3)
+    
+    return stda_cl, stda_ol
