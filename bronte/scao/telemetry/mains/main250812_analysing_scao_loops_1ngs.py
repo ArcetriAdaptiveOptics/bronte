@@ -165,11 +165,13 @@ class ModalCoefficients2Raster():
         if self._modal_base == 'kl':
             kl_sr =  KLSlmRasterizer(self._slm_pupil_mask, self._ifs_ftag)
             self._coef2rast = kl_sr.kl_coefficients_to_raster
+            self._sign_corr = 1
     
         if self._modal_base == 'zernike':
             zc_sr = SlmRasterizer(self._slm_pupil_mask, self._Nmodes)
             self._coef2rast = zc_sr.zernike_coefficients_to_raster
-    
+            self._sign_corr = -1
+            
     def get_wf_from_modal_coefficients(self, modal_coeff):
         
         wf = self._coef2rast(modal_coeff)
@@ -239,10 +241,36 @@ def main250813_114600():
     Telemetry data without turbulence using measured
     Zernike control matrices of 200 modes
     '''
-    modal_base = 'zernike'
-    ol_ftag = '250808_134700' # Nstep=300 dt=1ms Nmodes=200
+    modal_base = 'kl'
+    ol_ftag = '250808_134700' # Nstep=100 dt=1ms Nmodes=200
     cl_ftag = '250808_135900' # gain=-0.1
-    ifs_ftag = None 
+    ifs_ftag = '250808_092602'#L0=40,seeng=0.5arcsec,D=8m 
+    stda_cl, stda_ol = main_kl_loop(ol_ftag, cl_ftag, modal_base, ifs_ftag, k=3)
+    
+    return stda_cl, stda_ol
+
+def main250813_123700():
+    '''
+    Telemetry data analysis with turbulence using measured
+    KL control matrices of 200 modes
+    '''
+    modal_base = 'kl'
+    ol_ftag = '250808_140700' # Nstep=100 dt=1ms Nmodes=200
+    cl_ftag = '250808_141500' # gain=-0.1
+    ifs_ftag = '250808_092602'# #L0=40,seeng=0.5arcsec,D=8m 
+    stda_cl, stda_ol = main_kl_loop(ol_ftag, cl_ftag, modal_base, ifs_ftag, k=1.5)
+    
+    return stda_cl, stda_ol 
+
+def main250813_125400():
+    '''
+    Telemetry data without turbulence using measured
+    Zernike control matrices of 200 modes
+    '''
+    modal_base = 'zernike'
+    ol_ftag = '250804_111500' # Nstep=100 dt=1ms Nmodes=200
+    cl_ftag = '250804_112600' # gain=-0.1
+    ifs_ftag = None #L0=40,seeng=0.5arcsec,D=8m 
     stda_cl, stda_ol = main_kl_loop(ol_ftag, cl_ftag, modal_base, ifs_ftag, k=3)
     
     return stda_cl, stda_ol
