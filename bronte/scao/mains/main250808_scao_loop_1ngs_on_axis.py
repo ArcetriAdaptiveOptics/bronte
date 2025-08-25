@@ -212,7 +212,7 @@ def main250808_152700():
     '''
     sf  = _factory_setup250808_130000()
     total_time = 0.3 #sec
-    ftag = '250808_152700'
+    ftag = '250808_152700_tris'
     
     # load control matrices zc or kl
     sf.REC_MAT_TAG = '250808_144900'
@@ -223,6 +223,7 @@ def main250808_152700():
     
     #opening or closing the loop with/without turb
     sf.TELESCOPE_PUPIL_DIAMETER = 8.2
+    sf._pupil_pixel_pitch = sf.TELESCOPE_PUPIL_DIAMETER/sf._pupil_diameter_in_pixel
     sf.OUTER_SCALE_L0 = 25            # m
     wl  = 500e-9
     r0 = 0.15
@@ -241,7 +242,7 @@ def main250808_153900():
     '''
     sf  = _factory_setup250808_130000()
     total_time = 0.3 #sec
-    ftag = '250808_153900'
+    ftag = '250808_153900_tris'
     
     # load control matrices zc or kl
     sf.REC_MAT_TAG = '250808_144900'
@@ -252,6 +253,7 @@ def main250808_153900():
     
     #opening or closing the loop with/without turb
     sf.TELESCOPE_PUPIL_DIAMETER = 8.2
+    sf._pupil_pixel_pitch = sf.TELESCOPE_PUPIL_DIAMETER/sf._pupil_diameter_in_pixel
     sf.OUTER_SCALE_L0 = 25            # m
     wl  = 500e-9
     r0 = 0.15
@@ -375,6 +377,72 @@ def main250808_162500():
     sf.INT_GAIN = gain_vector 
     
     main(sf, total_time, ftag)
+
+
+
+
+def main250825_153300():
+    '''
+    open loop, with turb, with KL modes
+    300 step ad dt 1ms
+    L0=25m, r0=0.15m,D=8.2m
+    '''
+    sf  = _factory_setup250808_130000()
+    total_time = 0.3 #sec
+    ftag = '250825_153300_bis'
+    
+    # load control matrices zc or kl
+    sf.REC_MAT_TAG = '250808_144900'
+    sf.MODAL_BASE_TYPE = 'kl'
+    sf.KL_MODAL_IFS_TAG = '250806_170800'
+    
+    sf.SH_FRAMES2AVERAGE = 1
+    
+    #opening or closing the loop with/without turb
+    sf.TELESCOPE_PUPIL_DIAMETER = 8.2
+    sf._pupil_pixel_pitch = sf.TELESCOPE_PUPIL_DIAMETER/sf._pupil_diameter_in_pixel
+    sf.OUTER_SCALE_L0 = 25            # m
+    wl  = 500e-9
+    r0 = 0.15
+    seeing = (wl/r0)*(180/np.pi)*60*60
+    sf.SEEING = seeing
+    gain_vector =  0 
+    sf.INT_GAIN = gain_vector 
+    sf.ONAXIS_SOURCE_WL_IN_NM = 633
+    
+    main(sf, total_time, ftag)
+    
+def main250825_154200():
+    '''
+    close loop, with turb, with KL modes
+    300 step ad dt 1ms
+    L0=25m, r0=0.15m,D=8.2m
+    '''
+    sf  = _factory_setup250808_130000()
+    total_time = 0.3 #sec
+    ftag = '250825_154200_bis'
+    
+    # load control matrices zc or kl
+    sf.REC_MAT_TAG = '250808_144900'
+    sf.MODAL_BASE_TYPE = 'kl'
+    sf.KL_MODAL_IFS_TAG = '250806_170800'
+    
+    sf.SH_FRAMES2AVERAGE = 6
+    
+    #opening or closing the loop with/without turb
+    sf.TELESCOPE_PUPIL_DIAMETER = 8.2
+    sf._pupil_pixel_pitch = sf.TELESCOPE_PUPIL_DIAMETER/sf._pupil_diameter_in_pixel
+    sf.OUTER_SCALE_L0 = 25            # m
+    wl  = 500e-9
+    r0 = 0.15
+    seeing = (wl/r0)*(180/np.pi)*60*60
+    sf.SEEING = seeing
+    gain_vector =  -0.3*np.ones(sf.N_MODES_TO_CORRECT)
+    sf.INT_GAIN = gain_vector 
+    sf.ONAXIS_SOURCE_WL_IN_NM = 633
+    main(sf, total_time, ftag)
+
+
 
 ###################################################################
 #### Get a factory setup

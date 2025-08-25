@@ -205,10 +205,10 @@ def main250813_101300():
     KL control matrices of 200 modes
     '''
     modal_base = 'kl'
-    ol_ftag = '250808_152700' # Nstep=300 dt=1ms Nmodes=200
-    cl_ftag = '250808_153900' # gain=-0.3
+    ol_ftag = '250808_152700_tris' # Nstep=300 dt=1ms Nmodes=200
+    cl_ftag = '250808_153900_tris' # gain=-0.3
     ifs_ftag = '250806_170800'# L0=25m,r0=15cm,D=8.2m
-    stda_cl, stda_ol = main_kl_loop(ol_ftag, cl_ftag, modal_base, ifs_ftag, k=3)
+    stda_cl, stda_ol = main_kl_loop(ol_ftag, cl_ftag, modal_base, ifs_ftag, k=3/12)
     
     return stda_cl, stda_ol 
 
@@ -287,5 +287,18 @@ def main250813_151700():
     cl_ftag = '250808_142500' # gain=-0.3
     ifs_ftag = '250808_092602'# #L0=40,seeng=0.5arcsec,D=8m 
     stda_cl, stda_ol = main_kl_loop(ol_ftag, cl_ftag, modal_base, ifs_ftag, k=1.5)
+    
+    return stda_cl, stda_ol 
+
+def main250825_162400():
+    '''
+    Telemetry data analysis with turbulence using measured
+    KL control matrices of 200 modes
+    '''
+    modal_base = 'kl'
+    ol_ftag = '250825_153300_bis' # Nstep=300 dt=1ms Nmodes=200
+    cl_ftag = '250825_154200_bis' # gain=-0.3
+    ifs_ftag = '250806_170800'# L0=25m,r0=15cm,D=8.2m
+    stda_cl, stda_ol = main_kl_loop(ol_ftag, cl_ftag, modal_base, ifs_ftag, k=5)
     
     return stda_cl, stda_ol 
