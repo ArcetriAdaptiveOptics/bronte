@@ -113,6 +113,7 @@ class SpeculaScaoRunner():
         self._zc_delta_modal_command_list = []
         self._zc_integrated_modal_command_list = []
         self._sh_frames_list = []
+        #self._wf_on_slm_in_nm_list = []
         
     @logEnterAndExit("Updating telemetry buffer...",
                   "Telemetry buffer updated.", level='debug')  
@@ -129,6 +130,7 @@ class SpeculaScaoRunner():
         self._zc_integrated_modal_command_list.append(
             specula_integrated_commands_in_nm*1e-9)
         sh_fr = self._groups[3][0].output_frame.pixels.copy()
+        #wf_on_slm_in_nm = self._groups[2].outputs['out_on_axis_source_ef'].phaseInNm.copy()
         #self._sh_frames_list.append(sh_fr)
         
     @logEnterAndExit("Starting Loop...",

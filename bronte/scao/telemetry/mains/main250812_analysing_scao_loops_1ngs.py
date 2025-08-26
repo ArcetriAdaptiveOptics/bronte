@@ -299,6 +299,6 @@ def main250825_162400():
     ol_ftag = '250825_153300_bis' # Nstep=300 dt=1ms Nmodes=200
     cl_ftag = '250825_154200_bis' # gain=-0.3
     ifs_ftag = '250806_170800'# L0=25m,r0=15cm,D=8.2m
-    stda_cl, stda_ol = main_kl_loop(ol_ftag, cl_ftag, modal_base, ifs_ftag, k=5)
+    stda_cl, stda_ol = main_kl_loop(ol_ftag, cl_ftag, modal_base, ifs_ftag, k=0.25)
     
     return stda_cl, stda_ol 

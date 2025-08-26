@@ -1,4 +1,5 @@
 import numpy as np
+from bronte.package_data import ifs_folder
 
 
 class ScaoErrorBudgetComputer():
@@ -31,3 +32,21 @@ class ScaoErrorBudgetComputer():
     def phase_var2wfe_in_nm(self, phase_var, wl=633e-9) :
         """ converting phase variance to RMS WFE (nm)"""
         return (wl / (2*np.pi)) * np.sqrt(phase_var) * 1e9
+    
+    def load_singular_values(self, ifs_ftag):
+        
+        from bronte.startup import set_data_dir
+        from astropy.io import fits
+        set_data_dir()
+        
+        fname = ifs_folder() / (ifs_ftag + '_singular_values_.fits')
+        hduList = fits.open(fname)
+        
+        self._s_ifs = hduList[0].data # in rad2
+        self._s_turb = hduList[1].data# in rad2
+        
+    def get_residual_var_from_kl_singular_values(self, j = 200):
+        
+        res_var_in_rad2 = self._s_turb[j:].sum()
+        
+        return res_var_in_rad2
