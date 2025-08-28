@@ -23,13 +23,14 @@ class RealtimeSHWFSDisplay(BaseRealTimeCameraDisplay):
     SH_PIX_THR = 0.18
     
     def __init__(self,
-                sh_cam_name = '193.206.155.69',
+                sh_cam_name = '193.206.155.92',
                 sh_cam_port = 7110,
                 wtitle = "Live SHWFS CAMERA",
                 ptitle = "SH Frame",
-                update_interval = 0):
+                update_interval = 2):
         
         super().__init__(sh_cam_name, sh_cam_port, wtitle, ptitle, update_interval)
+        self._update_interval = update_interval
         self._load_subaperture_grid()
         
         # subap grid check box
@@ -38,7 +39,7 @@ class RealtimeSHWFSDisplay(BaseRealTimeCameraDisplay):
         self.grid_checkbox.stateChanged.connect(self.update_plot)
         self.layout.addWidget(self.grid_checkbox)
 
-        self._slopes_data_manager = SlopesDataManager(self)
+        self._slopes_data_manager = SlopesDataManager(self, update_interval=self._update_interval)
         self._slopes_window = None
         self._flux_window = None
         # slope analysis buttons
@@ -62,12 +63,12 @@ class RealtimeSHWFSDisplay(BaseRealTimeCameraDisplay):
             
     def _open_slopes_plotter(self):
         if self._slopes_window is None:
-            self._slopes_window = SlopesPlotterWindow(self._slopes_data_manager)
+            self._slopes_window = SlopesPlotterWindow(self._slopes_data_manager, update_interval=self._update_interval*100)
         self._slopes_window.show()
 
     def _open_flux_map(self):
         if self._flux_window is None:
-            self._flux_window = FluxMapWindow(self._slopes_data_manager)
+            self._flux_window = FluxMapWindow(self._slopes_data_manager, update_interval=self._update_interval*100)
         self._flux_window.show()
     
     @override

@@ -11,7 +11,7 @@ from bronte.utils.raw_strehl_ratio_computer import StrehlRatioComputer
 class StrehlRatioPlotter(QtWidgets.QMainWindow):
     """Finestra per il grafico dello Strehl Ratio in tempo reale."""
     
-    def __init__(self, gui_master, title="Live Strehl Ratio", update_interval=2):
+    def __init__(self, gui_master, title="Live Strehl Ratio", update_interval=4):
         super().__init__()
         self.setWindowTitle(title)
         self._gui_master = gui_master

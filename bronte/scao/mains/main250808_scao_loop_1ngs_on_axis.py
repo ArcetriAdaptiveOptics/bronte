@@ -537,7 +537,7 @@ def main250828_142600():
     L0=25m, r0=0.15m,D=8.2m
     '''
     sf  = _factory_setup250808_130000()
-    total_time = 0.3 #sec
+    total_time = 0.3 #sec 0.3
     ftag = '250828_142600'
     
     # load control matrices zc or kl
@@ -555,10 +555,11 @@ def main250828_142600():
     r0 = 0.15
     seeing = (wl/r0)*(180/np.pi)*60*60
     sf.SEEING = seeing
+    #sf.WIND_SPEED_LIST = [0.0] #5m/s
     gain_vector =  -0.3*np.ones(sf.N_MODES_TO_CORRECT)
     sf.INT_GAIN = gain_vector 
     sf.ONAXIS_SOURCE_WL_IN_NM = 633
-    main(sf, total_time, ftag)
+    main(sf, total_time, ftag, False)
     
 ###################################################################
 #### Get a factory setup

@@ -19,10 +19,10 @@ class RealtimePsfDisplay(BaseRealTimeCameraDisplay):
                 psf_cam_port = 7100,
                 wtitle = "Live PSF CAMERA",
                 ptitle = "PSF",
-                update_interval = 0):
+                update_interval = 2):
         
         super().__init__(psf_cam_name, psf_cam_port, wtitle, ptitle, update_interval)
-    
+        self._update_interval = update_interval
         # add button for Strehl window
         self.button_strehl = QtWidgets.QPushButton("Open Strehl Ratio Window")
         self.button_strehl.clicked.connect(self.open_strehl_plot)
@@ -41,7 +41,7 @@ class RealtimePsfDisplay(BaseRealTimeCameraDisplay):
     def open_strehl_plot(self):
         """One a new window to plot the strehl ratio."""
         if self.plot_strehl_window is None or not self.plot_strehl_window.isVisible():
-            self.plot_strehl_window = StrehlRatioPlotter(self)
+            self.plot_strehl_window = StrehlRatioPlotter(self, update_interval=self._update_interval*2)
             self.plot_strehl_window.show()
     
 # run plotter
