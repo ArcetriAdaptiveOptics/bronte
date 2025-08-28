@@ -1,6 +1,7 @@
 import sys
 import numpy as np
 from PyQt5 import QtWidgets, QtCore
+#from PySide6 import QtWidgets, QtCore
 import pyqtgraph as pg
 import time  # Import necessario per gestire il tempo reale
 from pysilico import camera

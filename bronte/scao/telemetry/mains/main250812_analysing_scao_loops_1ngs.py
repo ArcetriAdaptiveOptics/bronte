@@ -205,8 +205,8 @@ def main250813_101300():
     KL control matrices of 200 modes
     '''
     modal_base = 'kl'
-    ol_ftag = '250808_152700_tris' # Nstep=300 dt=1ms Nmodes=200
-    cl_ftag = '250808_153900_tris' # gain=-0.3
+    ol_ftag = '250808_152700'#_tris' # Nstep=300 dt=1ms Nmodes=200
+    cl_ftag = '250808_153900'#_tris' # gain=-0.3
     ifs_ftag = '250806_170800'# L0=25m,r0=15cm,D=8.2m
     stda_cl, stda_ol = main_kl_loop(ol_ftag, cl_ftag, modal_base, ifs_ftag, k=3/12)
     

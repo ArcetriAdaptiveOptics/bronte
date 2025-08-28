@@ -1,6 +1,7 @@
 import sys
 import numpy as np
 from PyQt5 import QtWidgets, QtCore
+#from PySide6 import QtWidgets, QtCore
 import pyqtgraph as pg
 import time  # Import necessario per gestire il tempo reale
 from bronte.gui.raw_gui.psf_camera_gui.strehl_ratio_live_stream import StrehlRatioPlotter
@@ -14,7 +15,7 @@ class RealtimePsfDisplay(BaseRealTimeCameraDisplay):
     PSFCAM_BKG_TAG = '250314_151800'
     
     def __init__(self,
-                psf_cam_name = '193.206.155.69',
+                psf_cam_name = '193.206.155.92',
                 psf_cam_port = 7100,
                 wtitle = "Live PSF CAMERA",
                 ptitle = "PSF",

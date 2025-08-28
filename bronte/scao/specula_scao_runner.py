@@ -15,11 +15,12 @@ class SpeculaScaoRunner():
     
     LOOP_TYPE = 'CLOSED'
     
-    def __init__(self, scao_factory, xp=np):
+    def __init__(self, scao_factory, display_plots = True, xp=np):
         
         self._logger = get_logger("SpeculaScaoRunner")
         self._factory = scao_factory 
         self._target_device_idx = self._factory._target_device_idx
+        self._display_plots = display_plots
         self._setup_atmosphere()
         self._load_slope_computer()
         self._load_reconstructor()
@@ -28,6 +29,7 @@ class SpeculaScaoRunner():
         self._set_inputs()
         self._define_groups()
         self._initialize_telemetry()
+        
 
     @logEnterAndExit("Setting Atmo parameters...",
                       "Atmo parameters set.", level='debug')
@@ -66,7 +68,7 @@ class SpeculaScaoRunner():
         #self._factory.sh_camera.setExposureTime(self._factory._sh_texp)
         self._bench_devices = TestbenchDeviceManager(self._factory,
                                 load_huge_tilt_under_mask = self._factory.LOAD_HUGE_TILT_UNDER_MASK, 
-                                do_plots=True,
+                                do_plots = self._display_plots,
                                 target_device_idx= self._target_device_idx)
                 
     @logEnterAndExit("Setting ProcessingObjects inputs ...",
@@ -85,11 +87,12 @@ class SpeculaScaoRunner():
         self._control.inputs['delta_comm'].set(self._rec.modes)
         self._dm.inputs['in_command'].set(self._control.out_comm)
         
-        self._modes_disp = ModesDisplay()
-        self._modes_disp.inputs['modes'].set(self._rec.modes)
-        self._slopes_disp = SlopecDisplay(disp_factor = 3)
-        self._slopes_disp.inputs['slopes'].set(self._slopec.outputs['out_slopes'])
-        self._slopes_disp.inputs['subapdata'].set(self._factory.subapertures_set)
+        if self._display_plots is True:
+            self._modes_disp = ModesDisplay()
+            self._modes_disp.inputs['modes'].set(self._rec.modes)
+            self._slopes_disp = SlopecDisplay(disp_factor = 3)
+            self._slopes_disp.inputs['slopes'].set(self._slopec.outputs['out_slopes'])
+            self._slopes_disp.inputs['subapdata'].set(self._factory.subapertures_set)
     
     def _define_groups(self):
         
@@ -99,7 +102,12 @@ class SpeculaScaoRunner():
         group4 = [self._bench_devices]
         group5 = [self._slopec]
         group6 = [self._rec]
-        group7 = [self._control, self._modes_disp, self._slopes_disp]
+        group7 = [self._control]
+        
+        if self._display_plots is True:
+            group7.append(self._modes_disp)
+            group7.append(self._slopes_disp)
+            
         group8 = [self._dm]
 
         self._groups = [group1, group2, group3, group4, group5, group6, group7, group8]

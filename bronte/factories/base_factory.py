@@ -53,15 +53,15 @@ class BaseFactory():
     
     @cached_property
     def sh_camera(self):
-        return camera('193.206.155.69', 7110)
+        return camera('193.206.155.92', 7110)
 
     @cached_property
     def psf_camera(self):
-        return camera('193.206.155.69', 7100)
+        return camera('193.206.155.92', 7100)
 
     @cached_property
     def deformable_mirror(self):
-        return deformableMirror('193.206.155.69', 7010)
+        return deformableMirror('193.206.155.92', 7010)
     
     @cached_property
     def slm_pupil_mask(self):

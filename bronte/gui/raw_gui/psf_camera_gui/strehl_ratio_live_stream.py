@@ -1,6 +1,7 @@
 import sys
 import numpy as np
 from PyQt5 import QtWidgets, QtCore
+#from PySide6 import QtWidgets, QtCore
 import pyqtgraph as pg
 import time  # Import necessario per gestire il tempo reale
 from bronte.utils.raw_strehl_ratio_computer import StrehlRatioComputer
@@ -10,7 +11,7 @@ from bronte.utils.raw_strehl_ratio_computer import StrehlRatioComputer
 class StrehlRatioPlotter(QtWidgets.QMainWindow):
     """Finestra per il grafico dello Strehl Ratio in tempo reale."""
     
-    def __init__(self, gui_master, title="Live Strehl Ratio", update_interval=0):
+    def __init__(self, gui_master, title="Live Strehl Ratio", update_interval=2):
         super().__init__()
         self.setWindowTitle(title)
         self._gui_master = gui_master

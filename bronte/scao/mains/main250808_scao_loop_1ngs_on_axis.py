@@ -2,13 +2,13 @@ from bronte.startup import specula_startup
 from bronte.scao.specula_scao_runner import SpeculaScaoRunner
 import numpy as np 
 
-def main(sf, total_time, ftag):
+def main(sf, total_time, ftag, do_plots = True):
     
     flat = np.zeros(1920*1152)
     sf.deformable_mirror.set_shape(flat)
     
     Nsteps = int(total_time/sf.TIME_STEP_IN_SEC)
-    ssr = SpeculaScaoRunner(sf) 
+    ssr = SpeculaScaoRunner(scao_factory= sf, display_plots = do_plots) 
     ssr.run(Nsteps)
     ssr.save_telemetry(ftag)
 
@@ -380,7 +380,6 @@ def main250808_162500():
 
 
 
-
 def main250825_153300():
     '''
     open loop, with turb, with KL modes
@@ -442,8 +441,125 @@ def main250825_154200():
     sf.ONAXIS_SOURCE_WL_IN_NM = 633
     main(sf, total_time, ftag)
 
+def main250828_133300():
+    '''
+    open loop, NO turb, with KL modes
+    300 step ad dt 1ms
+    L0=25m, r0=0.15m,D=8.2m
+    '''
+    sf  = _factory_setup250808_130000()
+    total_time = 0.3 #sec
+    ftag = '250828_133300'
+    
+    # load control matrices zc or kl
+    sf.REC_MAT_TAG = '250808_144900'
+    sf.MODAL_BASE_TYPE = 'kl'
+    sf.KL_MODAL_IFS_TAG = '250806_170800'
+    
+    sf.SH_FRAMES2AVERAGE = 1
+    
+    #opening or closing the loop with/without turb
+    sf.TELESCOPE_PUPIL_DIAMETER = 8.2
+    sf._pupil_pixel_pitch = sf.TELESCOPE_PUPIL_DIAMETER/sf._pupil_diameter_in_pixel
+    sf.OUTER_SCALE_L0 = 25            # m
+
+    sf.SEEING = 0
+    gain_vector =  0 
+    sf.INT_GAIN = gain_vector 
+    sf.ONAXIS_SOURCE_WL_IN_NM = 633
+    
+    main(sf, total_time, ftag)
+    
+def main250828_135000():
+    '''
+    close loop, NO turb, with KL modes
+    300 step ad dt 1ms
+    L0=25m, r0=0.15m,D=8.2m
+    '''
+    sf  = _factory_setup250808_130000()
+    total_time = 0.3 #sec
+    ftag = '250828_135000'
+    
+    # load control matrices zc or kl
+    sf.REC_MAT_TAG = '250808_144900'
+    sf.MODAL_BASE_TYPE = 'kl'
+    sf.KL_MODAL_IFS_TAG = '250806_170800'
+    
+    sf.SH_FRAMES2AVERAGE = 6
+    
+    #opening or closing the loop with/without turb
+    sf.TELESCOPE_PUPIL_DIAMETER = 8.2
+    sf._pupil_pixel_pitch = sf.TELESCOPE_PUPIL_DIAMETER/sf._pupil_diameter_in_pixel
+    sf.OUTER_SCALE_L0 = 25            # m
+
+    sf.SEEING = 0
+    gain_vector =  -0.3 
+    sf.INT_GAIN = gain_vector 
+    sf.ONAXIS_SOURCE_WL_IN_NM = 633
+    
+    main(sf, total_time, ftag)
 
 
+def main250828_141200():
+    '''
+    Open loop, with turb, with KL modes
+    300 step ad dt 1ms
+    L0=25m, r0=0.15m,D=8.2m
+    '''
+    sf  = _factory_setup250808_130000()
+    total_time = 0.3 #sec
+    ftag = '250828_141200'
+    
+    # load control matrices zc or kl
+    sf.REC_MAT_TAG = '250808_144900'
+    sf.MODAL_BASE_TYPE = 'kl'
+    sf.KL_MODAL_IFS_TAG = '250806_170800'
+    
+    sf.SH_FRAMES2AVERAGE = 1
+    
+    #opening or closing the loop with/without turb
+    sf.TELESCOPE_PUPIL_DIAMETER = 8.2
+    sf._pupil_pixel_pitch = sf.TELESCOPE_PUPIL_DIAMETER/sf._pupil_diameter_in_pixel
+    sf.OUTER_SCALE_L0 = 25            # m
+    wl  = 500e-9
+    r0 = 0.15
+    seeing = (wl/r0)*(180/np.pi)*60*60
+    sf.SEEING = seeing
+    gain_vector =  0#-0.3*np.ones(sf.N_MODES_TO_CORRECT)
+    sf.INT_GAIN = gain_vector 
+    sf.ONAXIS_SOURCE_WL_IN_NM = 633
+    main(sf, total_time, ftag)
+    
+def main250828_142600():
+    '''
+    Close loop, with turb, with KL modes
+    300 step ad dt 1ms
+    L0=25m, r0=0.15m,D=8.2m
+    '''
+    sf  = _factory_setup250808_130000()
+    total_time = 0.3 #sec
+    ftag = '250828_142600'
+    
+    # load control matrices zc or kl
+    sf.REC_MAT_TAG = '250808_144900'
+    sf.MODAL_BASE_TYPE = 'kl'
+    sf.KL_MODAL_IFS_TAG = '250806_170800'
+    
+    sf.SH_FRAMES2AVERAGE = 6
+    
+    #opening or closing the loop with/without turb
+    sf.TELESCOPE_PUPIL_DIAMETER = 8.2
+    sf._pupil_pixel_pitch = sf.TELESCOPE_PUPIL_DIAMETER/sf._pupil_diameter_in_pixel
+    sf.OUTER_SCALE_L0 = 25            # m
+    wl  = 500e-9
+    r0 = 0.15
+    seeing = (wl/r0)*(180/np.pi)*60*60
+    sf.SEEING = seeing
+    gain_vector =  -0.3*np.ones(sf.N_MODES_TO_CORRECT)
+    sf.INT_GAIN = gain_vector 
+    sf.ONAXIS_SOURCE_WL_IN_NM = 633
+    main(sf, total_time, ftag)
+    
 ###################################################################
 #### Get a factory setup
 def _factory_setup250808_130000():
