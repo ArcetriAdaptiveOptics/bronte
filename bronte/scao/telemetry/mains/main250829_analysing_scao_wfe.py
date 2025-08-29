@@ -32,7 +32,55 @@ def main():
         wf_diff = dwa._wf_cube_on_slm[idx] - static_wf
         wfe[idx] = wf_diff.std()
     
-    
+    plt.figure()
+    plt.clf()
+    plt.plot(wfe, label = '$\sigma_{res}$')
+    plt.xlabel('N steps')
+    plt.ylabel('Wavefront Error [nm rms wf]')
+    plt.grid('--',alpha=0.3)
+    plt.legend(loc='best')
     
     return stda_ol_noturb, dwa, sr, static_wf, wfe
     
+def main_compare():
+    
+        
+    ol_noturb_ftag = '250829_111600'
+    cl_turb_ftag01 = '250829_164600'
+    cl_turb_ftag02 = '250829_162800'
+    cl_turb_ftag03 = '250829_120000'
+    
+    mifs_ftag = '250806_170800'
+    
+    cmask = CircularMask(frameShape=(1152,1920), maskCenter=(579, 968), maskRadius=545)
+    sr = KLSlmRasterizer(cmask, mifs_ftag)
+    slm_pupil_mask = sr.slm_pupil_mask
+    
+    stda_ol_noturb = ScaoTelemetryDataAnalyser(ol_noturb_ftag)
+    mean_static_dcmds = stda_ol_noturb._delta_cmds.mean(axis=0)
+    static_wf = sr.kl_coefficients_to_raster(mean_static_dcmds)/1e-9
+    
+    wfe01 = get_wfe(cl_turb_ftag01, slm_pupil_mask, static_wf)
+    wfe02 = get_wfe(cl_turb_ftag02, slm_pupil_mask, static_wf)
+    wfe03 = get_wfe(cl_turb_ftag03, slm_pupil_mask, static_wf)
+    
+    plt.figure()
+    plt.clf()
+    plt.plot(wfe01, label = '$gain=-0.1$')
+    plt.plot(wfe02, label = '$gain=-0.2$')
+    plt.plot(wfe03, label = '$gain=-0.3$')
+    plt.xlabel('N steps')
+    plt.ylabel('Wavefront Error '+'$\sigma_{res}$'+' [nm rms wf]')
+    plt.grid('--',alpha=0.3)
+    plt.legend(loc='best')
+
+def get_wfe(ftag, slm_pupil_mask, static_wf):
+    
+    dwa = DisplayedWavefrontAnalyser(ftag)
+    dwa.set_slm_pupil_mask(slm_pupil_mask)
+    dwa.apply_slm_pupil_mask_on_displayed_wf()
+    wfe = np.zeros(dwa._Nwf)
+    for idx in range(dwa._Nwf):
+        wf_diff = dwa._wf_cube_on_slm[idx] - static_wf
+        wfe[idx] = wf_diff.std()
+    return wfe
