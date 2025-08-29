@@ -5,7 +5,7 @@ from bronte.startup import set_data_dir
 from bronte.types.testbench_device_manager import TestbenchDeviceManager
 from specula.display.modes_display import ModesDisplay
 from specula.display.slopec_display import SlopecDisplay
-from bronte.package_data import telemetry_folder
+from bronte.package_data import telemetry_folder, phase_screen_folder
 from astropy.io import fits
 from bronte.utils.set_basic_logging import get_logger
 from arte.utils.decorator import logEnterAndExit 
@@ -121,7 +121,7 @@ class SpeculaScaoRunner():
         self._zc_delta_modal_command_list = []
         self._zc_integrated_modal_command_list = []
         self._sh_frames_list = []
-        #self._wf_on_slm_in_nm_list = []
+        self._wf_on_slm_in_nm_list = []
         
     @logEnterAndExit("Updating telemetry buffer...",
                   "Telemetry buffer updated.", level='debug')  
@@ -138,9 +138,10 @@ class SpeculaScaoRunner():
         self._zc_integrated_modal_command_list.append(
             specula_integrated_commands_in_nm*1e-9)
         sh_fr = self._groups[3][0].output_frame.pixels.copy()
-        #wf_on_slm_in_nm = self._groups[2].outputs['out_on_axis_source_ef'].phaseInNm.copy()
         #self._sh_frames_list.append(sh_fr)
-        
+        wf_on_slm_in_nm = self._groups[2][0].outputs['out_on_axis_source_ef'].phaseInNm.copy()
+        self._wf_on_slm_in_nm_list.append(wf_on_slm_in_nm)
+                
     @logEnterAndExit("Starting Loop...",
               "Loop Terminated.", level='debug')
     def run(self, Nsteps = 30):
@@ -174,17 +175,7 @@ class SpeculaScaoRunner():
                 
     @logEnterAndExit("Saving data...",
               "Data saved.", level='debug')
-    def save_telemetry(self, fname):
-        
-        # def retry_on_timeout(func, max_retries = 5000, delay = 0.001):
-        #     '''Retries a function call if ZmqRpcTimeoutError occurs.'''
-        #     for attempt in range(max_retries):
-        #         try:
-        #             return func()
-        #         except ZmqRpcTimeoutError:
-        #             print(f"Timeout error, retrying {attempt + 1}/{max_retries}...")
-        #             time.sleep(delay)
-        #     raise ZmqRpcTimeoutError("Max retries reached")
+    def save_telemetry(self, fname, save_displayed_wf_on_slm = False):
         
         psf_camera_texp = retry_on_timeout(lambda: self._factory.psf_camera.exposureTime())
         psf_camera_fps = retry_on_timeout(lambda: self._factory.psf_camera.getFrameRate())
@@ -258,13 +249,16 @@ class SpeculaScaoRunner():
         if isinstance(self._factory.INT_GAIN, np.ndarray):
             fits.append(file_name, self._factory.INT_GAIN)
         
-        
+        if save_displayed_wf_on_slm is True:
+            file_name = phase_screen_folder() / (fname + 'DispWFOnSLM.fits')
+            fits.writeto(file_name, np.array(self._wf_on_slm_in_nm_list), hdr)
+            
     # @logEnterAndExit("Loading data...",
     #        "Data loaded.", level='debug')
     @staticmethod
-    def load_telemetry(fname):
+    def load_telemetry(ftag):
         set_data_dir()
-        file_name = telemetry_folder() / (fname + '.fits')
+        file_name = telemetry_folder() / (ftag + '.fits')
         header = fits.getheader(file_name)
         hduList = fits.open(file_name)
 
@@ -277,3 +271,13 @@ class SpeculaScaoRunner():
         except:
             int_gain = 'NA'
         return  header, slopes_vect, zc_delta_modal_commands, zc_integrated_modal_commands, sh_frames, int_gain
+    
+    @staticmethod
+    def load_displayed_wf(ftag):
+        set_data_dir()
+        file_name = phase_screen_folder() / (ftag + 'DispWFOnSLM.fits')
+        header = fits.getheader(file_name)
+        hduList = fits.open(file_name)
+        disp_wf_cube_in_nm = hduList[0].data
+        
+        return disp_wf_cube_in_nm, header
