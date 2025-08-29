@@ -29,6 +29,13 @@ class ScaoErrorBudgetComputer():
         coeff = K * 2**(5/3)   # sim 0.274
         return coeff * (d_dm / self.r0)**(5./3)
     
+    def get_band_with_pure_delay_var(self, delay_in_sec, v_in_ms):
+        
+        tau = delay_in_sec
+        tau0 = 0.314 * self.r0/v_in_ms
+        
+        return (tau/tau0)**(5/3) 
+    
     def phase_var2wfe_in_nm(self, phase_var, wl=633e-9) :
         """ converting phase variance to RMS WFE (nm)"""
         return (wl / (2*np.pi)) * np.sqrt(phase_var) * 1e9
