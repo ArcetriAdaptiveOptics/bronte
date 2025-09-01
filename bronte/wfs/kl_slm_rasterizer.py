@@ -102,14 +102,20 @@ class KLSlmRasterizer():
         command_vector = self.reshape_map2vector(wf2raster)
         return command_vector
     
+    @logEnterAndExit("Converting WF to KL coefficients",
+                     "WF converted to KL coefficients", level='debug') 
     def decompose_wf(self, wf):
         '''
         wf must be a masked array with slm_pupil_mask
         '''
-        wf_on_pupil_valid_points = wf[wf.mask == True]
+        wf_on_pupil_valid_points = wf[wf.mask == False]
         kl_coeff_vector = np.dot(self._im_synth, wf_on_pupil_valid_points)
+        
+        kl_coeff_vector[kl_coeff_vector < 1e-12] = 0.
         return kl_coeff_vector
     
+    @logEnterAndExit("Computing Synthetic intmat",
+                     "Synthetic intmat computed", level='debug')
     def compute_synthetic_kl_intmat(self):
         
         self._im_synth = np.linalg.pinv(self._klg._ifunc._influence_function)
@@ -119,7 +125,7 @@ class KLSlmRasterizer():
         
         set_data_dir()
         fname = ifs_folder()/(ftag+'_pinv.fits')
-        self._synth_hdr = fits.getheader()
+        self._synth_hdr = fits.getheader(fname)
         hdulist = fits.open(fname)
         self._im_synth = hdulist[0].data
         

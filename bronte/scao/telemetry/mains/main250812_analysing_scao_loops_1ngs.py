@@ -315,3 +315,44 @@ def main_pippo():
     stda_cl, stda_ol = main_kl_loop(ol_ftag, cl_ftag, modal_base, ifs_ftag, k=0.25)
     
     return stda_cl, stda_ol 
+
+def main250901_145400():
+    '''
+    Telemetry data analysis with NO turbulence using measured
+    KL control matrices of 200 modes
+    '''
+    modal_base = 'kl'
+    ol_ftag = '250829_111600' # Nstep=300 dt=1ms Nmodes=200
+    cl_ftag = '250829_112700' # gain=-0.3
+    ifs_ftag = '250806_170800'# L0=25m,r0=15cm,D=8.2m
+    stda_cl, stda_ol = main_kl_loop(ol_ftag, cl_ftag, modal_base, ifs_ftag, k=3)
+    
+    return stda_cl, stda_ol 
+
+def main250901_150900():
+    '''
+    Telemetry data analysis with NO turbulence using measured
+    KL control matrices of 200 modes
+    '''
+    modal_base = 'kl'
+    ol_ftag = '250901_121100' # Nstep=300 dt=1ms Nmodes=200
+    cl_ftag = '250901_122900' # gain=-0.3
+    ifs_ftag = '250806_170800'# L0=25m,r0=15cm,D=8.2m
+    stda_cl, stda_ol = main_kl_loop(ol_ftag, cl_ftag, modal_base, ifs_ftag, k=3/6)
+    
+    return stda_cl, stda_ol 
+
+
+def main250901_151300():
+    '''
+    Telemetry data analysis with NO turbulence using measured
+    KL control matrices of 200 modes
+    '''
+    modal_base = 'kl'
+    ol_ftag = '250901_124500' # Nstep=300 dt=1ms Nmodes=200
+    cl_ftag = '250901_125700' # gain=-0.3
+    ifs_ftag = '250806_170800'# L0=25m,r0=15cm,D=8.2m
+    stda_cl, stda_ol = main_kl_loop(ol_ftag, cl_ftag, modal_base, ifs_ftag, k=3/6)
+    
+    return stda_cl, stda_ol 
+
