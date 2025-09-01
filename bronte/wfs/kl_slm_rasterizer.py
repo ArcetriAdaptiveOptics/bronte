@@ -4,6 +4,8 @@ from arte.utils.decorator import logEnterAndExit
 from functools import cache
 from bronte.types.slm_pupil_mask_generator import SlmPupilMaskGenerator
 from bronte.calibration.utils.display_ifs_map import DisplayInfluenceFunctionsMap
+from bronte.startup import set_data_dir
+from bronte.package_data import ifs_folder
 
 class KLSlmRasterizer():
     
@@ -14,6 +16,7 @@ class KLSlmRasterizer():
         self._kl_modal_base_ftag = kl_modal_base_ftag
         self._load_kl_modal_base()
         self._update_slm_pupil_mask_with_ifs_mask(self._ifs_mask_idl)
+        self._im_synth = None
         
     def _load_kl_modal_base(self):
         
@@ -98,3 +101,25 @@ class KLSlmRasterizer():
             wf2raster = self.load_a_tilt_under_pupil_mask(wf2raster)
         command_vector = self.reshape_map2vector(wf2raster)
         return command_vector
+    
+    def decompose_wf(self, wf):
+        '''
+        wf must be a masked array with slm_pupil_mask
+        '''
+        wf_on_pupil_valid_points = wf[wf.mask == True]
+        kl_coeff_vector = np.dot(self._im_synth, wf_on_pupil_valid_points)
+        return kl_coeff_vector
+    
+    def compute_synthetic_kl_intmat(self):
+        
+        self._im_synth = np.linalg.pinv(self._klg._ifunc._influence_function)
+    
+    def load_synthetic_kl_intmat(self, ftag):
+        from astropy.io import fits
+        
+        set_data_dir()
+        fname = ifs_folder()/(ftag+'_pinv.fits')
+        self._synth_hdr = fits.getheader()
+        hdulist = fits.open(fname)
+        self._im_synth = hdulist[0].data
+        

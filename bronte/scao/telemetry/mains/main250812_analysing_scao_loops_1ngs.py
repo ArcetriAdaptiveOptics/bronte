@@ -302,3 +302,16 @@ def main250825_162400():
     stda_cl, stda_ol = main_kl_loop(ol_ftag, cl_ftag, modal_base, ifs_ftag, k=0.25)
     
     return stda_cl, stda_ol 
+
+def main_pippo():
+    '''
+    Telemetry data analysis with turbulence using measured
+    KL control matrices of 200 modes
+    '''
+    modal_base = 'kl'
+    ol_ftag = '250829_114300' # Nstep=300 dt=1ms Nmodes=200
+    cl_ftag = '250829_120000' # gain=-0.3
+    ifs_ftag = '250806_170800'# L0=25m,r0=15cm,D=8.2m
+    stda_cl, stda_ol = main_kl_loop(ol_ftag, cl_ftag, modal_base, ifs_ftag, k=0.25)
+    
+    return stda_cl, stda_ol 

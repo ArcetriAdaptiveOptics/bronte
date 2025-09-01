@@ -1,6 +1,8 @@
 from bronte.startup import specula_startup
 from bronte.scao.specula_scao_runner import SpeculaScaoRunner
 import numpy as np 
+from astropy.io import fits
+from bronte.package_data import telemetry_folder
 
 def main(sf, total_time, ftag, do_plots = True, save_disp_wf = False):
     
@@ -809,8 +811,229 @@ def main250829_164600():
     sf.INT_GAIN = gain_vector 
     sf.ONAXIS_SOURCE_WL_IN_NM = 633
     main(sf, total_time, ftag, False, True)
+    
+def main250901_092200():
+    '''
+    Close loop, with turb, with KL modes
+    200 step ad dt 1ms
+    L0=25m, r0=0.15m,D=8.2m
+    Saving displayed wf on the slm
+    Optimizing gain vector to reduce res wf
+    '''
+    sf  = _factory_setup250808_130000()
+    total_time = 0.2
+    ftag = '250901_092200'
+    
+    # load control matrices zc or kl
+    sf.REC_MAT_TAG = '250808_144900'
+    sf.MODAL_BASE_TYPE = 'kl'
+    sf.KL_MODAL_IFS_TAG = '250806_170800'
+    
+    sf.SH_FRAMES2AVERAGE = 6
+    
+    #opening or closing the loop with/without turb
+    sf.TELESCOPE_PUPIL_DIAMETER = 8.2
+    sf._pupil_pixel_pitch = sf.TELESCOPE_PUPIL_DIAMETER/sf._pupil_diameter_in_pixel
+    sf.OUTER_SCALE_L0 = 25            # m
+    wl  = 500e-9
+    r0 = 0.15
+    seeing = (wl/r0)*(180/np.pi)*60*60
+    sf.SEEING = seeing
+    gain_vector =  np.zeros(200)
+    gain_vector[:3] = -0.1
+    gain_vector[3:50] = -0.2
+    gain_vector[50:] = -0.3 
+    sf.INT_GAIN = gain_vector 
+    sf.ONAXIS_SOURCE_WL_IN_NM = 633
+    main(sf, total_time, ftag, True, True)
 
+def main250901_100400():
+    '''
+    Open loop, with turb, with KL modes
+    200 step ad dt 1ms
+    L0=25m, r0=0.15m,D=8.2m
+    Saving displayed wf on the slm
+    '''
+    sf  = _factory_setup250808_130000()
+    total_time = 0.2
+    ftag = '250901_100401'
+    
+    # load control matrices zc or kl
+    sf.REC_MAT_TAG = '250808_144900'
+    sf.MODAL_BASE_TYPE = 'kl'
+    sf.KL_MODAL_IFS_TAG = '250806_170800'
+    
+    sf.SH_FRAMES2AVERAGE = 6
+    
+    #opening or closing the loop with/without turb
+    sf.TELESCOPE_PUPIL_DIAMETER = 8.2
+    sf._pupil_pixel_pitch = sf.TELESCOPE_PUPIL_DIAMETER/sf._pupil_diameter_in_pixel
+    sf.OUTER_SCALE_L0 = 25            # m
+    wl  = 500e-9
+    r0 = 0.15
+    seeing = (wl/r0)*(180/np.pi)*60*60
+    sf.SEEING = seeing
+    gain_vector =  0
+    sf.INT_GAIN = gain_vector 
+    sf.ONAXIS_SOURCE_WL_IN_NM = 633
+    main(sf, total_time, ftag, False, False)
+
+def main250901_121100():
+    '''
+    Open loop, with turb, with KL modes
+    200 step ad dt 1ms
+    L0=25m, r0=0.15m,D=8.2m
+    Saving displayed wf on the slm
+    changing atmo seed
+    '''
+    sf  = _factory_setup250808_130000()
+    total_time = 0.2
+    ftag = '250901_121100'
+    
+    # load control matrices zc or kl
+    sf.REC_MAT_TAG = '250808_144900'
+    sf.MODAL_BASE_TYPE = 'kl'
+    sf.KL_MODAL_IFS_TAG = '250806_170800'
+    
+    sf.SH_FRAMES2AVERAGE = 6
+    
+    #opening or closing the loop with/without turb
+    sf.TELESCOPE_PUPIL_DIAMETER = 8.2
+    sf._pupil_pixel_pitch = sf.TELESCOPE_PUPIL_DIAMETER/sf._pupil_diameter_in_pixel
+    sf.OUTER_SCALE_L0 = 25            # m
+    wl  = 500e-9
+    r0 = 0.15
+    seeing = (wl/r0)*(180/np.pi)*60*60
+    sf.SEEING = seeing
+    gain_vector =  0
+    sf.INT_GAIN = gain_vector 
+    import time
+    sf.ATMO_SEED = int(time.time())
+    print('Atmo seef %d'%sf.ATMO_SEED)
+    sf.ONAXIS_SOURCE_WL_IN_NM = 633
+    main(sf, total_time, ftag, False, True)    
+
+def main250901_122900():
+    '''
+    Close loop, with turb, with KL modes
+    200 step ad dt 1ms
+    L0=25m, r0=0.15m,D=8.2m
+    Saving displayed wf on the slm
+    same atmo seed of 250901_121100
+    '''
+    sf  = _factory_setup250808_130000()
+    total_time = 0.2
+    ftag = '250901_122900'
+    
+    # load control matrices zc or kl
+    sf.REC_MAT_TAG = '250808_144900'
+    sf.MODAL_BASE_TYPE = 'kl'
+    sf.KL_MODAL_IFS_TAG = '250806_170800'
+    
+    sf.SH_FRAMES2AVERAGE = 6
+    
+    #opening or closing the loop with/without turb
+    sf.TELESCOPE_PUPIL_DIAMETER = 8.2
+    sf._pupil_pixel_pitch = sf.TELESCOPE_PUPIL_DIAMETER/sf._pupil_diameter_in_pixel
+    sf.OUTER_SCALE_L0 = 25            # m
+    wl  = 500e-9
+    r0 = 0.15
+    seeing = (wl/r0)*(180/np.pi)*60*60
+    sf.SEEING = seeing
+    gain_vector =  -0.3
+    sf.INT_GAIN = gain_vector 
+    
+
+    ol_hdr = _get_hdr('250901_121100')
+    sf.ATMO_SEED = ol_hdr['ATM_SEED']
+    print('Atmo seef %d'%sf.ATMO_SEED)
+    sf.ONAXIS_SOURCE_WL_IN_NM = 633
+    main(sf, total_time, ftag, False, True) 
+    
+    
+def main250901_124500():
+    '''
+    Open loop, with turb, with KL modes
+    200 step ad dt 1ms
+    L0=25m, r0=0.15m,D=8.2m
+    Saving displayed wf on the slm
+    changing atmo seed
+    '''
+    sf  = _factory_setup250808_130000()
+    total_time = 0.2
+    ftag = '250901_124500'
+    
+    # load control matrices zc or kl
+    sf.REC_MAT_TAG = '250808_144900'
+    sf.MODAL_BASE_TYPE = 'kl'
+    sf.KL_MODAL_IFS_TAG = '250806_170800'
+    
+    sf.SH_FRAMES2AVERAGE = 6
+    
+    #opening or closing the loop with/without turb
+    sf.TELESCOPE_PUPIL_DIAMETER = 8.2
+    sf._pupil_pixel_pitch = sf.TELESCOPE_PUPIL_DIAMETER/sf._pupil_diameter_in_pixel
+    sf.OUTER_SCALE_L0 = 25            # m
+    wl  = 500e-9
+    r0 = 0.15
+    seeing = (wl/r0)*(180/np.pi)*60*60
+    sf.SEEING = seeing
+    gain_vector =  0
+    sf.INT_GAIN = gain_vector 
+    import time
+    sf.ATMO_SEED = int(time.time())
+    print('Atmo seef %d'%sf.ATMO_SEED)
+    sf.ONAXIS_SOURCE_WL_IN_NM = 633
+    main(sf, total_time, ftag, False, True)   
+    
+
+
+def main250901_125700():
+    '''
+    Close loop, with turb, with KL modes
+    200 step ad dt 1ms
+    L0=25m, r0=0.15m,D=8.2m
+    Saving displayed wf on the slm
+    same atmo seed of 250901_124500
+    '''
+    sf  = _factory_setup250808_130000()
+    total_time = 0.2
+    ftag = '250901_125700'
+    
+    # load control matrices zc or kl
+    sf.REC_MAT_TAG = '250808_144900'
+    sf.MODAL_BASE_TYPE = 'kl'
+    sf.KL_MODAL_IFS_TAG = '250806_170800'
+    
+    sf.SH_FRAMES2AVERAGE = 6
+    
+    #opening or closing the loop with/without turb
+    sf.TELESCOPE_PUPIL_DIAMETER = 8.2
+    sf._pupil_pixel_pitch = sf.TELESCOPE_PUPIL_DIAMETER/sf._pupil_diameter_in_pixel
+    sf.OUTER_SCALE_L0 = 25            # m
+    wl  = 500e-9
+    r0 = 0.15
+    seeing = (wl/r0)*(180/np.pi)*60*60
+    sf.SEEING = seeing
+    gain_vector =  -0.3
+    sf.INT_GAIN = gain_vector 
+    
+
+    ol_hdr = _get_hdr('250901_124500')
+    sf.ATMO_SEED = ol_hdr['ATM_SEED']
+    print('Atmo seef %d'%sf.ATMO_SEED)
+    sf.ONAXIS_SOURCE_WL_IN_NM = 633
+    main(sf, total_time, ftag, False, True) 
+    
 ###################################################################
+#### Get loop param from lelemetri file
+
+def _get_hdr(ftag):
+    
+    fname = telemetry_folder() /(ftag+'.fits')
+    hdr = fits.getheader(fname)
+    return hdr
+
 #### Get a factory setup
 def _factory_setup250808_130000():
     '''

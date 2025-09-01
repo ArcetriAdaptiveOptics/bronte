@@ -7,6 +7,7 @@ from bronte.calibration.utils.kl_modal_base_computer import KarhunenLoeveGenerat
 from bronte.startup import set_data_dir
 from bronte.package_data import ifs_folder
 from scipy.interpolate import RegularGridInterpolator
+from astropy.io import fits
 
 class InfluenceFucntionEditor():
     
@@ -19,6 +20,7 @@ class InfluenceFucntionEditor():
         
         self._edited_pupil_mask_idl = None
         self._edited_np_ifs = None
+        self._edited_ifs_pinv = None 
         
     def load_sigular_values(self):
         
@@ -142,8 +144,12 @@ class InfluenceFucntionEditor():
         
         return masked_array_ifs_map
     
+    def compute_ifs_pinv(self):
+        
+        self._edited_ifs_pinv = np.linalg.pinv(self._edited_np_ifs)
     
-    def save_filtered_ifs(self, ftag):
+    
+    def save_filtered_ifs(self, ftag, save_pinv = False):
 
         pupil_mask_idl = self._edited_pupil_mask_idl
         np_ifs = self._edited_np_ifs
@@ -160,4 +166,14 @@ class InfluenceFucntionEditor():
             mask = edited_pupil_mask_idl)
         fname  = ifs_folder() / (ftag + '.fits')
         ifunc_obj.save(fname)
+        
+        if save_pinv is True:
+            self._save_pinv_ifs(ftag)
+    
+    def _save_pinv_ifs(self, ftag):
+        
+        fname = ifs_folder() / (ftag + '_pinv.fits')
+        hdr = fits.Header()
+        hdr['IFS_TAG'] = ftag
+        fits.writeto(fname, self._edited_ifs_pinv, hdr)
         
