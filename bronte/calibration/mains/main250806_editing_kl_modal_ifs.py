@@ -3,13 +3,15 @@ from bronte.calibration.utils.display_ifs_map import DisplayInfluenceFunctionsMa
 import numpy as np
 import matplotlib.pyplot as plt
 
-def main(ifs_ftag, Nmodes, new_frame_size, ftag):
+def main(ifs_ftag, Nmodes, new_frame_size, ftag, save_pinv=False):
     
     ife = InfluenceFucntionEditor(ifs_ftag)
     
     ife.remove_modes(Nmodes)
     ife.rescale_ifs(new_frame_size)
-    ife.save_filtered_ifs(ftag)
+    if save_pinv is True:
+        ife.compute_ifs_pinv()
+    ife.save_filtered_ifs(ftag, save_pinv)
     
     disp_rescaled_ifs = DisplayInfluenceFunctionsMap(ftag)
     disp_original_ifs = DisplayInfluenceFunctionsMap(ifs_ftag)
