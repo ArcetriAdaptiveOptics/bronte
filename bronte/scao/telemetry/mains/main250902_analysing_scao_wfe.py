@@ -119,7 +119,7 @@ def main250829_120000():
     turb_ol_ftag = '250829_114300'
     mifs_ftag = '250806_170800'
     
-    main(turb_cl_ftag, turb_ol_ftag, mifs_ftag, conv_index = 75)
+    main(turb_cl_ftag, turb_ol_ftag, mifs_ftag, conv_index = 75, dispWFmap = True)
 
 def main250901_122900():
     
