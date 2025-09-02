@@ -1024,9 +1024,36 @@ def main250901_125700():
     print('Atmo seef %d'%sf.ATMO_SEED)
     sf.ONAXIS_SOURCE_WL_IN_NM = 633
     main(sf, total_time, ftag, False, True) 
+
+
+def main250902_101600():
+    '''
+    openloop No turb
+    200 kl modes
+    '''
+    sf  = _factory_setup250808_130000()
+    total_time = 0.2
+    ftag = '250902_101600'
     
+    # load control matrices zc or kl
+    sf.REC_MAT_TAG = '250808_144900'
+    sf.MODAL_BASE_TYPE = 'kl'
+    sf.KL_MODAL_IFS_TAG = '250806_170800'
+    
+    sf.SH_FRAMES2AVERAGE = 6
+    
+    #opening or closing the loop with/without turb
+    sf.TELESCOPE_PUPIL_DIAMETER = 8.2
+    sf._pupil_pixel_pitch = sf.TELESCOPE_PUPIL_DIAMETER/sf._pupil_diameter_in_pixel
+    sf.OUTER_SCALE_L0 = 25            # m
+
+    sf.SEEING = 0
+    gain_vector =  0
+    sf.INT_GAIN = gain_vector 
+    sf.ONAXIS_SOURCE_WL_IN_NM = 633
+    main(sf, total_time, ftag, True, True)
 ###################################################################
-#### Get loop param from lelemetri file
+#### Get loop param from telemetry file
 
 def _get_hdr(ftag):
     
