@@ -149,24 +149,30 @@ def display_results_250902_101200():
     rec_ftag_zern = '250616_103300'
     ol_ftag_list = ['250808_151100','250808_161900','250828_133300','250829_111600','250902_101600']
     
+    ### rec modes from kl measured base
+    
     mean_rec_modes_in_nm_list = []
     std_rec_modes_in_nm_list = []
-    
     meas_error_list = []
+    tot_wfe_list = []
     
-    ### rec modes from kl measured base
     for ol_ftag in ol_ftag_list:
         mean_rec_modes_in_nm, std_rec_modes_in_nm, _ = load_ol_rec_modes(ol_ftag, rec_ftag_kl)
         meas_error_in_nm = np.sqrt((std_rec_modes_in_nm**2).sum())
+        tot_wfe  = np.sqrt((mean_rec_modes_in_nm**2).sum())
+        tot_wfe_list.append(tot_wfe)
         meas_error_list.append(meas_error_in_nm)
         mean_rec_modes_in_nm_list.append(mean_rec_modes_in_nm)
         std_rec_modes_in_nm_list.append(std_rec_modes_in_nm)
-    
+        tot_wfe_list.append(tot_wfe)
+        
     plt.figure()
     plt.clf()
     plt.title('KL Base')
     for idx in range(len(ol_ftag_list)):
         plt.plot(mean_rec_modes_in_nm_list[idx], label = ol_ftag_list[idx])
+        
+        print(f"Total WFE for ol_tag {ol_ftag_list[idx]} and rec_tag {rec_ftag_kl}: {tot_wfe_list[idx]:.0f} nm rms wf ")
         print(f"Measurment error for ol_tag {ol_ftag_list[idx]} and rec_tag {rec_ftag_kl}: {meas_error_list[idx]:.0f} nm rms wf ")
     
     plt.xlabel('Mode index')
@@ -187,9 +193,17 @@ def display_results_250902_101200():
     
     
     ### rec modes from zernike measured base
+    
+    mean_rec_modes_in_nm_list = []
+    std_rec_modes_in_nm_list = []
+    meas_error_list = []
+    tot_wfe_list = []
+    
     for ol_ftag in ol_ftag_list:
         mean_rec_modes_in_nm, std_rec_modes_in_nm, _ = load_ol_rec_modes(ol_ftag, rec_ftag_zern)
         meas_error_in_nm = np.sqrt((std_rec_modes_in_nm**2).sum())
+        tot_wfe  = np.sqrt((mean_rec_modes_in_nm**2).sum())
+        tot_wfe_list.append(tot_wfe)
         meas_error_list.append(meas_error_in_nm)
         mean_rec_modes_in_nm_list.append(mean_rec_modes_in_nm)
         std_rec_modes_in_nm_list.append(std_rec_modes_in_nm)
@@ -199,6 +213,7 @@ def display_results_250902_101200():
     plt.title('Zernike Base')
     for idx in range(len(ol_ftag_list)):
         plt.plot(mean_rec_modes_in_nm_list[idx], label = ol_ftag_list[idx])
+        print(f"Total WFE for ol_tag {ol_ftag_list[idx]} and rec_tag {rec_ftag_zern}: {tot_wfe_list[idx]:.0f} nm rms wf ")
         print(f"Measurment error for ol_tag {ol_ftag_list[idx]} and rec_tag {rec_ftag_zern}: {meas_error_list[idx]:.0f} nm rms wf ")
     
     plt.xlabel('Mode index')
