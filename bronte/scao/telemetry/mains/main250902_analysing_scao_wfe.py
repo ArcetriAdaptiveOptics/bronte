@@ -5,6 +5,7 @@ from bronte.wfs.kl_slm_rasterizer import KLSlmRasterizer
 from arte.types.mask import CircularMask
 from bronte.scao.telemetry.mains.main250812_analysing_scao_loops_1ngs import filter_tt_and_focus
 from bronte.scao.telemetry.mains.main250829_compute_scao_wf_res import load_residual_wf
+from bronte.utils.scao_error_budget_computer import ScaoErrorBudgetComputer
 
 def main(turb_cl_ftag, turb_ol_ftag, mifs_ftag, conv_index = 75, dispWFmap = False):
     
@@ -51,8 +52,11 @@ def main(turb_cl_ftag, turb_ol_ftag, mifs_ftag, conv_index = 75, dispWFmap = Fal
     plt.ylabel('Total Wavefront Error '+'$\sigma_{res}$'+' [nm rms wf]')
     plt.grid('--',alpha=0.3)
     mean_tot_res_wf_in_nm = tot_res_wf_in_nm[50:].mean()
-
+    
+    exp_fitting_err = compute_approximated_exp_fitting_error_from_vk()
+    
     print(f"Total Residual WF (CL): {mean_tot_res_wf_in_nm :.0f} nm rms wf")
+    print(f"Expected Fitting error (VK): {exp_fitting_err :.0f} nm rms wf")
     
 def compute_and_display_wf_from_modal_coeff(modal_coeff_in_nm, mifs_ftag, sup_title_str = 'RES WF'):
       
@@ -92,6 +96,20 @@ def get_residual_wf_from_slm_displayed_wfs(ftag):
     res_wf_in_nm, _ = load_residual_wf(ftag)
     return res_wf_in_nm
 
+def compute_approximated_exp_fitting_error_from_vk():
+    wl = 500e-9
+    r0 = 0.15
+    L0 = 25
+    Nmodes  = 200
+    Dtel = 8.2
+    single_cell_area = (np.pi*(Dtel/2)**2)/Nmodes
+    single_cell_radius = np.sqrt(single_cell_area/np.pi)
+    eq_dm_pitch = 2*single_cell_radius
+    seb = ScaoErrorBudgetComputer(wl, r0, L0)
+    var = seb.get_fitting_var_vk_closed(None, d_dm = eq_dm_pitch)
+    fitting_err_in_nm = seb.phase_var2wfe_in_nm(var, wl)
+    return fitting_err_in_nm
+    
 ####
 # mains 
 

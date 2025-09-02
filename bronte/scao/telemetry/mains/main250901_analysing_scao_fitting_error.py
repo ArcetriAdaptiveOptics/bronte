@@ -42,7 +42,7 @@ def main_compute(ftag, ol_ftag, mifs_ftag, Nmodes = 200):
     hdr = fits.Header()
     hdr['OL_TAG'] = ol_ftag
     hdr['MIFS_TAG'] = mifs_ftag
-    fits.writeto(fname,kl_modes, hdr)
+    fits.writeto(fname, kl_modes, hdr)
     fits.append(fname, wf_on_slm_rms_amp)
     fits.append(fname, wf_diff_rms_amp)
 
