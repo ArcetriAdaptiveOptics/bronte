@@ -1109,10 +1109,48 @@ def main250903_111200():
     r0 = 0.15
     seeing = (wl/r0)*(180/np.pi)*60*60
     sf.SEEING = seeing
-    gain_vector =  -0.3
+    gain_vector =  np.zeros(200)
+    gain_vector[0:5] = -0.3
+    gain_vector[5:55] = -0.2
+    gain_vector[55:] = -0.1
     sf.INT_GAIN = gain_vector 
     sf.ONAXIS_SOURCE_WL_IN_NM = 633
-    main(sf, total_time, ftag, True, False, True)
+    main(sf, total_time, ftag, True, True, True)
+
+def main250903_155600():
+    '''
+    Close loop, with turb, with KL modes
+    100 step ad dt 1ms
+    L0=25m, r0=0.15m,D=8.2m
+    Saving acquired pfs frames
+    '''
+    sf  = _factory_setup250808_130000()
+    total_time = 0.1
+    ftag = '250903_155600'
+    
+    # load control matrices zc or kl
+    sf.REC_MAT_TAG = '250808_144900'
+    sf.MODAL_BASE_TYPE = 'kl'
+    sf.KL_MODAL_IFS_TAG = '250806_170800'
+    
+    sf.SH_FRAMES2AVERAGE = 6
+    sf.PSF_FRAMES2AVERAGE = 1
+    
+    #opening or closing the loop with/without turb
+    sf.TELESCOPE_PUPIL_DIAMETER = 8.2
+    sf._pupil_pixel_pitch = sf.TELESCOPE_PUPIL_DIAMETER/sf._pupil_diameter_in_pixel
+    sf.OUTER_SCALE_L0 = 25            # m
+    wl  = 500e-9
+    r0 = 0.15
+    seeing = (wl/r0)*(180/np.pi)*60*60
+    sf.SEEING = seeing
+    gain_vector =  np.zeros(200)
+    gain_vector[0:10] = -0.3
+    gain_vector[10:100] = -0.2
+    gain_vector[100:] = -0.1
+    sf.INT_GAIN = gain_vector 
+    sf.ONAXIS_SOURCE_WL_IN_NM = 633
+    main(sf, total_time, ftag, True, True, True)
     
 ###################################################################
 #### Get loop param from telemetry file

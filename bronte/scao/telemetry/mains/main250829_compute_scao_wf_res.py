@@ -174,3 +174,53 @@ def compute_wf_res_from250901_125700():
     plt.grid('--',alpha=0.3)
     mean_res_in_nm = res_wf_in_nm[50:].mean()
     print(f"res wf : {mean_res_in_nm :.0f} nm rms wf")
+    
+def compute_wf_res_from250903_111200():
+    
+    ol_noturb_ftag = '250902_101600'
+    cl_turb_ftag = '250903_111200'
+    mifs_ftag = '250806_170800'
+    
+    cmask = CircularMask(frameShape=(1152,1920), maskCenter=(579, 968), maskRadius=545)
+    sr = KLSlmRasterizer(cmask, mifs_ftag)
+    slm_pupil_mask = sr.slm_pupil_mask
+    
+    stda_ol_noturb = ScaoTelemetryDataAnalyser(ol_noturb_ftag)
+    mean_static_dcmds = stda_ol_noturb._delta_cmds.mean(axis=0)
+    static_wf = sr.kl_coefficients_to_raster(mean_static_dcmds)/1e-9
+    
+    res_wf_in_nm = get_wfe(cl_turb_ftag, slm_pupil_mask, static_wf, True)
+    
+    plt.figure()
+    plt.clf()
+    plt.plot(res_wf_in_nm)
+    plt.xlabel('N steps')
+    plt.ylabel('Wavefront Error '+'$\sigma_{res}$'+' [nm rms wf]')
+    plt.grid('--',alpha=0.3)
+    mean_res_in_nm = res_wf_in_nm[50:].mean()
+    print(f"res wf : {mean_res_in_nm :.0f} nm rms wf")
+    
+def compute_wf_res_from250903_155600():
+    
+    ol_noturb_ftag = '250902_101600'
+    cl_turb_ftag = '250903_155600'
+    mifs_ftag = '250806_170800'
+    
+    cmask = CircularMask(frameShape=(1152,1920), maskCenter=(579, 968), maskRadius=545)
+    sr = KLSlmRasterizer(cmask, mifs_ftag)
+    slm_pupil_mask = sr.slm_pupil_mask
+    
+    stda_ol_noturb = ScaoTelemetryDataAnalyser(ol_noturb_ftag)
+    mean_static_dcmds = stda_ol_noturb._delta_cmds.mean(axis=0)
+    static_wf = sr.kl_coefficients_to_raster(mean_static_dcmds)/1e-9
+    
+    res_wf_in_nm = get_wfe(cl_turb_ftag, slm_pupil_mask, static_wf, True)
+    
+    plt.figure()
+    plt.clf()
+    plt.plot(res_wf_in_nm)
+    plt.xlabel('N steps')
+    plt.ylabel('Wavefront Error '+'$\sigma_{res}$'+' [nm rms wf]')
+    plt.grid('--',alpha=0.3)
+    mean_res_in_nm = res_wf_in_nm[50:].mean()
+    print(f"res wf : {mean_res_in_nm :.0f} nm rms wf")

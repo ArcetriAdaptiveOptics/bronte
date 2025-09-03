@@ -148,3 +148,15 @@ def main250901_125700():
     turb_ol_ftag = '250901_124500'
     mifs_ftag = '250806_170800'
     main(turb_cl_ftag, turb_ol_ftag, mifs_ftag, conv_index = 75)
+    
+def main250903_111200():
+    turb_cl_ftag = '250903_111200'
+    turb_ol_ftag = '250829_114300'
+    mifs_ftag = '250806_170800'
+    main(turb_cl_ftag, turb_ol_ftag, mifs_ftag, conv_index = 75)
+
+def main250903_155600():
+    turb_cl_ftag = '250903_155600'
+    turb_ol_ftag = '250829_114300'
+    mifs_ftag = '250806_170800'
+    main(turb_cl_ftag, turb_ol_ftag, mifs_ftag, conv_index = 75)

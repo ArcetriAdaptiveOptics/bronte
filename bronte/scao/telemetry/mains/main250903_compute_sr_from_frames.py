@@ -20,6 +20,14 @@ def main(ftag):
         roi_psf = psf_cube[idx, 400:440, 735:765]
         measured_sr_vector[idx] = sr_pc.get_SR_from_image(roi_psf)
     
+    plt.figure()
+    plt.clf()
+    plt.plot(measured_sr_vector)
+    plt.grid('--', alpha=0.3)
+    plt.xlabel('N Steps')
+    plt.ylabel('Measured SR @633nm')
+    
+    
     return measured_sr_vector 
     
 def compute_sr_from250903_111200():
@@ -27,9 +35,8 @@ def compute_sr_from250903_111200():
     ftag = '250903_111200'
     measured_sr_vector = main(ftag)
     
-    plt.figure()
-    plt.clf()
-    plt.plot(measured_sr_vector)
-    plt.grid('--', alpha=0.3)
-    plt.xlabel('N Steps')
-    plt.ylabel('SR')
+
+def compute_sr_from250903_155600():
+    
+    ftag = '2250903_155600'
+    measured_sr_vector = main(ftag)
