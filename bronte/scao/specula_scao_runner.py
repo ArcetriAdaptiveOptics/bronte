@@ -3,9 +3,10 @@ specula.init(-1, precision=1)  # Default target=-1 (CPU), float32=1
 from specula import np
 from bronte.startup import set_data_dir
 from bronte.types.testbench_device_manager import TestbenchDeviceManager
+from bronte.types.psf_camera_device_manager import PsfCameraDeviceManager
 from specula.display.modes_display import ModesDisplay
 from specula.display.slopec_display import SlopecDisplay
-from bronte.package_data import telemetry_folder, phase_screen_folder
+from bronte.package_data import telemetry_folder, phase_screen_folder, psf_camera_folder
 from astropy.io import fits
 from bronte.utils.set_basic_logging import get_logger
 from arte.utils.decorator import logEnterAndExit 
@@ -15,12 +16,13 @@ class SpeculaScaoRunner():
     
     LOOP_TYPE = 'CLOSED'
     
-    def __init__(self, scao_factory, display_plots = True, xp=np):
+    def __init__(self, scao_factory, display_plots = True, PsfCamOn = False, xp=np):
         
         self._logger = get_logger("SpeculaScaoRunner")
         self._factory = scao_factory 
         self._target_device_idx = self._factory._target_device_idx
         self._display_plots = display_plots
+        self._PsfCamOn = PsfCamOn
         self._setup_atmosphere()
         self._load_slope_computer()
         self._load_reconstructor()
@@ -70,6 +72,8 @@ class SpeculaScaoRunner():
                                 load_huge_tilt_under_mask = self._factory.LOAD_HUGE_TILT_UNDER_MASK, 
                                 do_plots = self._display_plots,
                                 target_device_idx= self._target_device_idx)
+        if self._PsfCamOn is True:
+            self._psf_camera_device = PsfCameraDeviceManager(self._factory, target_device_idx= self._target_device_idx)
                 
     @logEnterAndExit("Setting ProcessingObjects inputs ...",
                       "ProcessingObjects inputs set.", level='debug')
@@ -82,10 +86,16 @@ class SpeculaScaoRunner():
         self._prop.inputs['common_layer_list'].set([self._dm.outputs['out_layer']])
     
         self._bench_devices.inputs['ef'].set(self._prop.outputs['out_on_axis_source_ef'])
+        if self._PsfCamOn is True:
+            self._psf_camera_device.inputs['ef'].set(self._prop.outputs['out_on_axis_source_ef'])
+            
         self._slopec.inputs['in_pixels'].set(self._bench_devices.outputs['out_pixels'])
         self._rec.inputs['in_slopes'].set(self._slopec.outputs['out_slopes'])
         self._control.inputs['delta_comm'].set(self._rec.modes)
         self._dm.inputs['in_command'].set(self._control.out_comm)
+        
+        if self._PsfCamOn is True:
+            self._psf_camera_device.inputs['ef'].set(self._prop.outputs['out_on_axis_source_ef'])
         
         if self._display_plots is True:
             self._modes_disp = ModesDisplay()
@@ -103,6 +113,9 @@ class SpeculaScaoRunner():
         group5 = [self._slopec]
         group6 = [self._rec]
         group7 = [self._control]
+        
+        if self._PsfCamOn is True:
+            group4.append(self._psf_camera_device)
         
         if self._display_plots is True:
             group7.append(self._modes_disp)
@@ -122,6 +135,7 @@ class SpeculaScaoRunner():
         self._zc_integrated_modal_command_list = []
         self._sh_frames_list = []
         self._wf_on_slm_in_nm_list = []
+        self._psf_frame_list = []
         
     @logEnterAndExit("Updating telemetry buffer...",
                   "Telemetry buffer updated.", level='debug')  
@@ -137,8 +151,11 @@ class SpeculaScaoRunner():
         specula_integrated_commands_in_nm = self._groups[6][0].out_comm.value
         self._zc_integrated_modal_command_list.append(
             specula_integrated_commands_in_nm*1e-9)
-        sh_fr = self._groups[3][0].output_frame.pixels.copy()
+        #sh_fr = self._groups[3][0].output_frame.pixels.copy()
         #self._sh_frames_list.append(sh_fr)
+        if self._PsfCamOn is True:
+            psf_fr = self._groups[3][1].outputs['out_pixels'].pixels.copy()
+            self._psf_frame_list.append(psf_fr)
         wf_on_slm_in_nm = self._groups[2][0].outputs['out_on_axis_source_ef'].phaseInNm.copy()
         self._wf_on_slm_in_nm_list.append(wf_on_slm_in_nm)
                 
@@ -175,7 +192,7 @@ class SpeculaScaoRunner():
                 
     @logEnterAndExit("Saving data...",
               "Data saved.", level='debug')
-    def save_telemetry(self, fname, save_displayed_wf_on_slm = False):
+    def save_telemetry(self, fname, save_displayed_wf_on_slm = False, save_psf_fr = False):
         
         psf_camera_texp = retry_on_timeout(lambda: self._factory.psf_camera.exposureTime())
         psf_camera_fps = retry_on_timeout(lambda: self._factory.psf_camera.getFrameRate())
@@ -252,6 +269,9 @@ class SpeculaScaoRunner():
         if save_displayed_wf_on_slm is True:
             file_name = phase_screen_folder() / (fname + 'DispWFOnSLM.fits')
             fits.writeto(file_name, np.array(self._wf_on_slm_in_nm_list), hdr)
+        if save_psf_fr is True:
+            file_name = psf_camera_folder() / (fname +'PsfLoopFrames.fits')
+            fits.writeto(file_name, np.array(self._psf_frame_list), hdr)
             
     # @logEnterAndExit("Loading data...",
     #        "Data loaded.", level='debug')
@@ -281,3 +301,13 @@ class SpeculaScaoRunner():
         disp_wf_cube_in_nm = hduList[0].data
         
         return disp_wf_cube_in_nm, header
+    
+    @staticmethod
+    def load_acquired_psf_frames(ftag):
+        set_data_dir()
+        file_name = psf_camera_folder() / (ftag + 'PsfLoopFrames.fits')
+        header = fits.getheader(file_name)
+        hduList = fits.open(file_name)
+        psf_fr_cube = hduList[0].data
+        
+        return psf_fr_cube, header

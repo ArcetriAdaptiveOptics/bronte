@@ -44,17 +44,30 @@ def main(turb_cl_ftag, turb_ol_ftag, mifs_ftag, conv_index = 75, dispWFmap = Fal
     
     tot_res_wf_in_nm = get_residual_wf_from_slm_displayed_wfs(turb_cl_ftag) 
     
+    tot_var_at500nm = (tot_res_wf_in_nm*2*np.pi/500)**2
+    sr_at500nm = np.exp(-tot_var_at500nm)
+    tot_var_at633nm = (tot_res_wf_in_nm*2*np.pi/633)**2
+    sr_at633nm = np.exp(-tot_var_at633nm)
+    
     plt.figure()
     plt.clf()
     plt.plot(tot_res_wf_in_nm)
-    
     plt.xlabel('N steps')
     plt.ylabel('Total Wavefront Error '+'$\sigma_{res}$'+' [nm rms wf]')
     plt.grid('--',alpha=0.3)
+    
+    plt.figure()
+    plt.clf()
+    plt.plot(sr_at500nm, '.-', label = 'SR@500nm')
+    plt.plot(sr_at633nm, '.-', label = 'SR@633nm')
+    plt.xlabel('N steps')
+    plt.ylabel('Strhel Ratio')
+    plt.legend(loc='best')
+    plt.grid('--', alpha=0.3)
+    
+    
     mean_tot_res_wf_in_nm = tot_res_wf_in_nm[50:].mean()
-    
     exp_fitting_err = compute_approximated_exp_fitting_error_from_vk()
-    
     print(f"Total Residual WF (CL): {mean_tot_res_wf_in_nm :.0f} nm rms wf")
     print(f"Expected Fitting error (VK): {exp_fitting_err :.0f} nm rms wf")
     
@@ -108,6 +121,7 @@ def compute_approximated_exp_fitting_error_from_vk():
     seb = ScaoErrorBudgetComputer(wl, r0, L0)
     var = seb.get_fitting_var_vk_closed(None, d_dm = eq_dm_pitch)
     fitting_err_in_nm = seb.phase_var2wfe_in_nm(var, wl)
+    
     return fitting_err_in_nm
     
 ####
@@ -119,7 +133,7 @@ def main250829_120000():
     turb_ol_ftag = '250829_114300'
     mifs_ftag = '250806_170800'
     
-    main(turb_cl_ftag, turb_ol_ftag, mifs_ftag, conv_index = 75, dispWFmap = True)
+    main(turb_cl_ftag, turb_ol_ftag, mifs_ftag, conv_index = 75)#, dispWFmap = True)
 
 def main250901_122900():
     

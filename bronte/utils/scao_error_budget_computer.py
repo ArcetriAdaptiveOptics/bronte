@@ -49,6 +49,9 @@ class ScaoErrorBudgetComputer():
         """ converting phase variance to RMS WFE (nm)"""
         return (wl / (2*np.pi)) * np.sqrt(phase_var) * 1e9
     
+    def wfe_in_nm2phase_var(self, wfe_in_nm, wl=633e-9):
+        return (2*np.pi/wl)*wfe_in_nm**2
+        
     def load_singular_values(self, ifs_ftag):
         
         from bronte.startup import set_data_dir
@@ -66,3 +69,7 @@ class ScaoErrorBudgetComputer():
         res_var_in_rad2 = self._s_turb[j:].sum()
         
         return res_var_in_rad2
+    
+    def get_sr(self, tot_var_in_rad2):
+        
+        return np.exp(-tot_var_in_rad2)
