@@ -16,7 +16,7 @@ def main():
     phi_w = 2*np.pi
     
     Npoints = 1000
-    tilt_c2_vector = np.linspace(1e-6, 80e-6, Npoints)
+    tilt_c2_vector = np.linspace(1e-6, 100e-6, Npoints)
     Nq = 1000
     eta0_vector = np.zeros(Npoints)
     eta1_vector = np.zeros(Npoints)
@@ -181,11 +181,27 @@ def eta(q, N, phi_w, clip=True):
     q = np.asarray(q, dtype=np.float64)
     N = max(1, int(N))
     phi_w = float(phi_w)
-
+    
+    
     env = _sinc_sq_rad(np.pi * q / N)
     A = 0.5 * phi_w - np.pi * q
     interf = _interf_ratio_stable(A, N)
     val = env * interf
+    val = np.where(np.isfinite(val), val, 0.0)
+    if clip:
+        val = np.clip(val, 0.0, 1.0 + 1e-12)
+    return val.item() if val.shape == () else val
+
+def eta_with_pix(q, N, phi_w, a, Lambda, clip=True):
+    q = np.asarray(q, dtype=np.float64)
+    N = max(1, int(N))
+    phi_w = float(phi_w)
+    
+    env_pix = _sinc_sq_rad(np.pi * q * a /Lambda)
+    env = _sinc_sq_rad(np.pi * q / N)
+    A = 0.5 * phi_w - np.pi * q
+    interf = _interf_ratio_stable(A, N)
+    val = env_pix * env * interf
     val = np.where(np.isfinite(val), val, 0.0)
     if clip:
         val = np.clip(val, 0.0, 1.0 + 1e-12)
@@ -266,6 +282,92 @@ def get_mean_coeff(Dtel = 8.2, r0=0.15, L0=25, wl=500e-9):
     vk_cj_in_m = np.sqrt(vk_var_in_rad2)*wl/(2*np.pi)
     return vk_cj_in_m
 
+def main2():
+    #PARAMETERS OF COMMANDED TILT
+    wl=633e-9
+    L = 256
+    Dpx = 545*2
+    a = 9e-6
+    d = 9.2e-6
+    #SETTING PHASE STROKE
+    phi_w = 2*np.pi
+    
+    Npoints = 1000
+    tilt_c2_vector = np.linspace(1e-6, 100e-6, Npoints)
+    Nq = 1000
+    Nstep_vector = np.zeros(Npoints)
+    Npixel_per_lambda_vector = np.zeros(Npoints)
+    
+    q_vect = np.arange(-0.5*Nq, 0.5*Nq+1)
+    eta_2d = np.zeros((Npoints, Nq+1))
+    eta_2d_with_px = np.zeros((Npoints, Nq+1))
+    env_pix = np.zeros((Npoints, Nq+1))
+    for idx, amp in enumerate(tilt_c2_vector):
+        
+        c2 = amp
+        wf_ptv = 4*c2
+        phase_ptv = 2*np.pi*wf_ptv/wl
+        phase_tilt = np.linspace(0, phase_ptv, Dpx)
+        N = get_N(phase_tilt, phi_w, L, Dpx)
+        Npxpl = get_Npix_per_Lambda(phase_tilt, phi_w, L, Dpx)
+        Nstep_vector[idx] = N
+        Npixel_per_lambda_vector[idx] = Npxpl
+        
+        env_pix[idx] = _sinc_sq_rad(np.pi * q_vect * a /(Npxpl*d))
+        eta_2d[idx] = eta(q_vect, N, phi_w)
+        eta_2d_with_px[idx] = eta_with_pix(q_vect, N, phi_w, a, Npxpl*d)
+        
+    ptv_vector = tilt_c2_vector*4
+    return eta_2d, eta_2d_with_px, ptv_vector, env_pix
+
+def pixel_envelope(q, Lambda_px, FF):
+    # E_q = sinc^2(pi*FF * q / Lambda), con sinc(x)=sin(x)/x
+    x = np.pi * FF * q / np.maximum(Lambda_px, 1e-12)
+    # np.sinc usa sinc(pi x), quindi convertiamo: sinc(x) = np.sinc(x/np.pi)
+    return np.sinc(x/np.pi)**2
+
+def show_pixel_effect_q1(FF=0.95):
+    # Parametri (come nei tuoi plot)
+    wl=633e-9; L=256; Dpx=545*2; phi_w=2*np.pi
+    Npoints=1200
+    tilt_c2 = np.linspace(1e-6, 120e-6, Npoints)
+    ptv_um = tilt_c2*4/1e-6
+
+    eta1_raw = np.zeros(Npoints)
+    eta1_pix = np.zeros(Npoints)
+    Lambda_px_vec = np.zeros(Npoints)
+
+    for i, c2 in enumerate(tilt_c2):
+        wf_ptv = 4*c2
+        phase_ptv = 2*np.pi*wf_ptv/wl
+        phase_tilt = np.linspace(0, phase_ptv, Dpx)
+        # tua funzione:
+        Npx_per_Lambda = get_Npix_per_Lambda(phase_tilt, phi_w, L, Dpx)  # = Λ in pixel
+        Lambda_px_vec[i] = Npx_per_Lambda
+
+        # eta "ideale" (senza pixel) dal tuo modello:
+        # qui uso N = get_N(...) se la tua eta(q,N,phi_w) lo richiede:
+        N = get_N(phase_tilt, phi_w, L, Dpx)
+        eta1_raw[i] = eta(1, N, phi_w)
+
+        # applico inviluppo del pixel:
+        E1 = pixel_envelope(q=1, Lambda_px=Npx_per_Lambda, FF=FF)
+        eta1_pix[i] = eta1_raw[i] * E1
+
+    fig, ax = plt.subplots(figsize=(8.8,5))
+    ax.plot(ptv_um, eta1_raw, lw=2.2, label=r'$\eta_1$ (no pixel)')
+    ax.plot(ptv_um, eta1_pix, lw=2.2, ls='--', label=fr'$\eta_1$ with pixel (FF={FF:.2f})')
+    ax.set_xlabel(r'Tilt PtV [$\mu$m wf]')
+    ax.set_ylabel(r'$\eta_1$')
+    ax.set_ylim(-0.02, 1.02); ax.grid(True, ls='--', alpha=0.35)
+    ax.legend(loc='best')
+    ax2 = ax.twinx()
+    ax2.plot(ptv_um, Lambda_px_vec, lw=1.2, color='tab:gray', alpha=0.6, label=r'$\Lambda$ [px/period]')
+    ax2.set_ylabel(r'$\Lambda$ [pixel/period]')
+    fig.tight_layout(); plt.show()
+    
+
+
 # --- Raw plots ---
 
 def show_Nstep_plots():
@@ -318,6 +420,8 @@ def show_eta_vs_ptv():
     wl=633e-9
     L = 256
     Dpx = 545*2
+    a=9e-6
+    d=9.2e-6
     #SETTING PHASE STROKE
     phi_w = 2*np.pi
     
@@ -703,7 +807,7 @@ def show_eta_map2():
     phi_w = 2*np.pi
 
     Npoints = 1000
-    tilt_c2_vector = np.linspace(1e-6, 80e-6, Npoints)
+    tilt_c2_vector = np.linspace(1e-6, 100e-6, Npoints)
     ptv_um = tilt_c2_vector * 4 / 1e-6  # PtV in µm (wf)
 
     # Limita gli ordini visualizzati per una mappa leggibile (es. ±20)
@@ -780,35 +884,6 @@ def show_eta_map2():
     ax_sum.set_ylim(0.999, 1.00)  # stringi la banda attorno a 1 per far vedere deviazioni
     ax_sum.grid(True, linestyle='--', alpha=0.35)
     ax_sum.legend(loc='lower left', frameon=True, framealpha=0.95)
-    #
-    # # residuo su asse destro in scala log
-    # ax_sum_r = ax_sum.twinx()
-    # ax_sum_r.semilogy(ptv_um, residual, lw=1.6, color='tab:red', label=r'$1-\sum_q \eta_q$')
-    # ax_sum_r.set_ylabel(r'Residual (log)')
-    # ax_sum_r.set_ylim(1e-12, 1e0)
     
-    # # legenda combinata (sinistra + destra)
-    # lines_l, labels_l = ax_sum.get_legend_handles_labels()
-    # lines_r, labels_r = ax_sum_r.get_legend_handles_labels()
-    # ax_sum_r.legend(lines_l + lines_r, labels_l + labels_r, loc='upper right',
-    #                 frameon=True, framealpha=0.95)
-
-    # # --- Pannello tagli: come si redistribuisce l'energia che esce da q=1 ---
-    # orders_to_plot = [1, 0, 2, -1, 3, -2]  # scegli quelli più informativi
-    # colors = plt.cm.viridis(np.linspace(0.15, 0.9, len(orders_to_plot)))
-    #
-    # for c, q_sel in zip(colors, orders_to_plot):
-    #     if q_sel < q_vect.min() or q_sel > q_vect.max():
-    #         continue
-    #     idx = int(q_sel - q_vect.min())
-    #     ax_cuts.plot(ptv_um, eta_2d[idx, :], label=fr'$q={q_sel}$', lw=2.0, color=c)
-    #
-    # ax_cuts.set_xlabel(r'Tilt PtV [$\mu$m wf]')
-    # ax_cuts.set_ylabel(r'$\eta_q$')
-    # ax_cuts.set_ylim(-0.02, 1.02)
-    # ax_cuts.xaxis.set_major_locator(MaxNLocator(7))
-    # ax_cuts.yaxis.set_major_locator(MaxNLocator(6))
-    # ax_cuts.grid(True, linestyle='--', alpha=0.35)
-    # ax_cuts.legend(loc='upper right', frameon=True, framealpha=0.95)
-
     plt.show()
+
