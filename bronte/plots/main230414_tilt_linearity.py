@@ -11,6 +11,114 @@ from matplotlib.patches import FancyArrowPatch, Arc
 
 # --- new functions --- 
 
+def estimate_ron_from_annulus(image, yc, xc, r_in, r_out):
+    """Stima RON in ADU dalla corona [r_in, r_out] attorno al centro (yc, xc)."""
+    H, W = image.shape
+    yy, xx = np.mgrid[:H, :W]
+    rr = np.hypot(yy - yc, xx - xc)
+    ann = (rr >= r_in) & (rr <= r_out)
+    vals = image[ann]
+    # usa MAD robusta per RON (senza shot, essendo lontano dal core)
+    med = np.median(vals)
+    mad = np.median(np.abs(vals - med))
+    sigma_ron_adu = 1.4826 * mad
+    bkg_adu = med
+    return bkg_adu, sigma_ron_adu
+
+def build_sigma_map_ADU(roi, bkg_adu, ron_adu, g_e_per_adu):
+    """
+    Var_ADU = shot_ADU + RON_ADU^2  con shot_ADU = max(roi - bkg, 0)/g
+    """
+    signal_adu = np.clip(roi - bkg_adu, 0, None)
+    var_adu = signal_adu / max(g_e_per_adu, 1e-12) + ron_adu**2
+    sigma_adu = np.sqrt(var_adu)
+    # evita zeri patologici
+    sigma_adu[sigma_adu == 0] = np.nanmedian(sigma_adu[sigma_adu > 0]) if np.any(sigma_adu > 0) else 1.0
+    return sigma_adu
+
+
+def _gaussian_fit_core_weighted(image, x0, y0, fwhm_x, fwhm_y, amplitude,
+                                g_e_per_adu=3.54, core_halfsize_pix=10,
+                                annulus_rin_pix=15, annulus_rout_pix=25):
+    """
+    1) definisce una ROI core centrata su (y0, x0) di lato 2*core_halfsize+1
+    2) stima bkg e RON in ADU da un'annulus fuori dalla ROI
+    3) costruisce mappa sigma (ADU) = sqrt( shot(ADU) + RON(ADU)^2 )
+    4) fit Gauss + offset costante pesato
+    """
+    H, W = image.shape
+    # ROI del core per il fit
+    yc = int(np.clip(y0, core_halfsize_pix, H-core_halfsize_pix-1))
+    xc = int(np.clip(x0, core_halfsize_pix, W-core_halfsize_pix-1))
+    roi = image[yc-core_halfsize_pix:yc+core_halfsize_pix+1,
+                xc-core_halfsize_pix:xc+core_halfsize_pix+1]
+
+    # Stima bkg e RON da annulus nella full image (non dalla ROI)
+    bkg_adu, ron_adu = estimate_ron_from_annulus(
+        image, yc, xc, annulus_rin_pix, annulus_rout_pix
+    )
+
+    # Mappa sigma in ADU
+    sigma = build_sigma_map_ADU(roi, bkg_adu, ron_adu, g_e_per_adu)
+    weights = 1.0 / (sigma**2)
+
+    # Fit Gauss + offset
+    Hc, Wc = roi.shape
+    yy, xx = np.mgrid[:Hc, :Wc]
+    g = Gaussian2D(
+        amplitude=max(amplitude - bkg_adu, 1.0),
+        x_mean=core_halfsize_pix, y_mean=core_halfsize_pix,
+        x_stddev=fwhm_x * gaussian_fwhm_to_sigma,
+        y_stddev=fwhm_y * gaussian_fwhm_to_sigma,
+        theta=0.0
+    )
+    c = Const2D(amplitude=bkg_adu)
+    model = c + g
+
+    fitter = LevMarLSQFitter(calc_uncertainties=True)
+    fit = fitter(model, xx, yy, roi, weights=weights)
+
+    # parametri gaussiani
+    names = fit.param_names
+    idx = {n: i for i, n in enumerate(names)}
+    amp_g   = fit.parameters[idx['amplitude_1']]
+    xmu_g   = fit.parameters[idx['x_mean_1']]
+    ymu_g   = fit.parameters[idx['y_mean_1']]
+    xsig_g  = fit.parameters[idx['x_stddev_1']]
+    ysig_g  = fit.parameters[idx['y_stddev_1']]
+    theta_g = fit.parameters[idx['theta_1']]
+    fwhm_x_g = xsig_g / gaussian_fwhm_to_sigma
+    fwhm_y_g = ysig_g / gaussian_fwhm_to_sigma
+
+    pars = np.array([
+        amp_g + fit.parameters[idx['amplitude_0']],
+        xmu_g + (xc - core_halfsize_pix),  # riporta in coords immagine
+        ymu_g + (yc - core_halfsize_pix),
+        fwhm_x_g, fwhm_y_g, theta_g
+    ])
+
+    # incertezze (sui soli param. gaussiani)
+    try:
+        cov = fit.cov_matrix.cov_matrix
+        sel = [idx['amplitude_1'], idx['x_mean_1'], idx['y_mean_1'],
+               idx['x_stddev_1'], idx['y_stddev_1'], idx['theta_1']]
+        cov_g = cov[np.ix_(sel, sel)]
+        # scala per chi2_red locale (robusto)
+        dof = roi.size - len(names)
+        resid = roi - fit(xx, yy)
+        chi2 = np.sum(weights * resid**2)
+        chi2r = chi2 / max(dof, 1)
+        if chi2r > 1:
+            cov_g = cov_g * chi2r
+        errs = np.sqrt(np.diag(cov_g))
+        errs[3] /= gaussian_fwhm_to_sigma
+        errs[4] /= gaussian_fwhm_to_sigma
+    except Exception:
+        errs = np.full(6, np.nan)
+
+    return pars, errs#, (bkg_adu, ron_adu, chi2r)
+
+
 def _sanitize_err(yerr, min_jitter_pix=0.03):
     yerr = np.asarray(yerr, float)
     bad = ~np.isfinite(yerr) | (yerr <= 0)
@@ -27,13 +135,14 @@ def _sanitize_err(yerr, min_jitter_pix=0.03):
 
 def estimate_background_and_sigma(roi):
     # fondo robusto
+    cam_gain=3.54
     bkg = np.percentile(roi, 10)
     # stima noise (MAD)
     diff = roi - np.median(roi)
     mad = np.median(np.abs(diff))
     sigma_read = 1.4826 * mad
     # shot + read (se ADU ~ fotoni; altrimenti resta una proxy robusta)
-    var = np.clip(roi - bkg, 0, None) + sigma_read**2
+    var = np.clip(roi - bkg, 0, None)/cam_gain + sigma_read**2
     sigma = np.sqrt(var)
     # evita zeri
     sigma[sigma == 0] = np.median(sigma[sigma > 0]) if np.any(sigma > 0) else 1.0
@@ -121,6 +230,23 @@ def execute_gaussian_fit_on_image(cut_image, FWHMx, FWHMy, print_par=True):
 
     return par, err
 
+def execute_gaussian_fit_on_image2(cut_image, FWHMx, FWHMy, print_par=True):
+    
+    hsize_cut_ima = cut_image.shape[0] //2
+    core_hsize = 5
+    ymax, xmax = get_index_from_image(cut_image)
+    imax = cut_image.max()
+    par, err = _gaussian_fit_core_weighted(cut_image, xmax, ymax, FWHMx, FWHMy, imax, g_e_per_adu=3.54, core_halfsize_pix=core_hsize,
+                                annulus_rin_pix=hsize_cut_ima - core_hsize, annulus_rout_pix=hsize_cut_ima)
+    
+                                
+    if print_par:
+        print('best fit results: amp, x_mean, y_mean, fwhm_x, fwhm_y, theta')
+        print(par); print(err)
+        
+
+    return par, err
+
 def cut_image_around_coord(image2D, yc, xc, halfside=25):
     yc = int(np.clip(yc, halfside, image2D.shape[0]-halfside-1))
     xc = int(np.clip(xc, halfside, image2D.shape[1]-halfside-1))
@@ -136,56 +262,7 @@ def get_index_from_image(image2D):
 # --- Old functions ---
 
 
-# def cut_image_around_coord(image2D, yc, xc, halfside=25):
-#         cut_image = image2D[yc-halfside:yc+halfside, xc-halfside:xc+halfside]
-#         return cut_image
-#
-# def get_index_from_image(image2D, value = None):
-#         #peak = image.max()
-#         if value is None:
-#             value = image2D.max()
-#         y, x = np.where(image2D==value)[0][0], np.where(image2D==value)[1][0]
-#         return y, x
-    
-# def get_index_from_array(array1D, value = None):
-#     if value is None:
-#         value = array1D.max()
-#     idx = np.where(array1D == value)[0][0]
-#     return idx
 
-# def _gaussian_fit(image, err_im, x_mean, y_mean, fwhm_x, fwhm_y, amplitude):
-#         dimy, dimx = image.shape
-#         y, x = np.mgrid[:dimy, :dimx]
-#         fitter = LevMarLSQFitter(calc_uncertainties=True)
-#         model = Gaussian2D(amplitude=amplitude,
-#                            x_mean=x_mean, y_mean=y_mean,
-#                            x_stddev=fwhm_x * gaussian_fwhm_to_sigma,
-#                            y_stddev=fwhm_y * gaussian_fwhm_to_sigma)
-#         w = 1/err_im**2
-#         fit = fitter(model, x, y, z = image, weights= w)
-#         return fit
-#
-# def execute_gaussian_fit_on_image(cut_image, FWHMx, FWHMy, print_par=True):
-#         ymax, xmax = get_index_from_image(cut_image)
-#         imax = cut_image.max()
-#         half_side_roi = cut_image.shape[0]//2
-#         err_ima = cut_image_around_coord(self._std_ima, ymax, xmax, half_side_roi)
-#         # assert imm.shape == err_ima.shape
-#         fit = _gaussian_fit(cut_image, err_ima, xmax, ymax, FWHMx, FWHMy, imax)
-#
-#         fit.cov_matrix
-#         par = fit.parameters
-#         err = np.sqrt(np.diag(fit.cov_matrix.cov_matrix))
-#         # ricorda di convertire da sigma a FWHM su x e y
-#         par[3] = par[3]/gaussian_fwhm_to_sigma 
-#         err[3] = err[3]/gaussian_fwhm_to_sigma 
-#         par[4] = par[4]/gaussian_fwhm_to_sigma
-#         err[4] = err[4]/gaussian_fwhm_to_sigma
-#         if print_par is True: 
-#             print('best fit results: amp, x_mean, y_mean, fwhm_x, fwhm_y')
-#             print(par)
-#             print(err)
-#         return par, err
 
 def load_measures(fname):
         header = fits.getheader(fname)
@@ -206,7 +283,7 @@ class TiltedPsfAnalyzer():
         self._tilts_cube, self._c_span, self._Nframes, self._texp,\
          self._j_noll, self._init_coeff = load_measures(fname)
          
-    def compute_tilted_psf_desplacement(self, diffraction_limit_fwhm = 3.3, half_side_roi=15):
+    def compute_tilted_psf_desplacement(self, diffraction_limit_fwhm = 3.3, half_side_roi=20):
         
         num_of_tilts = self._tilts_cube.shape[0]
         
@@ -407,34 +484,34 @@ def main():
     fname_z3 = "D:\phd_slm_edo\old_data\\230414tpm_red_z3_v4.fits"
     
     tpa2 = TiltedPsfAnalyzer(fname_z2)
-    tpa2.compute_tilted_psf_desplacement(diffraction_limit_fwhm = 3.3, half_side_roi=16)
+    tpa2.compute_tilted_psf_desplacement(diffraction_limit_fwhm = 3.3, half_side_roi=20)
     tpa2.execite_linfit_along1axis()
     tpa3 = TiltedPsfAnalyzer(fname_z3)
-    tpa3.compute_tilted_psf_desplacement(diffraction_limit_fwhm = 3.3, half_side_roi=15)
+    tpa3.compute_tilted_psf_desplacement(diffraction_limit_fwhm = 3.3, half_side_roi=16)
     tpa3.execite_linfit_along1axis()
     return tpa2, tpa3 
-         
-def main22():
-    
-    import matplotlib.pyplot as plt
-    tpa2, tpa3  = main()
-    plt.close('all')
-    
-    D = 10.5e-3
-    f = 250e-3
-    pp_cam = 4.65e-6
-    
-    
-    z2_centroid_pos_x_in_px = tpa2._pos_x
-    z2_centroid_pos_y_in_px = tpa2._pos_y
-    z2_centroid_err_pos_x_in_px = tpa2._pos_x_err
-    z2_centroid_err_pos_y_in_px = tpa2._pos_y_err
-    c2_span = tpa2._c_span
-    z3_centroid_pos_x_in_px = tpa3._pos_x
-    z3_centroid_pos_y_in_px = tpa3._pos_y
-    z3_centroid_err_pos_x_in_px = tpa3._pos_x_err
-    z3_centroid_err_pos_y_in_px = tpa3._pos_y_err
-    c3_span = tpa2._c_span
+#
+# def main22():
+#
+#     import matplotlib.pyplot as plt
+#     tpa2, tpa3  = main()
+#     plt.close('all')
+#
+#     D = 10.5e-3
+#     f = 250e-3
+#     pp_cam = 4.65e-6
+#
+#
+#     z2_centroid_pos_x_in_px = tpa2._pos_x
+#     z2_centroid_pos_y_in_px = tpa2._pos_y
+#     z2_centroid_err_pos_x_in_px = tpa2._pos_x_err
+#     z2_centroid_err_pos_y_in_px = tpa2._pos_y_err
+#     c2_span = tpa2._c_span
+#     z3_centroid_pos_x_in_px = tpa3._pos_x
+#     z3_centroid_pos_y_in_px = tpa3._pos_y
+#     z3_centroid_err_pos_x_in_px = tpa3._pos_x_err
+#     z3_centroid_err_pos_y_in_px = tpa3._pos_y_err
+#     c3_span = tpa2._c_span
     
 # ---
 
@@ -577,7 +654,19 @@ def main2():
         np.degrees(np.hypot(dsy2/abs(sx2), dsx2*abs(sy2)/(sx2**2 + 1e-30))),
         np.degrees(np.hypot(dsx3/abs(sy3 + 1e-30), dsy3*abs(sx3)/(sy3**2 + 1e-30)))
     )
+    
+    # phi1 = atan2(sy|2, sx|2)
+    phi1_deg = np.degrees(np.arctan2(sy2_pix, sx2_pix))
+    var_phi1 = ((sy2_pix**2)*(dsx2_pix**2) + (sx2_pix**2)*(dsy2_pix**2)) / ((sx2_pix**2 + sy2_pix**2)**2)
+    dphi1_deg = np.degrees(np.sqrt(var_phi1))
+    
+    # phi2 = atan2(-sx|3, sy|3)  -> y = -sx3, x = sy3
+    phi2_deg = np.degrees(np.arctan2(-sx3_pix, sy3_pix))
+    var_phi2 = (((-sx3_pix)**2)*(dsy3_pix**2) + (sy3_pix**2)*(dsx3_pix**2)) / ((sy3_pix**2 + (-sx3_pix)**2)**2)
+    dphi2_deg = np.degrees(np.sqrt(var_phi2))
+    
 
+    
     # --- REPORT TESTUALE ---
     print("\n=== TIP-only (c2) fits (pixels per meter OPD) ===")
     print(f"sx|2 = {sx2_pix:.6g} ± {dsx2_pix:.2g}  [pix/m],  R^2={R2_x2:.5f},  χ²_red={chi2r_x2:.3f},  intercept={bx2_pix:.3g}±{dbx2_pix:.1g} pix")
@@ -597,6 +686,9 @@ def main2():
     print(f"psi2 (from c2)  = {psi2:.3f} deg")
     print(f"psi3 (from c3)  = {psi3:.3f} deg")
     print(f"psi_hat (avg)   = {psi_hat:.3f} ± {dpsi:.3f} deg")
+    print(f"\nAngle uncertainties:")
+    print(f"phi1 = {phi1_deg:.3f} ± {dphi1_deg:.3f} deg   (from c2 column)")
+    print(f"phi2 = {phi2_deg:.3f} ± {dphi2_deg:.3f} deg   (from c3 column)")
 
     # Coerenza incrociata ideale: sx|2 ≈ sy|3 ; sy|2 ≈ -sx|3
     print("\n=== Cross-checks (ideal equalities) ===")
