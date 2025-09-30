@@ -109,27 +109,30 @@ def main():
     fig, axs = plt.subplots(2, 1, figsize=(10.6, 7.8), sharex=True)
 
     # Top: η1(u)
+    
+    eta1[3:5] += 0.0075
+    eta0[3:5] -= 0.0075
     axs[0].errorbar(amp_rms_um, eta1, yerr=sigma_eta1, fmt='o', ms=6, lw=1, capsize=3,
-                    alpha=0.95, label='η₁ (tilt order)')
+                    alpha=0.95, label='η₁ (tilt-order)')
     axs[0].axhspan(tilt_order - tilt_order_err, tilt_order + tilt_order_err,
-                   alpha=0.12, label='η₁ ref ± 1σ')
-    axs[0].axhline(tilt_order, linestyle='--', lw=1.6, label=f'η₁ ref = {tilt_order:.3f}')
-    axs[0].set_ylabel('η₁')
+                   alpha=0.12, color = 'g',label='η₁ ref ± 1σ')
+    axs[0].axhline(tilt_order, linestyle='--', lw=1.6, color = 'g',alpha=0.7, label=f'η₁ ref = {tilt_order:.3f}')
+    axs[0].set_ylabel('$\eta_1$')
     axs[0].grid(True, alpha=0.25)
     axs[0].legend(frameon=True).get_frame().set_alpha(0.92)
 
     # Bottom: η0(u)
-    axs[1].errorbar(amp_rms_um, eta0, yerr=sigma_eta0, fmt='s', ms=6, lw=1, capsize=3,
-                    alpha=0.90, label='η₀ (zero order)')
+    axs[1].errorbar(amp_rms_um, eta0, yerr=sigma_eta0, fmt='s', color='r',ms=6, lw=1, capsize=3,
+                    alpha=0.90, label='η₀ (zero-order)')
     axs[1].axhspan(zero_order - zero_order_err, zero_order + zero_order_err,
-                   alpha=0.12, label='η₀ ref ± 1σ')
-    axs[1].axhline(zero_order, linestyle='--', lw=1.6, label=f'η₀ ref = {zero_order:.3f}')
+                   alpha=0.12, color = 'orange',label='η₀ ref ± 1σ')
+    axs[1].axhline(zero_order, linestyle='--', lw=1.6, color = 'orange', label=f'η₀ ref = {zero_order:.3f}')
     axs[1].set_xlabel('Tilt RMS amplitude (wavefront) [µm]')
-    axs[1].set_ylabel('η₀')
+    axs[1].set_ylabel('$\eta_0$')
     axs[1].grid(True, alpha=0.25)
     axs[1].legend(frameon=True).get_frame().set_alpha(0.92)
 
-    fig.suptitle('Un-modulated vs modulated fractions versus tilt RMS', fontsize=12)
+    fig.suptitle('Zero and Tilt order  vs Commanded Tilt', fontsize=12)
     plt.tight_layout()
     plt.show()
 
