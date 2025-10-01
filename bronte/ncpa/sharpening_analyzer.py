@@ -10,7 +10,7 @@ class SharpeningAnalyzer():
         
         self._texp, self._tot_dl_flux, self._ncpa, self._zc_offset, \
         self._corrected_z_modes_indexes,self._measured_sr, self._amp_span,\
-        self._comp_psf, self._uncomp_psf, self._au_dl_psf = SharpPsfOnCamera().load_ncpa(fname)
+        self._comp_psf, self._uncomp_psf, self._au_dl_psf, self._mesured_i_roi = SharpPsfOnCamera.load_ncpa(fname)
         self._sr_computer = StrehlRatioComputer()
         self._execute_interpolation()
         

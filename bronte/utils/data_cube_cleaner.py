@@ -29,7 +29,7 @@ class DataCubeCleaner():
         master_dark has shape (FrameSizeY, FrameSizeX)
         '''
         red_cube  = DataCubeCleaner.get_redCube_from_rawCube(raw_cube, master_dark)
-        return np.median(red_cube, axis = -1)
+        return np.mean(red_cube, axis = -1)
     
     @staticmethod
     def get_mean_from_rawCube(raw_cube, master_dark):
