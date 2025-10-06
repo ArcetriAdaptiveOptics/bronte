@@ -146,3 +146,32 @@ def main251001_123800():
     fname = other_folder() / ('251001_123800.fits')
     
     spoc.save_ncpa(fname)
+    
+def main251006_094500():
+    
+    list_of_zernike2compensate = [4,5,6,7,8,9,10,11]  # noll indexes
+    spoc = SharpPsfOnCamera(list_of_zernike2compensate)
+    
+    # loading zc offset
+    zc_offset_array = np.array([ 0.0e+00,  0.0e+00, -2.0e-08,  4.0e-08,  1.5e-08,  1.0e-08,
+        1.0e-08,  5.0e-09, -5.0e-09, -5.0e-09])
+    #zc_offset_array = np.array([0.5e-6, 0.5e-6])
+    spoc.load_zc_offset(zc_offset_array)
+    #flat = np.zeros(1152*1920)
+    cmd_offset = spoc._sr.m2c(zc_offset_array, True)
+    spoc._factory.deformable_mirror.set_shape(cmd_offset)
+    
+    bkg = spoc._factory.psf_camera_master_bkg
+    texp_cam = 5
+    spoc.load_master_dark(bkg)
+    
+    yc = 544
+    xc = 652
+    size = 50
+    spoc.define_roi(yc, xc, size)
+    
+    spoc.sharp( amp_span = np.linspace(-200e-9, 200e-9, 21), texp_in_ms = texp_cam, Nframe2average = 10)
+    
+    fname = other_folder() / ('251006_094500.fits')
+    
+    spoc.save_ncpa(fname)

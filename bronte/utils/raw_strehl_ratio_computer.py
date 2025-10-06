@@ -76,7 +76,11 @@ class StrehlRatioComputer():
         normalized_dl_psf_roi = normalized_dl_psf[center-hsize:center+hsize,
                                                   center-hsize:center+hsize]
         #TODO: estimate the measured psf maximum in a better way, moffat maybe 
-        sr = image.max()/(self._fitted_dl_max_au * total_measured_flux/self._total_dl_flux)
+        meas_max = image.max()
+        ymc = np.where(image == meas_max)[0][0]
+        xmc = np.where(image == meas_max)[1][0]
+        meas_max = self.quadfit_peak_3x3(image, ymc, xmc) 
+        sr = meas_max/(self._fitted_dl_max_au * total_measured_flux/self._total_dl_flux)
         
         if enable_display is True:
             
@@ -93,3 +97,40 @@ class StrehlRatioComputer():
             
         return sr
     
+    def quadfit_peak_3x3(self, img, yc, xc):
+
+        """
+        Stima sub-pixel del picco con un fit quadratico 2D su patch 3x3
+        centrato su (yc, xc). Ritorna SOLO I_peak_fit (float).
+        Se il fit è degenere o siamo al bordo, usa il valore del pixel centrale.
+        """
+        h, w = img.shape
+        y0, x0 = int(yc), int(xc)
+    
+        # bordo: se non posso estrarre 3x3, ritorno il pixel
+        if y0-1 < 0 or y0+1 >= h or x0-1 < 0 or x0+1 >= w:
+            return float(img[y0, x0])
+    
+        patch = img[y0-1:y0+2, x0-1:x0+2].astype(float)
+        Y, X = np.mgrid[-1:2, -1:2]
+    
+        # modello: a + bX + cY + dX^2 + eXY + fY^2
+        A = np.column_stack([
+            np.ones(X.size), X.ravel(), Y.ravel(),
+            (X**2).ravel(), (X*Y).ravel(), (Y**2).ravel()
+        ])
+        try:
+            coeff, *_ = np.linalg.lstsq(A, patch.ravel(), rcond=None)
+            a, b, c, d, e, f = coeff
+            denom = (4*d*f - e**2)
+            if denom >= 0:  # paraboloide non concavo -> fallback
+                return float(patch[1, 1])
+            x_peak = (e*c - 2*f*b) / denom
+            y_peak = (e*b - 2*d*c) / denom
+            # se il vertice è troppo lontano dal centro, fallback (fit fuori patch)
+            if abs(x_peak) > 1.5 or abs(y_peak) > 1.5:
+                return float(patch[1, 1])
+            I_peak = a + b*x_peak + c*y_peak + d*x_peak**2 + e*x_peak*y_peak + f*y_peak**2
+            return float(I_peak)
+        except Exception:
+            return float(patch[1, 1])
