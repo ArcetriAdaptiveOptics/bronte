@@ -141,7 +141,7 @@ class SharpPsfOnCamera():
             
             self._best_coeff[idx_n] = best_amplitude
             self._best_coeff_err[idx_n] = best_err
-            zc2apply.toNumpyArray()[idx_n] = best_amplitude
+            zc2apply.toNumpyArray()[idx_n] = best_amplitude + amp
         
         self._ncpa_zc = zc2apply
         ncpa_wfz = self._sr.zernike_coefficients_to_raster(self._ncpa_zc)
@@ -162,7 +162,11 @@ class SharpPsfOnCamera():
     def get_psf_in_roi(self, Nframes):
         
         raw_dataCube = self._cam.getFutureFrames(Nframes).toNumpyArray()
-        master_image = self._cleaner.get_master_from_rawCube(raw_dataCube, self._master_dark)
+        if Nframes == 1:
+            master_image = raw_dataCube - self._master_dark
+            master_image[master_image<0] = 0
+        else:
+            master_image = self._cleaner.get_master_from_rawCube(raw_dataCube, self._master_dark)
                 
         hsize = int(np.round(self._size*0.5))
         roi_master = master_image[self._yc_roi-hsize:self._yc_roi+hsize,

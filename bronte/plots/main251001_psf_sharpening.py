@@ -22,7 +22,7 @@ def load_low_order_sharpening():
 def load_low_order_finer_sharpening():
     
     fpath = "D:\\phd_slm_edo\\bronte\\other_data\\"
-    ftag =  "251001_104600.fits"
+    ftag =  "251006_105400.fits"#"251001_104600.fits"
     fname = fpath + ftag
     
     sa = sharpening_analyzer.SharpeningAnalyzer(fname)
@@ -260,7 +260,7 @@ def final_results_best_coeff():
     ax.errorbar(j_lo - dx, c_hat_lo1, yerr=c_err_lo1, fmt='o', ms=6, capsize=3,
                 elinewidth=1.2, label=r'$\pm 2.5\,\mu$m @ 100 nm', color='#1f77b4')
     ax.errorbar(j_lo + dx, c_hat_lo2, yerr=c_err_lo2, fmt='s', ms=6, capsize=3,
-                elinewidth=1.2, label=r'$\pm 200$ nm @ 10 nm', color='#ff7f0e')
+                elinewidth=1.2, label=r'$\pm 100$ nm @ 20 nm', color='#ff7f0e')
     
     ax.axhline(0, color='k', lw=1.0, alpha=0.6)
     ax.set_xlabel('Zernike index $j$')
@@ -369,7 +369,7 @@ def _strehl_and_sigma_from_image(img_roi_adu, sa, gain_e_per_adu=3.5409, ron_adu
 # --- ADD: plot trio DL/Before/After con colorbar condivisa ---
 from matplotlib.gridspec import GridSpec
 from mpl_toolkits.axes_grid1 import make_axes_locatable
-def _plot_psf_triple(sa, img_before, img_after, title_prefix=""):
+def _plot_psf_triple(sa, img_before, img_after, title_prefix="", titles_mod = None):
     """
     - stima e sottrae il background su before/after
     - normalizza la DL al flusso della PSF 'after'
@@ -425,9 +425,12 @@ def _plot_psf_triple(sa, img_before, img_after, title_prefix=""):
 
     titles = [
         "DL PSF (SR=100%)",
-        f"Before, SR={sr_bef*100:.0f}% ± {sig_bef*100:.0f}%",
-        f"After,  SR={sr_aft*100:.0f}% ± {sig_aft*100:.0f}%"
+        f"Before, SR={sr_bef*100:.1f}%",# ± {sig_bef*100:.1f}%",
+        f"After,  SR={sr_aft*100:.1f}%"# ± {sig_aft*100:.1f}%"
     ]
+    
+    if titles_mod is not None:
+        titles = titles_mod
 
     im = None
     for ax, L, title in zip(axes, log_imgs, titles):
@@ -452,22 +455,41 @@ def final_results_psf():
     sa_lor_coarse = load_low_order_sharpening()
     sa_lor_fine   = load_low_order_finer_sharpening()
     sa_hor        = load_higer_order_sharpening()
+    
+    titles1 = [
+        "DL PSF (SR=100%)",
+        f"Before, $<SR>_t$=(55.8 ± 0.7)%",
+        f"After,  $<SR>_t$=(79.9 ± 0.9)%"]
+    
+    titles2 = [
+        "DL PSF (SR=100%)",
+        f"Before, $<SR>_t$=(80.1 ± 0.9)%",
+        f"After,  $<SR>_t$=(80.8 ± 0.9)%"]
 
+    #
+    titles3 = [
+        "DL PSF (SR=100%)",
+        f"Before, $<SR>_t$=(80.4 ± 0.9)%",
+        f"After,  $<SR>_t$=(81 ± 1)%"]
+    
     # LOW ORDER, coarse
     _plot_psf_triple(sa_lor_coarse,
                      sa_lor_coarse._uncomp_psf,
                      sa_lor_coarse._comp_psf,
-                     title_prefix="Low-order: $Z_{4}$–$Z_{11}$ (coarse scan)")
+                     title_prefix="Low-order: $Z_{4}$–$Z_{11}$ (coarse scan)",
+                     titles_mod = titles1)
 
     # LOW ORDER, fine
     _plot_psf_triple(sa_lor_fine,
                      sa_lor_fine._uncomp_psf,
                      sa_lor_fine._comp_psf,
-                     title_prefix="Low-order: $Z_{4}$–$Z_{11}$ (fine scan)")
+                     title_prefix="Low-order: $Z_{4}$–$Z_{11}$ (fine scan)",
+                     titles_mod = titles2)
 
     # HIGH ORDER
     _plot_psf_triple(sa_hor,
                      sa_hor._uncomp_psf,
                      sa_hor._comp_psf,
-                     title_prefix="High-order: $Z_{12}$–$Z_{31}$")
+                     title_prefix="High-order: $Z_{12}$–$Z_{31}$",
+                     titles_mod = titles3)
 
