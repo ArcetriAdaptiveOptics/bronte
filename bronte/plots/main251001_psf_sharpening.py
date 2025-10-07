@@ -458,7 +458,7 @@ def final_results_psf():
     
     titles1 = [
         "DL PSF (SR=100%)",
-        f"Before, $<SR>_t$=(55.8 ± 0.7)%",
+        f"Before, $<SR>_t$=(54.7 ± 0.7)%",
         f"After,  $<SR>_t$=(79.9 ± 0.9)%"]
     
     titles2 = [
