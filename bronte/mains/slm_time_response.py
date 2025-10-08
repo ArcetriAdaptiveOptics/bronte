@@ -137,7 +137,7 @@ class ResponseTimeAnalyzer():
             self._compute_pd_bkgs(self._bkg_fname)
         
         self._fname = csv_file_name
-        self._t, v1, v2 = SlmResposeTime().get_data_from_DAQamiCSVfile(csv_file_name)
+        self._t, v1, v2 = SlmResposeTime.get_data_from_DAQamiCSVfile(csv_file_name)
         self._v1 = v1 - self._bkg1
         self._v2 = v2 - self._bkg2
         
@@ -168,7 +168,7 @@ class ResponseTimeAnalyzer():
     
     def _compute_pd_bkgs(self, fname):
         
-        t, bkg1, bkg2 = SlmResposeTime().get_data_from_DAQamiCSVfile(fname)
+        t, bkg1, bkg2 = SlmResposeTime.get_data_from_DAQamiCSVfile(fname)
         self._bkg1 = np.median(bkg1)
         self._bkg2 = np.median(bkg2)
         

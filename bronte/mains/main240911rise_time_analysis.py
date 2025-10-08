@@ -5,7 +5,7 @@ from bronte.mains.slm_time_response import ResponseTimeAnalyzer
 class PhotodiodeDataAnalyzer():
 
 
-    FDIR = "C:\\Users\\labot\\Desktop\\misure_tesi_slm\\slm_time_response\\photodiode\\"
+    FDIR = "D:\\phd_slm_edo\\old_data\\slm_time_response\\photodiode\\"#"C:\\Users\\labot\\Desktop\\misure_tesi_slm\\slm_time_response\\photodiode\\"
     
     def __init__(self):
         
