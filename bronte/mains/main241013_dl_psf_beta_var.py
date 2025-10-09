@@ -397,3 +397,24 @@ def main251009_130100():
     _main(ftag, Nsamp=8000,seed=0)               # esegue MC e salva FITS
     load_beta_mc_data(ftag)   # ricarica da FITS in cache
     show_beta_data_res(ftag, save_fig = False)  # grafici + riepilogo
+
+def main251009_151200():
+    ftag = '251009_151200'
+    _main(ftag, Nsamp=10000,seed=0)               # esegue MC e salva FITS
+    load_beta_mc_data(ftag)   # ricarica da FITS in cache
+    show_beta_data_res(ftag, save_fig = False)  # grafici + riepilogo
+    
+def main251009_171500():
+    import time
+    
+    seed1 = int(time.time())
+    ftag1 = '251009_171500'
+    _main(ftag1, Nsamp=10000,seed=seed1)               # esegue MC e salva FITS
+    load_beta_mc_data(ftag1)   # ricarica da FITS in cache
+    show_beta_data_res(ftag1, save_fig = False)
+    
+    seed2 = int(time.time())
+    ftag2 = '251009_193500'
+    _main(ftag2, Nsamp=10000,seed=seed2)               # esegue MC e salva FITS
+    load_beta_mc_data(ftag2)   # ricarica da FITS in cache
+    show_beta_data_res(ftag2, save_fig = False)
