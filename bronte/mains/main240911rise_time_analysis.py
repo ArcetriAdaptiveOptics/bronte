@@ -72,6 +72,11 @@ class PhotodiodeDataAnalyzer():
         rta_blink = ResponseTimeAnalyzer(self._fname_blink_dwt0ms)
         return display_rise_time_analysis_of_data20240906_1422(rta_blink)
     
+    def blink_data_dwell_time100ms(self):
+        
+        rta_blink = ResponseTimeAnalyzer(self._fname_blink_dwt100ms)
+        return display_rise_time_analysis_of_data20240906_1441(rta_blink)
+    
     def plico_data_pd2_on_axis(self):
         rta_plico_pd2_on_axis = ResponseTimeAnalyzer(self._fname_pd2_on_axis)
         return display_rise_time_analysis_of_plicodata20240912_1622(rta_plico_pd2_on_axis)
@@ -474,103 +479,104 @@ def display_rise_time_analysis_of_data20240906_1422(rta):
     
     return (va, err_va, mae_va), (vb, err_vb, mae_vb), (vc, err_vc, mae_vc), (vd, err_vd, mae_vd)
 
-# def display_rise_time_analysis_of_data20240906_1441():
-#
-#     fname_blink_data  = "C:\\Users\\labot\\Desktop\\misure_tesi_slm\\slm_time_response\\photodiode\\20240906_1441_blink_loop10_dwell100ms\\Analog - 9-6-2024 2-41-15.63336 PM.csv"
-#     rta = ResponseTimeAnalyzer(fname_blink_data)
-#
-#     c_index = np.arange(0,44061)
-#     b_index = np.arange(121585,len(rta._v2))
-#
-#     vc = rta._v2[c_index].mean()
-#     err_vc = rta._v2[c_index].std()
-#
-#     vb = rta._v2[b_index].mean()
-#     err_vb = rta._v2[b_index].std()
-#
-#     idx0 = np.arange(39930,44056)
-#     idx1 = np.arange(48562,52681)
-#     idx2 = np.arange(57061,61175)
-#     idx3 = np.arange(65581,69722)
-#     idx4 = np.arange(74143,78200)
-#     idx5 = np.arange(82659,86473)
-#     idx6 = np.arange(91207,95267)
-#     idx7 = np.arange(99733,103790)
-#     idx8 = np.arange(108217,112309)
-#     idx9 = np.arange(116799,120853)
-#
-#     va0 = rta._v1[idx0].mean()
-#     err_va0 = rta._v1[idx0].std()
-#     va1 = rta._v1[idx1].mean()
-#     err_va1 = rta._v1[idx1].std()
-#     va2 = rta._v1[idx2].mean()
-#     err_va2 = rta._v1[idx2].std()
-#     va3 = rta._v1[idx3].mean()
-#     err_va3 = rta._v1[idx3].std()
-#     va4 = rta._v1[idx4].mean()
-#     err_va4 = rta._v1[idx4].std()
-#     va5 = rta._v1[idx5].mean()
-#     err_va5 = rta._v1[idx5].std()
-#     va6 = rta._v1[idx6].mean()
-#     err_va6 = rta._v1[idx6].std()
-#     va7 = rta._v1[idx7].mean()
-#     err_va7 = rta._v1[idx7].std()
-#     va8 = rta._v1[idx8].mean()
-#     err_va8= rta._v1[idx8].std()
-#     va9 = rta._v1[idx9].mean()
-#     err_va9 = rta._v1[idx9].std()
-#
-#     rta.display_data()
-#
-#
-#     plt.title("Blink data 240906_1441 Dwell Time 100ms")
-#
-#     plt.hlines(vc, 0 , rta._t.max(), ls='-',colors='black')
-#     plt.hlines(vc+err_vc, 0 , rta._t.max(), ls='--',colors='black')
-#     plt.hlines(vc-err_vc, 0 , rta._t.max(), ls='--',colors='black')
-#
-#     plt.hlines(vb, 0 , rta._t.max(), ls='-',colors='black')
-#     plt.hlines(vb+err_vb, 0 , rta._t.max(), ls='--',colors='black')
-#     plt.hlines(vb-err_vb, 0 , rta._t.max(), ls='--',colors='black')
-#
-#     dindx  = 500
-#
-#     plt.hlines(va0, rta._t[idx0.min()- dindx], rta._t[idx0.max()+dindx], ls='-',colors='cyan')
-#     plt.hlines(va0+err_va0, rta._t[idx0.min()- dindx], rta._t[idx0.max()+dindx], ls='--',colors='cyan')
-#     plt.hlines(va0-err_va0, rta._t[idx0.min()- dindx], rta._t[idx0.max()+dindx], ls='--',colors='cyan')
-#
-#     plt.hlines(va1, rta._t[idx1.min()- dindx], rta._t[idx1.max()+dindx], ls='-',colors='cyan')
-#     plt.hlines(va1+err_va1, rta._t[idx1.min()- dindx], rta._t[idx1.max()+dindx], ls='--',colors='cyan')
-#     plt.hlines(va1-err_va1, rta._t[idx1.min()- dindx], rta._t[idx1.max()+dindx], ls='--',colors='cyan')
-#
-#     plt.hlines(va2, rta._t[idx2.min()- dindx], rta._t[idx2.max()+dindx], ls='-',colors='cyan')
-#     plt.hlines(va2+err_va2, rta._t[idx2.min()- dindx], rta._t[idx2.max()+dindx], ls='--',colors='cyan')
-#     plt.hlines(va2-err_va2, rta._t[idx2.min()- dindx], rta._t[idx2.max()+dindx], ls='--',colors='cyan')
-#
-#     plt.hlines(va3, rta._t[idx3.min()- dindx], rta._t[idx3.max()+dindx], ls='-',colors='cyan')
-#     plt.hlines(va3+err_va3, rta._t[idx3.min()- dindx], rta._t[idx3.max()+dindx], ls='--',colors='cyan')
-#     plt.hlines(va3-err_va3, rta._t[idx3.min()- dindx], rta._t[idx3.max()+dindx], ls='--',colors='cyan')
-#
-#     plt.hlines(va4, rta._t[idx4.min()- dindx], rta._t[idx4.max()+dindx], ls='-',colors='cyan')
-#     plt.hlines(va4+err_va4, rta._t[idx4.min()- dindx], rta._t[idx4.max()+dindx], ls='--',colors='cyan')
-#     plt.hlines(va4-err_va4, rta._t[idx4.min()- dindx], rta._t[idx4.max()+dindx], ls='--',colors='cyan')
-#
-#     plt.hlines(va5, rta._t[idx5.min()- dindx], rta._t[idx5.max()+dindx], ls='-',colors='cyan')
-#     plt.hlines(va5+err_va5, rta._t[idx5.min()- dindx], rta._t[idx5.max()+dindx], ls='--',colors='cyan')
-#     plt.hlines(va5-err_va5, rta._t[idx5.min()- dindx], rta._t[idx5.max()+dindx], ls='--',colors='cyan')
-#
-#     plt.hlines(va6, rta._t[idx6.min()- dindx], rta._t[idx6.max()+dindx], ls='-',colors='cyan')
-#     plt.hlines(va6+err_va6, rta._t[idx6.min()- dindx], rta._t[idx6.max()+dindx], ls='--',colors='cyan')
-#     plt.hlines(va6-err_va6, rta._t[idx6.min()- dindx], rta._t[idx6.max()+dindx], ls='--',colors='cyan')
-#
-#     plt.hlines(va7, rta._t[idx7.min()- dindx], rta._t[idx7.max()+dindx], ls='-',colors='cyan')
-#     plt.hlines(va7+err_va7, rta._t[idx7.min()- dindx], rta._t[idx7.max()+dindx], ls='--',colors='cyan')
-#     plt.hlines(va7-err_va7, rta._t[idx7.min()- dindx], rta._t[idx7.max()+dindx], ls='--',colors='cyan')
-#
-#     plt.hlines(va8, rta._t[idx8.min()- dindx], rta._t[idx8.max()+dindx], ls='-',colors='cyan')
-#     plt.hlines(va8+err_va8, rta._t[idx8.min()- dindx], rta._t[idx8.max()+dindx], ls='--',colors='cyan')
-#     plt.hlines(va8-err_va8, rta._t[idx8.min()- dindx], rta._t[idx8.max()+dindx], ls='--',colors='cyan')
-#
-#     plt.hlines(va9, rta._t[idx9.min()- dindx], rta._t[idx9.max()+dindx], ls='-',colors='cyan')
-#     plt.hlines(va9+err_va9, rta._t[idx9.min()- dindx], rta._t[idx9.max()+dindx], ls='--',colors='cyan')
-#     plt.hlines(va9-err_va9, rta._t[idx9.min()- dindx], rta._t[idx9.max()+dindx], ls='--',colors='cyan')
+def display_rise_time_analysis_of_data20240906_1441(rta):
+
+    # fname_blink_data  = "C:\\Users\\labot\\Desktop\\misure_tesi_slm\\slm_time_response\\photodiode\\20240906_1441_blink_loop10_dwell100ms\\Analog - 9-6-2024 2-41-15.63336 PM.csv"
+    # rta = ResponseTimeAnalyzer(fname_blink_data)
+
+    c_index = np.arange(0,44061)
+    b_index = np.arange(121585,len(rta._v2))
+
+    vc = rta._v2[c_index].mean()
+    err_vc = rta._v2[c_index].std()
+
+    vb = rta._v2[b_index].mean()
+    err_vb = rta._v2[b_index].std()
+
+    idx0 = np.arange(39930,44056)
+    idx1 = np.arange(48562,52681)
+    idx2 = np.arange(57061,61175)
+    idx3 = np.arange(65581,69722)
+    idx4 = np.arange(74143,78200)
+    idx5 = np.arange(82659,86473)
+    idx6 = np.arange(91207,95267)
+    idx7 = np.arange(99733,103790)
+    idx8 = np.arange(108217,112309)
+    idx9 = np.arange(116799,120853)
+
+    va0 = rta._v1[idx0].mean()
+    err_va0 = rta._v1[idx0].std()
+    va1 = rta._v1[idx1].mean()
+    err_va1 = rta._v1[idx1].std()
+    va2 = rta._v1[idx2].mean()
+    err_va2 = rta._v1[idx2].std()
+    va3 = rta._v1[idx3].mean()
+    err_va3 = rta._v1[idx3].std()
+    va4 = rta._v1[idx4].mean()
+    err_va4 = rta._v1[idx4].std()
+    va5 = rta._v1[idx5].mean()
+    err_va5 = rta._v1[idx5].std()
+    va6 = rta._v1[idx6].mean()
+    err_va6 = rta._v1[idx6].std()
+    va7 = rta._v1[idx7].mean()
+    err_va7 = rta._v1[idx7].std()
+    va8 = rta._v1[idx8].mean()
+    err_va8= rta._v1[idx8].std()
+    va9 = rta._v1[idx9].mean()
+    err_va9 = rta._v1[idx9].std()
+
+    #rta.display_data()
+    rta.display_moving_average_signals()
+
+
+    plt.title("Blink data 240906_1441 Dwell Time 100ms")
+
+    plt.hlines(vc, 0 , rta._t.max(), ls='-',colors='black')
+    plt.hlines(vc+err_vc, 0 , rta._t.max(), ls='--',colors='black')
+    plt.hlines(vc-err_vc, 0 , rta._t.max(), ls='--',colors='black')
+
+    plt.hlines(vb, 0 , rta._t.max(), ls='-',colors='black')
+    plt.hlines(vb+err_vb, 0 , rta._t.max(), ls='--',colors='black')
+    plt.hlines(vb-err_vb, 0 , rta._t.max(), ls='--',colors='black')
+
+    dindx  = 500
+
+    plt.hlines(va0, rta._t[idx0.min()- dindx], rta._t[idx0.max()+dindx], ls='-',colors='cyan')
+    plt.hlines(va0+err_va0, rta._t[idx0.min()- dindx], rta._t[idx0.max()+dindx], ls='--',colors='cyan')
+    plt.hlines(va0-err_va0, rta._t[idx0.min()- dindx], rta._t[idx0.max()+dindx], ls='--',colors='cyan')
+
+    plt.hlines(va1, rta._t[idx1.min()- dindx], rta._t[idx1.max()+dindx], ls='-',colors='cyan')
+    plt.hlines(va1+err_va1, rta._t[idx1.min()- dindx], rta._t[idx1.max()+dindx], ls='--',colors='cyan')
+    plt.hlines(va1-err_va1, rta._t[idx1.min()- dindx], rta._t[idx1.max()+dindx], ls='--',colors='cyan')
+
+    plt.hlines(va2, rta._t[idx2.min()- dindx], rta._t[idx2.max()+dindx], ls='-',colors='cyan')
+    plt.hlines(va2+err_va2, rta._t[idx2.min()- dindx], rta._t[idx2.max()+dindx], ls='--',colors='cyan')
+    plt.hlines(va2-err_va2, rta._t[idx2.min()- dindx], rta._t[idx2.max()+dindx], ls='--',colors='cyan')
+
+    plt.hlines(va3, rta._t[idx3.min()- dindx], rta._t[idx3.max()+dindx], ls='-',colors='cyan')
+    plt.hlines(va3+err_va3, rta._t[idx3.min()- dindx], rta._t[idx3.max()+dindx], ls='--',colors='cyan')
+    plt.hlines(va3-err_va3, rta._t[idx3.min()- dindx], rta._t[idx3.max()+dindx], ls='--',colors='cyan')
+
+    plt.hlines(va4, rta._t[idx4.min()- dindx], rta._t[idx4.max()+dindx], ls='-',colors='cyan')
+    plt.hlines(va4+err_va4, rta._t[idx4.min()- dindx], rta._t[idx4.max()+dindx], ls='--',colors='cyan')
+    plt.hlines(va4-err_va4, rta._t[idx4.min()- dindx], rta._t[idx4.max()+dindx], ls='--',colors='cyan')
+
+    plt.hlines(va5, rta._t[idx5.min()- dindx], rta._t[idx5.max()+dindx], ls='-',colors='cyan')
+    plt.hlines(va5+err_va5, rta._t[idx5.min()- dindx], rta._t[idx5.max()+dindx], ls='--',colors='cyan')
+    plt.hlines(va5-err_va5, rta._t[idx5.min()- dindx], rta._t[idx5.max()+dindx], ls='--',colors='cyan')
+
+    plt.hlines(va6, rta._t[idx6.min()- dindx], rta._t[idx6.max()+dindx], ls='-',colors='cyan')
+    plt.hlines(va6+err_va6, rta._t[idx6.min()- dindx], rta._t[idx6.max()+dindx], ls='--',colors='cyan')
+    plt.hlines(va6-err_va6, rta._t[idx6.min()- dindx], rta._t[idx6.max()+dindx], ls='--',colors='cyan')
+
+    plt.hlines(va7, rta._t[idx7.min()- dindx], rta._t[idx7.max()+dindx], ls='-',colors='cyan')
+    plt.hlines(va7+err_va7, rta._t[idx7.min()- dindx], rta._t[idx7.max()+dindx], ls='--',colors='cyan')
+    plt.hlines(va7-err_va7, rta._t[idx7.min()- dindx], rta._t[idx7.max()+dindx], ls='--',colors='cyan')
+
+    plt.hlines(va8, rta._t[idx8.min()- dindx], rta._t[idx8.max()+dindx], ls='-',colors='cyan')
+    plt.hlines(va8+err_va8, rta._t[idx8.min()- dindx], rta._t[idx8.max()+dindx], ls='--',colors='cyan')
+    plt.hlines(va8-err_va8, rta._t[idx8.min()- dindx], rta._t[idx8.max()+dindx], ls='--',colors='cyan')
+
+    plt.hlines(va9, rta._t[idx9.min()- dindx], rta._t[idx9.max()+dindx], ls='-',colors='cyan')
+    plt.hlines(va9+err_va9, rta._t[idx9.min()- dindx], rta._t[idx9.max()+dindx], ls='--',colors='cyan')
+    plt.hlines(va9-err_va9, rta._t[idx9.min()- dindx], rta._t[idx9.max()+dindx], ls='--',colors='cyan')
