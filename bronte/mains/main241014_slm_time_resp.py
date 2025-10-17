@@ -115,8 +115,209 @@ def _fit_exp_linearized(t: np.ndarray, y: np.ndarray, kind: str, pre_level: floa
     return float(tau), (float(r2) if r2 is not None else np.nan)
 
 
+def _latency_diagnostic_plots(t, v, t50, T, delta, label="PD1"):
+    if len(t50) == 0 or not np.isfinite(T) or not np.isfinite(delta):
+        print("[WARN] nothing to plot for latency diagnostics.")
+        return
+    g_first = math.floor((t[0] - delta) / T)
+    g_last  = math.ceil((t[-1] - delta) / T)
+    grid_times = delta + np.arange(g_first, g_last + 1) * T
+
+    plt.figure()
+    plt.plot(t, v, label=label)
+    plt.scatter(t50, np.interp(t50, t, v), marker='o', s=25, label="t50")
+    for gt in grid_times:
+        plt.axvline(gt, alpha=0.25)
+    plt.title(f"{label}: grid overlay (δ={delta*1e3:.2f} ms, T={T*1e3:.2f} ms)")
+    plt.xlabel("Time (s)"); plt.ylabel("Voltage (V)"); plt.legend(); plt.show()
+
+    phase = np.mod(t50 - delta, T)
+    plt.figure()
+    plt.plot(np.arange(len(phase)), phase*1e3, 'o-')
+    plt.title(f"{label}: phase-fold t50 (mean={np.mean(phase)*1e3:.2f} ms, std={np.std(phase, ddof=1)*1e3:.2f} ms)")
+    plt.xlabel("edge index"); plt.ylabel("phase (ms)"); plt.show()
+
+    plt.figure()
+    bins = max(6, int(round(math.sqrt(len(phase)))))
+    plt.hist(phase*1e3, bins=bins)
+    plt.title(f"{label}: phase histogram"); plt.xlabel("phase (ms)"); plt.ylabel("count"); plt.show()
+
+    n = np.round((t50 - delta) / T).astype(int)
+    t_fit = delta + n * T
+    r = t50 - t_fit
+    plt.figure()
+    plt.plot(n, t50*1e3, 'o', label="t50 data")
+    plt.plot(n, t_fit*1e3, '-', label="δ + n·T")
+    plt.title(f"{label}: t50 vs index (RMS resid={np.sqrt(np.mean(r*r))*1e3:.2f} ms)")
+    plt.xlabel("toggle index n"); plt.ylabel("time (ms)"); plt.legend(); plt.show()
+
+    plt.figure()
+    plt.plot(t50, r*1e3, 'o-')
+    plt.axhline(0, color='k', alpha=0.3)
+    s = np.std(r, ddof=1) if len(r) > 1 else np.nan
+    plt.axhline(+s*1e3, color='r', alpha=0.3, linestyle='--')
+    plt.axhline(-s*1e3, color='r', alpha=0.3, linestyle='--')
+    plt.title(f"{label}: residuals vs time (std={s*1e3:.2f} ms)")
+    plt.xlabel("time (s)"); plt.ylabel("residual (ms)"); plt.show()
+
+
+# ========= Helpers per latenza assoluta (t0 noto) =========
+def _robust_dwell_from_edges(r_times: np.ndarray, f_times: np.ndarray) -> float:
+    Td_r = 0.5*np.median(np.diff(np.sort(r_times))) if len(r_times) >= 2 else np.nan
+    Td_f = 0.5*np.median(np.diff(np.sort(f_times))) if len(f_times) >= 2 else np.nan
+    Td = np.nanmedian([Td_r, Td_f])
+    return float(Td) if np.isfinite(Td) and Td > 0 else np.nan
+
+def _build_trigger_grids_from_t0(t0: float, Td: float, tmin: float, tmax: float, first_kind: str):
+    assert first_kind in ("rise", "fall")
+    pad = 2*Td
+    lo = tmin - pad; hi = tmax + pad
+    if first_kind == "rise":
+        phi_r = t0;      phi_f = t0 + Td
+    else:
+        phi_f = t0;      phi_r = t0 + Td
+    def grid(phi):
+        n_lo = int(math.floor((lo - phi)/Td)) - 1
+        n_hi = int(math.ceil ((hi - phi)/Td)) + 1
+        return phi + Td*np.arange(n_lo, n_hi+1)
+    C_rise = grid(phi_r); C_fall = grid(phi_f)
+    m_r = (C_rise >= (tmin - 0.25*Td)) & (C_rise <= (tmax + 0.25*Td))
+    m_f = (C_fall >= (tmin - 0.25*Td)) & (C_fall <= (tmax + 0.25*Td))
+    return C_rise[m_r], C_fall[m_f]
+
+def _nearest_offsets(events: np.ndarray, grid: np.ndarray) -> Tuple[np.ndarray, np.ndarray]:
+    """Ritorna (offsets, assigned_grid) con offsets = events - trigger_assegnato."""
+    if events.size == 0 or grid.size == 0:
+        return np.array([], float), np.array([], float)
+    idx = np.searchsorted(grid, events)
+    idx0 = np.clip(idx-1, 0, len(grid)-1)
+    idx1 = np.clip(idx,   0, len(grid)-1)
+    g0 = grid[idx0]; g1 = grid[idx1]
+    pick = np.where(np.abs(events-g0) <= np.abs(events-g1), g0, g1)
+    return (events - pick), pick
+
+def _get_rise_fall_times(out: Dict, rise_key: str = "t90", fall_key: str = "t10") -> Tuple[np.ndarray, np.ndarray]:
+    r_times = np.array([m[rise_key] for m in out["rise"]], float) if len(out["rise"]) else np.array([], float)
+    f_times = np.array([m[fall_key] for m in out["fall"]], float) if len(out["fall"]) else np.array([], float)
+    if r_times.size: r_times.sort()
+    if f_times.size: f_times.sort()
+    return r_times, f_times
+
+def estimate_absolute_latency_with_t0_levels(out: Dict,
+                                             t0: float,
+                                             Td_hint: Optional[float] = None,
+                                             rise_key: str = "t90",
+                                             fall_key: str = "t10") -> Dict:
+    """
+    Usa t0 (primo trigger noto) e i crossing selezionati:
+      - rise_key per i fronti di salita (default 't90')
+      - fall_key per i fronti di discesa (default 't10')
+    per stimare:
+      Td, il tipo del primo comando (rise/fall), Lr, Lf, jitter RMS, e le griglie di trigger.
+    Definizioni:
+      Lr = mediana( t90_rise - trigger_rise_associato )
+      Lf = mediana( t10_fall - trigger_fall_associato )
+    """
+    r_times, f_times = _get_rise_fall_times(out, rise_key=rise_key, fall_key=fall_key)
+    if r_times.size + f_times.size < 2:
+        return dict(ok=False, reason="Too few events for absolute latency", t0=t0)
+
+    # 1) Td stimato dai dati; se c'è un hint lo combino robustamente
+    Td_est = _robust_dwell_from_edges(r_times, f_times)
+    if np.isfinite(Td_hint) and Td_hint > 0:
+        Td = 0.5*(Td_est + Td_hint) if (np.isfinite(Td_est) and Td_est > 0) else float(Td_hint)
+    else:
+        Td = float(Td_est)
+    if not (np.isfinite(Td) and Td > 0):
+        return dict(ok=False, reason="Cannot estimate Td", t0=t0)
+
+    tmin = np.nanmin(np.concatenate([r_times, f_times]) if f_times.size else r_times)
+    tmax = np.nanmax(np.concatenate([r_times, f_times]) if f_times.size else r_times)
+
+    # 2) prova due ipotesi su t0: rise o fall → scegli quella con residui minori
+    best = None
+    for hyp in ("rise", "fall"):
+        C_rise, C_fall = _build_trigger_grids_from_t0(t0, Td, tmin, tmax, hyp)
+
+        # OFFSETS E ASSEGNAZIONI (!!! spacchettati correttamente)
+        off_r, assign_r = _nearest_offsets(r_times, C_rise)
+        off_f, assign_f = _nearest_offsets(f_times, C_fall)
+
+        # Lr/Lf come mediane degli offset
+        Lr = float(np.nanmedian(off_r)) if off_r.size else np.nan
+        Lf = float(np.nanmedian(off_f)) if off_f.size else np.nan
+
+        res_r = off_r - Lr if np.isfinite(Lr) else np.array([], float)
+        res_f = off_f - Lf if np.isfinite(Lf) else np.array([], float)
+        rms = np.sqrt(np.nanmean(np.concatenate([res_r**2, res_f**2]))) if (res_r.size+res_f.size) else np.inf
+
+        cand = dict(
+            ok=True, t0=t0, first_kind=hyp, Td=Td,
+            C_rise=C_rise, C_fall=C_fall,
+            Lr=Lr, Lf=Lf, rms=rms,
+            rise_key=rise_key, fall_key=fall_key,
+            rise_times=r_times, fall_times=f_times,  # utili per il plot "barre"
+            assigned_rise=assign_r, assigned_fall=assign_f
+        )
+        if (best is None) or (cand["rms"] < best["rms"]):
+            best = cand
+
+    return best
+
+
+# ========= Plot a barre: trigger e livelli (t90 rise, t10 fall) =========
+def plot_triggers_and_levels_bars(rta, out, absres, channel_title="PD1", show_markers=False):
+    """
+    Barre verticali su:
+      - trigger rise (sottili)
+      - trigger fall (sottili)
+      - t90 (rise) -- tratteggiate
+      - t10 (fall) -- tratteggiate
+    Opzionale: marker sui punti evento.
+    """
+    t = rta.t
+    v = rta.v1 if out["channel"]=="PD1" else rta.v2
+
+    # eventi ESATTI usati per la latenza (come richiesto)
+    r_times = absres["rise_times"]   # t90 dei rise
+    f_times = absres["fall_times"]   # t10 dei fall
+
+    C_r = absres["C_rise"]; C_f = absres["C_fall"]
+    Lr = absres["Lr"]; Lf = absres["Lf"]
+
+    plt.figure(figsize=(12,5))
+    plt.plot(t, v, lw=0.8, alpha=0.65, label=f"{channel_title} (V)")
+
+    # Trigger puri
+    for c in C_r:
+        if t[0] <= c <= t[-1]: plt.axvline(c, alpha=0.35, linewidth=1.0, label="trigger rise")
+    for c in C_f:
+        if t[0] <= c <= t[-1]: plt.axvline(c, alpha=0.35, linewidth=1.0, label="trigger fall")
+
+    # t90 (rise) e t10 (fall) — tratteggiate
+    for tr in r_times:
+        if t[0] <= tr <= t[-1]: plt.axvline(tr, alpha=0.85, linestyle="--", linewidth=1.3, label="rise t90")
+    for tf in f_times:
+        if t[0] <= tf <= t[-1]: plt.axvline(tf, alpha=0.85, linestyle="--", linewidth=1.3, label="fall t10")
+
+    if show_markers:
+        if r_times.size: plt.scatter(r_times, np.interp(r_times, t, v), s=30, marker="^", label="marker t90 (rise)")
+        if f_times.size: plt.scatter(f_times, np.interp(f_times, t, v), s=30, marker="v", label="marker t10 (fall)")
+
+    # legenda unica (senza duplicati)
+    h, l = plt.gca().get_legend_handles_labels()
+    uniq = dict(zip(l, h))
+    plt.legend(uniq.values(), uniq.keys(), loc="best")
+
+    Lr_ms = (Lr*1e3) if np.isfinite(Lr) else float('nan')
+    Lf_ms = (Lf*1e3) if np.isfinite(Lf) else float('nan')
+    plt.title(f"{channel_title}: Trigger | t90(rise) | t10(fall) — Lr≈{Lr_ms:.2f} ms, Lf≈{Lf_ms:.2f} ms")
+    plt.xlabel("Time (s)"); plt.ylabel("Voltage (V)")
+    plt.tight_layout(); plt.show()
+
+
 # =========================
-# 3) Classe di analisi
+# 3) Classe di analisi (come tua versione)
 # =========================
 class ResponseTimeAnalyzer:
     WINDOW_SIZE     = 8
@@ -161,7 +362,6 @@ class ResponseTimeAnalyzer:
         self._g_v1 = np.diff(self._v1, prepend=self._v1[0])
         self._g_v2 = np.diff(self._v2, prepend=self._v2[0])
 
-    # ---------- Detection su s(t) ----------
     def detect_transitions_s(self, grad_threshold_k: float = 6.0, min_separation_ms: float = 70.0) -> List[int]:
         fs = self._fs
         g = self._g_s
@@ -221,7 +421,6 @@ class ResponseTimeAnalyzer:
         if (abs(delta) < self.MIN_EDGE_AMP_V) or (abs(delta) < self.MIN_EDGE_SNR * max(noise, 1e-12)):
             return None
 
-        # livelli per 10%, 50%, 90%
         y10 = pre + 0.1 * delta
         y50 = pre + 0.5 * delta
         y90 = pre + 0.9 * delta
@@ -241,7 +440,7 @@ class ResponseTimeAnalyzer:
             kind = "falling"
             if not (t10 < t50 < t90):
                 return None
-            width_ms = (t90 - t10) * 1000.0  # definizione uniforme: 10→90 sempre positivo
+            width_ms = (t90 - t10) * 1000.0
 
         a10 = _estimate_slope(self._t, y, t10, window_ms=1.0)
         a90 = _estimate_slope(self._t, y, t90, window_ms=1.0)
@@ -260,18 +459,10 @@ class ResponseTimeAnalyzer:
                     width_exp_ms=float(tr_exp_ms) if not np.isnan(tr_exp_ms) else np.nan,
                     exp_r2=(float(r2) if r2 is not None else np.nan))
 
-    def analyze_one_channel_with_dwell(
-        self,
-        channel: str,
-        dwell_time_s: float,
-        grad_threshold_k=6.0,
-        min_separation_ms=70.0,
-        pre_ms=5.0,
-        post_ms=25.0,
-        search_ms=30.0,
-        expected_rise: int = 9,
-        expected_fall: int = 10,
-    ) -> Dict:
+    def analyze_one_channel_with_dwell(self, channel: str, dwell_time_s: float,
+                                       grad_threshold_k=6.0, min_separation_ms=70.0,
+                                       pre_ms=5.0, post_ms=25.0, search_ms=30.0,
+                                       expected_rise: int = 9, expected_fall: int = 10) -> Dict:
 
         idxs_s = self.detect_transitions_s(grad_threshold_k=grad_threshold_k,
                                            min_separation_ms=min_separation_ms)
@@ -292,7 +483,7 @@ class ResponseTimeAnalyzer:
 
         def _add_missing(target_list, seeds_list, want_kind):
             need = (expected_fall if want_kind=="falling" else expected_rise) - len(target_list)
-            if need <= 0 or len(seeds_list) == 0: 
+            if need <= 0 or len(seeds_list) == 0:
                 return
             min_sep = int(round(self._fs * (min_separation_ms / 1000.0)))
             for mseed in seeds_list:
@@ -356,7 +547,61 @@ class ResponseTimeAnalyzer:
             )
         )
 
-    # -------- pairing robusto per simmetria: accoppia per tempo (±tol_ms)
+    @staticmethod
+    def _grid_phase_latency(t_events: np.ndarray, T: float, nsteps: int = 4001) -> Tuple[float, float, float]:
+        if (t_events is None) or (len(t_events) < 2) or not np.isfinite(T) or T <= 0:
+            return (np.nan, np.nan, np.nan)
+        t = np.sort(np.array(t_events, float))
+        deltas = np.linspace(0.0, T, nsteps, endpoint=False)
+        best_idx, best_rms = None, np.inf
+        best_resid = None
+        for j, d in enumerate(deltas):
+            x = t - d
+            k = np.round(x / T)
+            r = x - k*T
+            rms = float(np.sqrt(np.mean(r*r)))
+            if rms < best_rms:
+                best_idx, best_rms, best_resid = j, rms, r
+        delta = float(deltas[best_idx])
+        residual_std = float(np.std(best_resid, ddof=1)) if len(t) > 1 else best_rms
+        return (delta, best_rms, residual_std)
+
+    @staticmethod
+    def _linear_fit_latency(t_events: np.ndarray) -> Tuple[float, float, float, float]:
+        if (t_events is None) or (len(t_events) < 2):
+            return (np.nan, np.nan, np.nan, np.nan)
+        t = np.sort(np.array(t_events, float))
+        N = len(t)
+        n = np.arange(N, dtype=float)
+        n0 = n - np.mean(n)
+        t0 = t - np.mean(t)
+        denom = np.sum(n0*n0)
+        if denom <= 0:
+            return (np.nan, np.nan, np.nan, np.nan)
+        T_eff = float(np.sum(n0*t0) / denom)
+        delta = float(np.mean(t) - T_eff*np.mean(n))
+        r = t - (delta + n*T_eff)
+        jitter_rms   = float(np.sqrt(np.mean(r*r)))
+        residual_std = float(np.std(r, ddof=1) if N>1 else 0.0)
+        if np.isfinite(T_eff) and T_eff > 0:
+            delta = float(delta % T_eff)
+        return (delta, T_eff, jitter_rms, residual_std)
+
+    @staticmethod
+    def _bootstrap_delta_A(t_events: np.ndarray, T: float, B: int = 200) -> Tuple[float, float]:
+        if (t_events is None) or (len(t_events) < 2) or not np.isfinite(T) or T <= 0:
+            return (np.nan, np.nan)
+        t = np.sort(np.array(t_events, float))
+        N = len(t)
+        ds = []
+        for _ in range(B):
+            idx = np.random.randint(0, N, size=N)
+            tb = np.sort(t[idx])
+            d, _, _ = ResponseTimeAnalyzer._grid_phase_latency(tb, T)
+            ds.append(d)
+        ds = np.array(ds)
+        return float(np.percentile(ds, 2.5)), float(np.percentile(ds, 97.5))
+        # -------- pairing robusto per simmetria: accoppia per tempo (±tol_ms)
     @staticmethod
     def _pair_by_time(A_times: List[float], B_times: List[float], tol_ms: float = 10.0) -> List[Tuple[int,int]]:
         A = np.array(A_times); B = np.array(B_times)
@@ -378,6 +623,7 @@ class ResponseTimeAnalyzer:
         diffs_to_PD1 = []
         for i,j in p_r_f:
             diffs_to_PD1.append(out_PD1["rise"][i]["width_10_90_ms"] - out_PD2["fall"][j]["width_10_90_ms"])
+
         # →PD2: PD1 fall vs PD2 rise
         t_PD1_f = [m["t_center"] for m in out_PD1["fall"]]
         t_PD2_r = [m["t_center"] for m in out_PD2["rise"]]
@@ -385,11 +631,19 @@ class ResponseTimeAnalyzer:
         diffs_to_PD2 = []
         for i,j in p_f_r:
             diffs_to_PD2.append(out_PD1["fall"][i]["width_10_90_ms"] - out_PD2["rise"][j]["width_10_90_ms"])
+
         def _stats(v):
-            if len(v)==0: return dict(n=0, mean=np.nan, std=np.nan, median=np.nan, abs_mean=np.nan)
+            if len(v)==0: 
+                return dict(n=0, mean=np.nan, std=np.nan, median=np.nan, abs_mean=np.nan)
             arr = np.array(v, float)
-            return dict(n=len(arr), mean=float(np.mean(arr)), std=float(np.std(arr, ddof=1) if len(arr)>1 else 0.0),
-                        median=float(np.median(arr)), abs_mean=float(np.mean(np.abs(arr))))
+            return dict(
+                n=len(arr),
+                mean=float(np.mean(arr)),
+                std=float(np.std(arr, ddof=1) if len(arr)>1 else 0.0),
+                median=float(np.median(arr)),
+                abs_mean=float(np.mean(np.abs(arr)))
+            )
+
         return dict(
             pairs_summary = dict(
                 to_PD1 = _stats(diffs_to_PD1),
@@ -400,73 +654,6 @@ class ResponseTimeAnalyzer:
             pairs_idx = dict(to_PD1=p_r_f, to_PD2=p_f_r)
         )
 
-    # ===== Latenza: metodo A (grid) =====
-    @staticmethod
-    def _grid_phase_latency(t_events: np.ndarray, T: float, nsteps: int = 4001) -> Tuple[float, float, float]:
-        """
-        Minimizziamo l'RMS dei residui rispetto alla griglia {delta + k*T}.
-        Ritorna (delta_s in [0,T), jitter_rms_s, residual_std_s).
-        """
-        if (t_events is None) or (len(t_events) < 2) or not np.isfinite(T) or T <= 0:
-            return (np.nan, np.nan, np.nan)
-        t = np.sort(np.array(t_events, float))
-        deltas = np.linspace(0.0, T, nsteps, endpoint=False)
-        best_idx, best_rms = None, np.inf
-        best_resid = None
-        for j, d in enumerate(deltas):
-            x = t - d
-            k = np.round(x / T)
-            r = x - k*T
-            rms = float(np.sqrt(np.mean(r*r)))
-            if rms < best_rms:
-                best_idx, best_rms, best_resid = j, rms, r
-        delta = float(deltas[best_idx])
-        residual_std = float(np.std(best_resid, ddof=1)) if len(t) > 1 else best_rms
-        return (delta, best_rms, residual_std)
-
-    # ===== Latenza: metodo B (fit lineare) =====
-    @staticmethod
-    def _linear_fit_latency(t_events: np.ndarray) -> Tuple[float, float, float, float]:
-        """
-        Fit lineare: t_n = delta + n*T_eff, con t ordinati e n=0..N-1.
-        Ritorna (delta_s, T_eff_s, jitter_rms_s, residual_std_s).
-        """
-        if (t_events is None) or (len(t_events) < 2):
-            return (np.nan, np.nan, np.nan, np.nan)
-        t = np.sort(np.array(t_events, float))
-        N = len(t)
-        n = np.arange(N, dtype=float)
-        n0 = n - np.mean(n)
-        t0 = t - np.mean(t)
-        denom = np.sum(n0*n0)
-        if denom <= 0:
-            return (np.nan, np.nan, np.nan, np.nan)
-        T_eff = float(np.sum(n0*t0) / denom)
-        delta = float(np.mean(t) - T_eff*np.mean(n))
-        r = t - (delta + n*T_eff)
-        jitter_rms   = float(np.sqrt(np.mean(r*r)))
-        residual_std = float(np.std(r, ddof=1) if N>1 else 0.0)
-        if np.isfinite(T_eff) and T_eff > 0:
-            delta = float(delta % T_eff)
-        return (delta, T_eff, jitter_rms, residual_std)
-
-    # ===== (Opzionale) Bootstrap su latenza =====
-    @staticmethod
-    def _bootstrap_delta_A(t_events: np.ndarray, T: float, B: int = 200) -> Tuple[float, float]:
-        if (t_events is None) or (len(t_events) < 2) or not np.isfinite(T) or T <= 0:
-            return (np.nan, np.nan)
-        t = np.sort(np.array(t_events, float))
-        N = len(t)
-        ds = []
-        for _ in range(B):
-            idx = np.random.randint(0, N, size=N)
-            tb = np.sort(t[idx])
-            d, _, _ = ResponseTimeAnalyzer._grid_phase_latency(tb, T)
-            ds.append(d)
-        ds = np.array(ds)
-        return float(np.percentile(ds, 2.5)), float(np.percentile(ds, 97.5))
-
-        # ------- getters (mancavano!) -------
     @property
     def t(self) -> np.ndarray:
         return self._t
@@ -487,6 +674,7 @@ class ResponseTimeAnalyzer:
     def fs(self) -> float:
         return self._fs
 
+
 # =========================
 # 4) Main
 # =========================
@@ -494,8 +682,11 @@ def main_blink_data_dwt100ms():
     FDIR = "D:\\phd_slm_edo\\old_data\\slm_time_response\\photodiode\\"
     fname = FDIR + "20240906_1441_blink_loop10_dwell100ms\\Analog - 9-6-2024 2-41-15.63336 PM.csv"
 
-    # *** imposta qui il dwell teorico (p.es. 0.1065 se usi 106.5 ms) ***
+    # dwell teorico (hint)
     dwell_time_in_s = 106.5e-3
+
+    # t0 del primo comando (trigger noto)
+    t0_first_cmd_s = 1.102010
 
     if not os.path.exists(fname):
         alt = os.path.join(os.getcwd(), "Analog - 9-6-2024 2-41-15.63336 PM.csv")
@@ -514,7 +705,7 @@ def main_blink_data_dwt100ms():
             pre_ms=5.0, post_ms=25.0, search_ms=30.0,
             expected_rise=9, expected_fall=10)
 
-    # Pairing simmetria per tempo (±10 ms)
+    # Pairing simmetria
     sym = rta.symmetry_pairs(out1, out2, tol_ms=10.0)
 
     # ----- STAMPA RIEPILOGO -----
@@ -535,9 +726,9 @@ def main_blink_data_dwt100ms():
     _fmt_block("PD1", out1["summary"])
     _fmt_block("PD2", out2["summary"])
 
-    # ----- STAMPA PER-EDGE (PD1 & PD2) -----
+    # ----- STAMPA PER-EDGE -----
     def _print_edges(label, edges):
-        if len(edges)==0: 
+        if len(edges)==0:
             print(f"\n-- {label} --\n(nessun fronte)")
             return
         print(f"\n-- {label} --")
@@ -551,7 +742,7 @@ def main_blink_data_dwt100ms():
     _print_edges("PD2 Rising", out2["rise"])
     _print_edges("PD2 Falling", out2["fall"])
 
-    # ----- SYMMETRY PAIRS -----
+    # ----- SYMMETRY -----
     ps = sym["pairs_summary"]
     print("\n--- Symmetry test (paired by time, ±10 ms) ---")
     print(f"→PD1 pairs (PD1 rise vs PD2 fall): n={ps['n_pairs_to_PD1']}, mean Δ={ps['to_PD1']['mean']:.3f} ms, ⟨|Δ|⟩={ps['to_PD1']['abs_mean']:.3f} ms, std={ps['to_PD1']['std']:.3f} ms")
@@ -562,18 +753,14 @@ def main_blink_data_dwt100ms():
     t50_pd1_rise = [m["t50"] for m in out1["rise"]]
     t50_pd1_fall = [m["t50"] for m in out1["fall"]]
 
-    # Metodo A: griglia con T (dwell teorico scelto) e con 2T
     dA_all,  jA_all,  sA_all  = ResponseTimeAnalyzer._grid_phase_latency(t50_pd1_all,  dwell_time_in_s)
     dA_rise, jA_rise, sA_rise = ResponseTimeAnalyzer._grid_phase_latency(t50_pd1_rise, 2*dwell_time_in_s)
     dA_fall, jA_fall, sA_fall = ResponseTimeAnalyzer._grid_phase_latency(t50_pd1_fall, 2*dwell_time_in_s)
 
-    # Metodo B: fit lineare (stima T_eff e delta)
     dB_all,  T_eff_all,  jB_all,  sB_all  = ResponseTimeAnalyzer._linear_fit_latency(t50_pd1_all)
     dB_rise, T_eff_rise, jB_rise, sB_rise = ResponseTimeAnalyzer._linear_fit_latency(t50_pd1_rise)
     dB_fall, T_eff_fall, jB_fall, sB_fall = ResponseTimeAnalyzer._linear_fit_latency(t50_pd1_fall)
 
-    # (Opzionale) bootstrap 95% CI su delta (Metodo A)
-    # lo/hi in secondi
     lo_all, hi_all = ResponseTimeAnalyzer._bootstrap_delta_A(np.array(t50_pd1_all), dwell_time_in_s, B=400)
 
     print("\n--- Command latency estimate on PD1 (no trigger) ---")
@@ -583,12 +770,28 @@ def main_blink_data_dwt100ms():
     print(f"[B-linear]       all:  N={len(t50_pd1_all):2d},  delta≈{dB_all*1000:.2f} ms,  T_eff≈{T_eff_all*1000:.2f} ms  (~dwell {dwell_time_in_s*1000:.2f} ms), jitter_RMS≈{jB_all*1000:.2f} ms")
     print(f"[B-linear]       rise: N={len(t50_pd1_rise):2d}, delta≈{dB_rise*1000:.2f} ms,  T_eff≈{T_eff_rise*1000:.2f} ms  (~2*dwell {2*dwell_time_in_s*1000:.2f} ms), jitter_RMS≈{jB_rise*1000:.2f} ms")
     print(f"[B-linear]       fall: N={len(t50_pd1_fall):2d}, delta≈{dB_fall*1000:.2f} ms,  T_eff≈{T_eff_fall*1000:.2f} ms  (~2*dwell {2*dwell_time_in_s*1000:.2f} ms), jitter_RMS≈{jB_fall*1000:.2f} ms")
-    print (lo_all)
-    print(hi_all)
-    # Stima "errore su delta": std residual / sqrt(N) (errore tipo standard)
-    if len(t50_pd1_all) >= 2:
-        se_delta_ms = (sA_all*1000.0)/math.sqrt(len(t50_pd1_all))
-        print(f"→ Uncertainty on δ (A, all) ~ residual_std/√N ≈ {se_delta_ms:.3f} ms  (jitter per-event ≈ {sA_all*1000:.3f} ms)")
+    print(f"Bootstrap 95% CI on δ (A, all): [{lo_all*1e3:.2f}, {hi_all*1e3:.2f}] ms")
+
+    # ---------- NUOVO: latenza ASSOLUTA da t0 (rise=t90, fall=t10) ----------
+    absres = estimate_absolute_latency_with_t0_levels(out1, t0_first_cmd_s,
+                                                      Td_hint=dwell_time_in_s,
+                                                      rise_key="t90", fall_key="t90")
+    if absres.get("ok", False):
+        Td_ms = absres["Td"]*1e3
+        Lr_ms = absres["Lr"]*1e3 if np.isfinite(absres["Lr"]) else float('nan')
+        Lf_ms = absres["Lf"]*1e3 if np.isfinite(absres["Lf"]) else float('nan')
+
+        print("\n=== ABSOLUTE LATENCY from first trigger t0 (levels: rise=t90, fall=t10) ===")
+        print(f"First command kind: {absres['first_kind']}")
+        print(f"Dwell Td ≈ {Td_ms:.3f} ms")
+        print(f"Latency L_r (t90 - trigger_rise) ≈ {Lr_ms:.3f} ms")
+        print(f"Latency L_f (t10 - trigger_fall) ≈ {Lf_ms:.3f} ms")
+        print(f"Residual RMS (jitter) ≈ {absres['rms']*1e3:.3f} ms")
+
+        # Plot pulito: solo barre su trigger e su t90/t10 (marker opzionali)
+        plot_triggers_and_levels_bars(rta, out1, absres, channel_title="PD1", show_markers=True)
+    else:
+        print("\n[WARN] Absolute latency estimation (t90/t10) failed:", absres.get("reason", "unknown"))
 
     # ---------- PLOT 0: PD1 & PD2 insieme ----------
     plt.figure()
@@ -623,7 +826,7 @@ def main_blink_data_dwt100ms():
     plt.title("PD2 voltage with detected edges")
     plt.legend(); plt.show()
 
-    # ---------- PLOT C: overlay stile “figura 3” per PD1 e PD2 ----------
+    # ---------- overlay locali (come tua “figura 3”) ----------
     def _overlay(ax, channel: str, meas: List[Dict], fs, t, v, title):
         win_ms = 20.0
         n_win = max(1, int(round(fs * (win_ms / 1000.0))))
@@ -674,5 +877,7 @@ def main_blink_data_dwt100ms():
     _dump_csv(out2, os.path.join(os.getcwd(), "slm_edge_timings_PD2.csv"))
 
 
+# if __name__ == "__main__":
+#     main_blink_data_dwt100ms()
 
 
