@@ -8,6 +8,10 @@ import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 
+import matplotlib as mpl
+
+from matplotlib.ticker import AutoMinorLocator, MaxNLocator
+
 
 # =========================
 # 1) Lettura CSV DAQami
@@ -678,6 +682,236 @@ class ResponseTimeAnalyzer:
 # =========================
 # 4) Main
 # =========================
+def main_blink_data_dwt100ms_with_cute_plots():
+    FDIR = "D:\\phd_slm_edo\\old_data\\slm_time_response\\photodiode\\"
+    fname = FDIR + "20240906_1441_blink_loop10_dwell100ms\\Analog - 9-6-2024 2-41-15.63336 PM.csv"
+
+    # dwell teorico (hint)
+    dwell_time_in_s = 106.5e-3
+
+    # t0 del primo comando (trigger noto)
+    t0_first_cmd_s = 1.102010
+
+    if not os.path.exists(fname):
+        alt = os.path.join(os.getcwd(), "Analog - 9-6-2024 2-41-15.63336 PM.csv")
+        if os.path.exists(alt):
+            fname = alt
+
+    rta = ResponseTimeAnalyzer(fname)
+
+    # ====== Stile globale “da tesi” ======
+    mpl.rcParams.update({
+        "figure.dpi": 170,
+        "axes.labelsize": 14,
+        "axes.titlesize": 15,
+        "xtick.labelsize": 12,
+        "ytick.labelsize": 12,
+        "legend.fontsize": 11,
+        "lines.linewidth": 1.6,
+        "axes.grid": True,
+        "grid.linestyle": "--",
+        "grid.alpha": 0.35,
+    })
+
+    # helper per stile assi
+    def _beautify(ax, xlabel=None, ylabel=None, title=None, xmaj=7, ymaj=6):
+        if title:  ax.set_title(title)
+        if xlabel: ax.set_xlabel(xlabel)
+        if ylabel: ax.set_ylabel(ylabel)
+        ax.xaxis.set_major_locator(MaxNLocator(xmaj))
+        ax.yaxis.set_major_locator(MaxNLocator(ymaj))
+        ax.xaxis.set_minor_locator(AutoMinorLocator(2))
+        ax.yaxis.set_minor_locator(AutoMinorLocator(2))
+        # minor grid con tratteggio più fine
+        ax.grid(which="minor", linestyle=":", alpha=0.25)
+        ax.tick_params(direction="out", length=4, width=0.9)
+        # bordi puliti
+        ax.spines["top"].set_visible(False)
+        ax.spines["right"].set_visible(False)
+
+    # ====== Analisi canali ======
+    out1 = rta.analyze_one_channel_with_dwell(
+        "PD1", dwell_time_in_s,
+        grad_threshold_k=6.0, min_separation_ms=70.0,
+        pre_ms=5.0, post_ms=25.0, search_ms=30.0,
+        expected_rise=9, expected_fall=10
+    )
+    out2 = rta.analyze_one_channel_with_dwell(
+        "PD2", dwell_time_in_s,
+        grad_threshold_k=6.0, min_separation_ms=70.0,
+        pre_ms=5.0, post_ms=25.0, search_ms=30.0,
+        expected_rise=9, expected_fall=10
+    )
+
+    # Pairing simmetria
+    sym = rta.symmetry_pairs(out1, out2, tol_ms=10.0)
+
+    # ----- STAMPA RIEPILOGO (immutata) -----
+    def _fmt_block(name, summ):
+        print(f"\n[{name}]  Fs(raw)={summ['fs_raw_Hz']:.2f} Hz | Fs(dec)={summ['fs_Hz']:.2f} Hz | toggles(s)={summ['n_detected_on_s']}")
+        def _fmt_stats(title, st):
+            if st["n"] == 0:
+                print(f"  {title}: n=0")
+            else:
+                print(f"  {title}: n={st['n']}, mean={st['mean']:.3f} ms, median={st['median']:.3f} ms, std={st['std']:.3f} ms")
+        _fmt_stats("Rise 10–90% (linear)", summ["rise_10_90_stats"])
+        _fmt_stats("Fall 10–90% (linear)", summ["fall_10_90_stats"])
+        _fmt_stats("Rise 10–90% (exp-fit ≈ τ ln 9)", summ["rise_exp_stats"])
+        _fmt_stats("Fall 10–90% (exp-fit ≈ τ ln 9)", summ["fall_exp_stats"])
+
+    print("\n=== SLM Response Time Analysis — PD1 & PD2 (same robust procedure on each channel) ===")
+    print(f"File: {fname}")
+    _fmt_block("PD1", out1["summary"])
+    _fmt_block("PD2", out2["summary"])
+
+    # ----- STAMPA PER-EDGE (immutata) -----
+    def _print_edges(label, edges):
+        if len(edges)==0:
+            print(f"\n-- {label} --\n(nessun fronte)")
+            return
+        print(f"\n-- {label} --")
+        for k, m in enumerate(edges, 1):
+            unc = (m['sigma_width_ms'] if np.isfinite(m['sigma_width_ms']) else float('nan'))
+            print(f"{label[0]}{k:02d} @ t={m['t_center']:.6f}s | 10–90={m['width_10_90_ms']:.3f} ms ±{unc:.3f} ms"
+                  f" | exp: τ={m['tau_ms']:.3f} ms, 10–90≈{m['width_exp_ms']:.3f} ms | R²={m['exp_r2']:.3f}")
+
+    _print_edges("PD1 Rising", out1["rise"])
+    _print_edges("PD1 Falling", out1["fall"])
+    _print_edges("PD2 Rising", out2["rise"])
+    _print_edges("PD2 Falling", out2["fall"])
+
+    # ----- SYMMETRY (immutata) -----
+    ps = sym["pairs_summary"]
+    print("\n--- Symmetry test (paired by time, ±10 ms) ---")
+    print(f"→PD1 pairs (PD1 rise vs PD2 fall): n={ps['n_pairs_to_PD1']}, mean Δ={ps['to_PD1']['mean']:.3f} ms, ⟨|Δ|⟩={ps['to_PD1']['abs_mean']:.3f} ms, std={ps['to_PD1']['std']:.3f} ms")
+    print(f"→PD2 pairs (PD1 fall vs PD2 rise): n={ps['n_pairs_to_PD2']}, mean Δ={ps['to_PD2']['mean']:.3f} ms, ⟨|Δ|⟩={ps['to_PD2']['abs_mean']:.3f} ms, std={ps['to_PD2']['std']:.3f} ms")
+
+    # ---------- LATENZA (senza trigger) sui t50 di PD1 ----------
+    t50_pd1_all  = [m["t50"] for m in out1["rise"]] + [m["t50"] for m in out1["fall"]]
+    t50_pd1_rise = [m["t50"] for m in out1["rise"]]
+    t50_pd1_fall = [m["t50"] for m in out1["fall"]]
+
+    dA_all,  jA_all,  sA_all  = ResponseTimeAnalyzer._grid_phase_latency(t50_pd1_all,  dwell_time_in_s)
+    dA_rise, jA_rise, sA_rise = ResponseTimeAnalyzer._grid_phase_latency(t50_pd1_rise, 2*dwell_time_in_s)
+    dA_fall, jA_fall, sA_fall = ResponseTimeAnalyzer._grid_phase_latency(t50_pd1_fall, 2*dwell_time_in_s)
+
+    dB_all,  T_eff_all,  jB_all,  sB_all  = ResponseTimeAnalyzer._linear_fit_latency(t50_pd1_all)
+    dB_rise, T_eff_rise, jB_rise, sB_rise = ResponseTimeAnalyzer._linear_fit_latency(t50_pd1_rise)
+    dB_fall, T_eff_fall, jB_fall, sB_fall = ResponseTimeAnalyzer._linear_fit_latency(t50_pd1_fall)
+
+    lo_all, hi_all = 0, 0  # Bootstrap opzionale
+
+    print("\n--- Command latency estimate on PD1 (no trigger) ---")
+    print(f"[A-grid, T]      all:  N={len(t50_pd1_all):2d},  delta≈{dA_all*1000:.2f} ms,  jitter_RMS≈{jA_all*1000:.2f} ms, residual_std≈{sA_all*1000:.2f} ms")
+    print(f"[A-grid, 2T]     rise: N={len(t50_pd1_rise):2d}, delta≈{dA_rise*1000:.2f} ms,  jitter_RMS≈{jA_rise*1000:.2f} ms, residual_std≈{sA_rise*1000:.2f} ms")
+    print(f"[A-grid, 2T]     fall: N={len(t50_pd1_fall):2d}, delta≈{dA_fall*1000:.2f} ms,  jitter_RMS≈{jA_fall*1000:.2f} ms, residual_std≈{sA_fall*1000:.2f} ms")
+    print(f"[B-linear]       all:  N={len(t50_pd1_all):2d},  delta≈{dB_all*1000:.2f} ms,  T_eff≈{T_eff_all*1000:.2f} ms  (~dwell {dwell_time_in_s*1000:.2f} ms), jitter_RMS≈{jB_all*1000:.2f} ms")
+    print(f"[B-linear]       rise: N={len(t50_pd1_rise):2d}, delta≈{dB_rise*1000:.2f} ms,  T_eff≈{T_eff_rise*1000:.2f} ms  (~2*dwell {2*dwell_time_in_s*1000:.2f} ms), jitter_RMS≈{jB_rise*1000:.2f} ms")
+    print(f"[B-linear]       fall: N={len(t50_pd1_fall):2d}, delta≈{dB_fall*1000:.2f} ms,  T_eff≈{T_eff_fall*1000:.2f} ms  (~2*dwell {2*dwell_time_in_s*1000:.2f} ms), jitter_RMS≈{jB_fall*1000:.2f} ms")
+    print(f"Bootstrap 95% CI on δ (A, all): [{lo_all*1e3:.2f}, {hi_all*1e3:.2f}] ms")
+
+    # ---------- NUOVO: latenza ASSOLUTA da t0 (rise=t90, fall=t10) ----------
+    absres = estimate_absolute_latency_with_t0_levels(
+        out1, t0_first_cmd_s, Td_hint=dwell_time_in_s, rise_key="t90", fall_key="t90"
+    )
+    if absres.get("ok", False):
+        Td_ms = absres["Td"]*1e3
+        Lr_ms = absres["Lr"]*1e3 if np.isfinite(absres["Lr"]) else float('nan')
+        Lf_ms = absres["Lf"]*1e3 if np.isfinite(absres["Lf"]) else float('nan')
+
+        print("\n=== ABSOLUTE LATENCY from first trigger t0 (levels: rise=t90, fall=t10) ===")
+        print(f"First command kind: {absres['first_kind']}")
+        print(f"Dwell Td ≈ {Td_ms:.3f} ms")
+        print(f"Latency L_r (t90 - trigger_rise) ≈ {Lr_ms:.3f} ms")
+        print(f"Latency L_f (t10 - trigger_fall) ≈ {Lf_ms:.3f} ms")
+        print(f"Residual RMS (jitter) ≈ {absres['rms']*1e3:.3f} ms")
+
+        plot_triggers_and_levels_bars(rta, out1, absres, channel_title="PD1", show_markers=True)
+    else:
+        print("\n[WARN] Absolute latency estimation (t90/t10) failed:", absres.get("reason", "unknown"))
+
+    # ---------- PLOT 0: PD1 & PD2 insieme ----------
+    fig0, ax0 = plt.subplots(figsize=(10.0, 4.6))
+    ax0.plot(rta.t, rta.v1, label="PD1 (SMA)")
+    ax0.plot(rta.t, rta.v2, label="PD2 (SMA)")
+    _beautify(ax0, xlabel="Time [s]", ylabel="Signal [V]", title="Photodiodes Signals — Dwell time = 100 ms")
+    ax0.legend(loc="best", frameon=True)
+    ax0.set_xlim(1.690, 2.550)
+    fig0.tight_layout()
+    plt.show()
+
+    # ---------- PLOT A: PD1 con marker ----------
+    figA, axA = plt.subplots(figsize=(10.0, 4.6))
+    axA.plot(rta.t, rta.v1, label="PD1 (V)")
+    idx_r_PD1 = [m["idx"] for m in out1["rise"]]
+    idx_f_PD1 = [m["idx"] for m in out1["fall"]]
+    tr1 = [rta.t[i] for i in idx_r_PD1]; tf1 = [rta.t[i] for i in idx_f_PD1]
+    yr1 = [rta.v1[i] for i in idx_r_PD1]; yf1 = [rta.v1[i] for i in idx_f_PD1]
+    axA.scatter(tr1, yr1, marker="^", color="tab:green", s=28, label="Rising on PD1", zorder=3)
+    axA.scatter(tf1, yf1, marker="v", color="tab:red",   s=28, label="Falling on PD1", zorder=3)
+    _beautify(axA, xlabel="Time [s]", ylabel="Voltage [V]", title="PD1 voltage with detected edges")
+    axA.legend(loc="best", frameon=True)
+    figA.tight_layout()
+    plt.show()
+
+    # ---------- PLOT B: PD2 con marker ----------
+    figB, axB = plt.subplots(figsize=(10.0, 4.6))
+    axB.plot(rta.t, rta.v2, label="PD2 (V)")
+    idx_r_PD2 = [m["idx"] for m in out2["rise"]]
+    idx_f_PD2 = [m["idx"] for m in out2["fall"]]
+    tr2 = [rta.t[i] for i in idx_r_PD2]; tf2 = [rta.t[i] for i in idx_f_PD2]
+    yr2 = [rta.v2[i] for i in idx_r_PD2]; yf2 = [rta.v2[i] for i in idx_f_PD2]
+    axB.scatter(tr2, yr2, marker="^", color="tab:green", s=28, label="Rising on PD2", zorder=3)
+    axB.scatter(tf2, yf2, marker="v", color="tab:red",   s=28, label="Falling on PD2", zorder=3)
+    _beautify(axB, xlabel="Time [s]", ylabel="Voltage [V]", title="PD2 voltage with detected edges")
+    axB.legend(loc="best", frameon=True)
+    figB.tight_layout()
+    plt.show()
+
+    # ---------- overlay locali (come tua “figura 3”) ----------
+    def _overlay(ax, channel: str, meas: List[Dict], fs, t, v, title, labelx):
+        win_ms = 6.5
+        n_win = max(1, int(round(fs * (win_ms / 1000.0))))
+        if len(meas) > 0:
+            t10_rel = float(np.median([m["t10"] - m["t_center"] for m in meas]))
+            t90_rel = float(np.median([m["t90"] - m["t_center"] for m in meas]))
+        else:
+            t10_rel = t90_rel = np.nan
+
+        for m in meas:
+            i0 = m["idx"]
+            lo = max(0, i0 - n_win); hi = min(len(v) - 1, i0 + n_win)
+            tt = t[lo:hi+1] - t[i0]; ss = v[lo:hi+1]
+            ax.plot((tt - t10_rel) / 1e-3, ss, alpha=0.80)
+
+        if np.isfinite(t10_rel):
+            ax.axvline((t10_rel - t10_rel) / 1e-3, linestyle="--", label=r"$\bar{t}_{10}$")
+        if np.isfinite(t90_rel):
+            ax.axvline((t90_rel - t10_rel) / 1e-3, linestyle="--", label=r"$\bar{t}_{90}$")
+
+        _beautify(ax, xlabel=f"Time rel. to {labelx} [ms]", ylabel=channel, title=title)
+
+        # legenda compatta se ci sono le due linee medie
+        handles, labels = ax.get_legend_handles_labels()
+        if handles:
+            ax.legend(loc="best", frameon=True)
+
+    # fig 5: PD1 rising/falling overlay
+    fig5, axes5 = plt.subplots(1, 2, figsize=(11.2, 4.4), sharex=True, sharey=True)
+    _overlay(axes5[0], "Signal on PD1 [V]", out1["rise"], rta.fs, rta.t, rta.v1, "Rising Events", r"$\bar{t}_{10}$")
+    _overlay(axes5[1], "",                   out1["fall"], rta.fs, rta.t, rta.v1, "Falling Events", r"$\bar{t}_{90}$")
+    fig5.suptitle("(A) Transient signals on PD1", y=0.98)
+    fig5.tight_layout()
+    plt.show()
+
+    # fig 6: PD2 rising/falling overlay
+    fig6, axes6 = plt.subplots(1, 2, figsize=(11.2, 4.4), sharex=True, sharey=True)
+    _overlay(axes6[0], "Signal on PD2 [V]", out2["rise"], rta.fs, rta.t, rta.v2, "Rising Events", r"$\bar{t}_{10}$")
+    _overlay(axes6[1], "",                   out2["fall"], rta.fs, rta.t, rta.v2, "Falling Events", r"$\bar{t}_{90}$")
+    fig6.suptitle("(B) Transient signals on PD2", y=0.98)
+    fig6.tight_layout()
+    plt.show()
+    
 def main_blink_data_dwt100ms():
     FDIR = "D:\\phd_slm_edo\\old_data\\slm_time_response\\photodiode\\"
     fname = FDIR + "20240906_1441_blink_loop10_dwell100ms\\Analog - 9-6-2024 2-41-15.63336 PM.csv"
@@ -761,7 +995,211 @@ def main_blink_data_dwt100ms():
     dB_rise, T_eff_rise, jB_rise, sB_rise = ResponseTimeAnalyzer._linear_fit_latency(t50_pd1_rise)
     dB_fall, T_eff_fall, jB_fall, sB_fall = ResponseTimeAnalyzer._linear_fit_latency(t50_pd1_fall)
 
-    lo_all, hi_all = ResponseTimeAnalyzer._bootstrap_delta_A(np.array(t50_pd1_all), dwell_time_in_s, B=400)
+    lo_all, hi_all =0,0 #ResponseTimeAnalyzer._bootstrap_delta_A(np.array(t50_pd1_all), dwell_time_in_s, B=400)
+
+    print("\n--- Command latency estimate on PD1 (no trigger) ---")
+    print(f"[A-grid, T]      all:  N={len(t50_pd1_all):2d},  delta≈{dA_all*1000:.2f} ms,  jitter_RMS≈{jA_all*1000:.2f} ms, residual_std≈{sA_all*1000:.2f} ms")
+    print(f"[A-grid, 2T]     rise: N={len(t50_pd1_rise):2d}, delta≈{dA_rise*1000:.2f} ms,  jitter_RMS≈{jA_rise*1000:.2f} ms, residual_std≈{sA_rise*1000:.2f} ms")
+    print(f"[A-grid, 2T]     fall: N={len(t50_pd1_fall):2d}, delta≈{dA_fall*1000:.2f} ms,  jitter_RMS≈{jA_fall*1000:.2f} ms, residual_std≈{sA_fall*1000:.2f} ms")
+    print(f"[B-linear]       all:  N={len(t50_pd1_all):2d},  delta≈{dB_all*1000:.2f} ms,  T_eff≈{T_eff_all*1000:.2f} ms  (~dwell {dwell_time_in_s*1000:.2f} ms), jitter_RMS≈{jB_all*1000:.2f} ms")
+    print(f"[B-linear]       rise: N={len(t50_pd1_rise):2d}, delta≈{dB_rise*1000:.2f} ms,  T_eff≈{T_eff_rise*1000:.2f} ms  (~2*dwell {2*dwell_time_in_s*1000:.2f} ms), jitter_RMS≈{jB_rise*1000:.2f} ms")
+    print(f"[B-linear]       fall: N={len(t50_pd1_fall):2d}, delta≈{dB_fall*1000:.2f} ms,  T_eff≈{T_eff_fall*1000:.2f} ms  (~2*dwell {2*dwell_time_in_s*1000:.2f} ms), jitter_RMS≈{jB_fall*1000:.2f} ms")
+    print(f"Bootstrap 95% CI on δ (A, all): [{lo_all*1e3:.2f}, {hi_all*1e3:.2f}] ms")
+
+    # ---------- NUOVO: latenza ASSOLUTA da t0 (rise=t90, fall=t10) ----------
+    absres = estimate_absolute_latency_with_t0_levels(out1, t0_first_cmd_s,
+                                                      Td_hint=dwell_time_in_s,
+                                                      rise_key="t90", fall_key="t90")
+    if absres.get("ok", False):
+        Td_ms = absres["Td"]*1e3
+        Lr_ms = absres["Lr"]*1e3 if np.isfinite(absres["Lr"]) else float('nan')
+        Lf_ms = absres["Lf"]*1e3 if np.isfinite(absres["Lf"]) else float('nan')
+
+        print("\n=== ABSOLUTE LATENCY from first trigger t0 (levels: rise=t90, fall=t10) ===")
+        print(f"First command kind: {absres['first_kind']}")
+        print(f"Dwell Td ≈ {Td_ms:.3f} ms")
+        print(f"Latency L_r (t90 - trigger_rise) ≈ {Lr_ms:.3f} ms")
+        print(f"Latency L_f (t10 - trigger_fall) ≈ {Lf_ms:.3f} ms")
+        print(f"Residual RMS (jitter) ≈ {absres['rms']*1e3:.3f} ms")
+
+        # Plot pulito: solo barre su trigger e su t90/t10 (marker opzionali)
+        plot_triggers_and_levels_bars(rta, out1, absres, channel_title="PD1", show_markers=True)
+    else:
+        print("\n[WARN] Absolute latency estimation (t90/t10) failed:", absres.get("reason", "unknown"))
+
+    # ---------- PLOT 0: PD1 & PD2 insieme ----------
+    #figure 2
+    plt.figure()
+    plt.plot(rta.t, rta.v1, label="PD1 (SMA)")
+    plt.plot(rta.t, rta.v2, label="PD2 (SMA)")
+    plt.xlabel("Time [s]"); plt.ylabel("Signal [V]"); plt.title("Photodiodes Signals: Dwell time = 100 ms")
+    plt.legend(); plt.show();plt.xlim(1.690,2.550)
+
+    # ---------- PLOT A: PD1 con marker ----------
+    plt.figure()
+    plt.plot(rta.t, rta.v1, label="PD1 (V)")
+    idx_r_PD1 = [m["idx"] for m in out1["rise"]]
+    idx_f_PD1 = [m["idx"] for m in out1["fall"]]
+    tr1 = [rta.t[i] for i in idx_r_PD1]; tf1 = [rta.t[i] for i in idx_f_PD1]
+    yr1 = [rta.v1[i] for i in idx_r_PD1]; yf1 = [rta.v1[i] for i in idx_f_PD1]
+    plt.scatter(tr1, yr1, marker="^", color="g", label="Rising on PD1")
+    plt.scatter(tf1, yf1, marker="v", color="r", label="Falling on PD1")
+    plt.xlabel("Time (s)"); plt.ylabel("Voltage (V)")
+    plt.title("PD1 voltage with detected edges")
+    plt.legend(); plt.show()
+
+    # ---------- PLOT B: PD2 con marker ----------
+    plt.figure()
+    plt.plot(rta.t, rta.v2, label="PD2 (V)")
+    idx_r_PD2 = [m["idx"] for m in out2["rise"]]
+    idx_f_PD2 = [m["idx"] for m in out2["fall"]]
+    tr2 = [rta.t[i] for i in idx_r_PD2]; tf2 = [rta.t[i] for i in idx_f_PD2]
+    yr2 = [rta.v2[i] for i in idx_r_PD2]; yf2 = [rta.v2[i] for i in idx_f_PD2]
+    plt.scatter(tr2, yr2, marker="^", color="g", label="Rising on PD2")
+    plt.scatter(tf2, yf2, marker="v", color="r", label="Falling on PD2")
+    plt.xlabel("Time (s)"); plt.ylabel("Voltage (V)")
+    plt.title("PD2 voltage with detected edges")
+    plt.legend(); plt.show()
+
+    # ---------- overlay locali (come tua “figura 3”) ----------
+    def _overlay(ax, channel: str, meas: List[Dict], fs, t, v, title, labelx):
+        win_ms = 6.5
+        n_win = max(1, int(round(fs * (win_ms / 1000.0))))
+        if len(meas)>0:
+            t10_rel = float(np.median([m["t10"] - m["t_center"] for m in meas]))
+            t90_rel = float(np.median([m["t90"] - m["t_center"] for m in meas]))
+        else:
+            t10_rel = t90_rel = np.nan
+        for m in meas:
+            i0 = m["idx"]
+            lo = max(0, i0 - n_win); hi = min(len(v) - 1, i0 + n_win)
+            tt = t[lo:hi+1] - t[i0]; ss = v[lo:hi+1]
+            ax.plot((tt-t10_rel)/1e-3, ss, alpha=0.75)
+        if np.isfinite(t10_rel): ax.axvline((t10_rel-t10_rel)/1e-3, linestyle="--", label=r"$\bar{t}_{10}$")
+        if np.isfinite(t90_rel): ax.axvline((t90_rel-t10_rel)/1e-3, linestyle="--", label=r"$\bar{t}_{90}$")
+        ax.set_title(title); ax.set_xlabel("Time rel. to "+f"{labelx}"+" [ms]"); ax.set_ylabel(f"{channel}")
+        if ax.get_legend_handles_labels()[0]: ax.legend()
+
+    #fig 5
+    fig, axes = plt.subplots(1, 2, figsize=(11, 4),sharex=True, sharey=True)
+    _overlay(axes[0], "Signal on PD1 [V]", out1["rise"], rta.fs, rta.t, rta.v1, "Rising Events", r"$\bar{t}_{10}$")
+    _overlay(axes[1], "", out1["fall"], rta.fs, rta.t, rta.v1, "Falling Events", r"$\bar{t}_{90}$")
+    fig.suptitle("(A) Transient signals on PD1", y=0.98)
+    plt.tight_layout(); plt.show()
+    #fig 6
+    fig, axes = plt.subplots(1, 2, figsize=(11, 4), sharex=True,sharey=True)
+    _overlay(axes[0], "Signal on PD2 [V]", out2["rise"], rta.fs, rta.t, rta.v2, "Rising Events", r"$\bar{t}_{10}$")
+    _overlay(axes[1], "", out2["fall"], rta.fs, rta.t, rta.v2, "Falling Events", r"$\bar{t}_{90}$")
+    fig.suptitle("(B) Transient signals on PD2", y=0.98)
+    plt.tight_layout(); plt.show()
+
+    # ---------- CSV ----------
+    # def _dump_csv(out, fname_csv):
+    #     rows = []
+    #     for m in out["kept"]:
+    #         rows.append(dict(
+    #             channel = out["channel"],
+    #             kind = m["kind"], t_center_s=m["t_center"],
+    #             t10_s=m["t10"], t50_s=m["t50"], t90_s=m["t90"],
+    #             width_10_90_ms=m["width_10_90_ms"],
+    #             sigma_width_ms=m["sigma_width_ms"],
+    #             tau_ms=m["tau_ms"], width_exp_ms=m["width_exp_ms"],
+    #             exp_r2=m["exp_r2"]
+    #         ))
+    #     pd.DataFrame(rows).to_csv(fname_csv, index=False)
+    #     print(f"Saved per-edge report: {fname_csv}")
+    #
+    # _dump_csv(out1, os.path.join(os.getcwd(), "slm_edge_timings_PD1.csv"))
+    # _dump_csv(out2, os.path.join(os.getcwd(), "slm_edge_timings_PD2.csv"))
+
+
+# if __name__ == "__main__":
+#     main_blink_data_dwt100ms()
+
+def main_blink_data_dwt0ms():
+    FDIR = "D:\\phd_slm_edo\\old_data\\slm_time_response\\photodiode\\"
+    fname = FDIR + "20240906_1422_blink_loop10_dwell0ms\\Analog - 9-6-2024 2-22-21.39271 PM.csv"
+
+    # dwell teorico (hint)
+    dwell_time_in_s = 2e-3
+
+    # t0 del primo comando (trigger noto)
+    t0_first_cmd_s = 1.239
+
+    if not os.path.exists(fname):
+        alt = os.path.join(os.getcwd(), "Analog - 9-6-2024 2-41-15.63336 PM.csv")
+        if os.path.exists(alt):
+            fname = alt
+
+    rta = ResponseTimeAnalyzer(fname)
+
+    # PD1 e PD2, stessa pipeline
+    out1 = rta.analyze_one_channel_with_dwell("PD1", dwell_time_in_s,
+            grad_threshold_k=6.0, min_separation_ms=1,
+            pre_ms=0.6, post_ms=0.6, search_ms=0.5,
+            expected_rise=9, expected_fall=10)
+    out2 = rta.analyze_one_channel_with_dwell("PD2", dwell_time_in_s,
+            grad_threshold_k=6.0, min_separation_ms=1,
+            pre_ms=0.6, post_ms=0.6, search_ms=0.5,
+            expected_rise=9, expected_fall=10)
+
+    # Pairing simmetria
+    sym = rta.symmetry_pairs(out1, out2, tol_ms=10.0)
+
+    # ----- STAMPA RIEPILOGO -----
+    def _fmt_block(name, summ):
+        print(f"\n[{name}]  Fs(raw)={summ['fs_raw_Hz']:.2f} Hz | Fs(dec)={summ['fs_Hz']:.2f} Hz | toggles(s)={summ['n_detected_on_s']}")
+        def _fmt_stats(title, st):
+            if st["n"] == 0:
+                print(f"  {title}: n=0")
+            else:
+                print(f"  {title}: n={st['n']}, mean={st['mean']:.3f} ms, median={st['median']:.3f} ms, std={st['std']:.3f} ms")
+        _fmt_stats("Rise 10–90% (linear)", summ["rise_10_90_stats"])
+        _fmt_stats("Fall 10–90% (linear)", summ["fall_10_90_stats"])
+        _fmt_stats("Rise 10–90% (exp-fit ≈ τ ln 9)", summ["rise_exp_stats"])
+        _fmt_stats("Fall 10–90% (exp-fit ≈ τ ln 9)", summ["fall_exp_stats"])
+
+    print("\n=== SLM Response Time Analysis — PD1 & PD2 (same robust procedure on each channel) ===")
+    print(f"File: {fname}")
+    _fmt_block("PD1", out1["summary"])
+    _fmt_block("PD2", out2["summary"])
+
+    # ----- STAMPA PER-EDGE -----
+    def _print_edges(label, edges):
+        if len(edges)==0:
+            print(f"\n-- {label} --\n(nessun fronte)")
+            return
+        print(f"\n-- {label} --")
+        for k, m in enumerate(edges, 1):
+            unc = (m['sigma_width_ms'] if np.isfinite(m['sigma_width_ms']) else float('nan'))
+            print(f"{label[0]}{k:02d} @ t={m['t_center']:.6f}s | 10–90={m['width_10_90_ms']:.3f} ms ±{unc:.3f} ms"
+                  f" | exp: τ={m['tau_ms']:.3f} ms, 10–90≈{m['width_exp_ms']:.3f} ms | R²={m['exp_r2']:.3f}")
+
+    _print_edges("PD1 Rising", out1["rise"])
+    _print_edges("PD1 Falling", out1["fall"])
+    _print_edges("PD2 Rising", out2["rise"])
+    _print_edges("PD2 Falling", out2["fall"])
+
+    # ----- SYMMETRY -----
+    ps = sym["pairs_summary"]
+    print("\n--- Symmetry test (paired by time, ±10 ms) ---")
+    print(f"→PD1 pairs (PD1 rise vs PD2 fall): n={ps['n_pairs_to_PD1']}, mean Δ={ps['to_PD1']['mean']:.3f} ms, ⟨|Δ|⟩={ps['to_PD1']['abs_mean']:.3f} ms, std={ps['to_PD1']['std']:.3f} ms")
+    print(f"→PD2 pairs (PD1 fall vs PD2 rise): n={ps['n_pairs_to_PD2']}, mean Δ={ps['to_PD2']['mean']:.3f} ms, ⟨|Δ|⟩={ps['to_PD2']['abs_mean']:.3f} ms, std={ps['to_PD2']['std']:.3f} ms")
+
+    # ---------- LATENZA (senza trigger) sui t50 di PD1 ----------
+    t50_pd1_all  = [m["t50"] for m in out1["rise"]] + [m["t50"] for m in out1["fall"]]
+    t50_pd1_rise = [m["t50"] for m in out1["rise"]]
+    t50_pd1_fall = [m["t50"] for m in out1["fall"]]
+
+    dA_all,  jA_all,  sA_all  = ResponseTimeAnalyzer._grid_phase_latency(t50_pd1_all,  dwell_time_in_s)
+    dA_rise, jA_rise, sA_rise = ResponseTimeAnalyzer._grid_phase_latency(t50_pd1_rise, 2*dwell_time_in_s)
+    dA_fall, jA_fall, sA_fall = ResponseTimeAnalyzer._grid_phase_latency(t50_pd1_fall, 2*dwell_time_in_s)
+
+    dB_all,  T_eff_all,  jB_all,  sB_all  = ResponseTimeAnalyzer._linear_fit_latency(t50_pd1_all)
+    dB_rise, T_eff_rise, jB_rise, sB_rise = ResponseTimeAnalyzer._linear_fit_latency(t50_pd1_rise)
+    dB_fall, T_eff_fall, jB_fall, sB_fall = ResponseTimeAnalyzer._linear_fit_latency(t50_pd1_fall)
+
+    lo_all, hi_all =0,0 #ResponseTimeAnalyzer._bootstrap_delta_A(np.array(t50_pd1_all), dwell_time_in_s, B=400)
 
     print("\n--- Command latency estimate on PD1 (no trigger) ---")
     print(f"[A-grid, T]      all:  N={len(t50_pd1_all):2d},  delta≈{dA_all*1000:.2f} ms,  jitter_RMS≈{jA_all*1000:.2f} ms, residual_std≈{sA_all*1000:.2f} ms")
@@ -828,7 +1266,7 @@ def main_blink_data_dwt100ms():
 
     # ---------- overlay locali (come tua “figura 3”) ----------
     def _overlay(ax, channel: str, meas: List[Dict], fs, t, v, title):
-        win_ms = 20.0
+        win_ms = 2.5#20.0
         n_win = max(1, int(round(fs * (win_ms / 1000.0))))
         if len(meas)>0:
             t10_rel = float(np.median([m["t10"] - m["t_center"] for m in meas]))
@@ -875,9 +1313,3 @@ def main_blink_data_dwt100ms():
 
     _dump_csv(out1, os.path.join(os.getcwd(), "slm_edge_timings_PD1.csv"))
     _dump_csv(out2, os.path.join(os.getcwd(), "slm_edge_timings_PD2.csv"))
-
-
-# if __name__ == "__main__":
-#     main_blink_data_dwt100ms()
-
-

@@ -3,6 +3,7 @@ from bronte.wfs.slm_rasterizer import SlmRasterizer
 from plico_dm import deformableMirror
 import logging
 from arte.utils.decorator import logEnterAndExit
+from bronte.types.slm_pupil_mask_generator import SlmPupilMaskGenerator
 
 class SlmResposeTime():
     
@@ -13,7 +14,9 @@ class SlmResposeTime():
     def __init__(self):
         self._set_up_basic_logging()
         self._slm = deformableMirror('localhost', 7010)
-        self._sr = SlmRasterizer()
+        slm_pup_gen = SlmPupilMaskGenerator()
+        cmask = slm_pup_gen.circular_pupil_mask()
+        self._sr = SlmRasterizer(cmask, 5)
         self._logger = logging.getLogger("SlmResponseTime")
     
     def _set_up_basic_logging(self):
