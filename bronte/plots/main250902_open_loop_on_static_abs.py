@@ -83,15 +83,15 @@ def _plot_stds_per_dataset(ol_ftag_list, stds_list, basis_name, save_prefix, mea
     for i, (tag, s) in enumerate(zip(ol_ftag_list, stds_list)):
         y = np.maximum(s, eps)
         if meas_err_list is not None and i < len(meas_err_list):
-            lbl = f" ME={meas_err_list[i]:.0f} nm"
+            lbl = r" $\sigma_{s2c}$"+f"={meas_err_list[i]:.0f} nm"
         else:
             lbl = _fmt_tag(tag)
         ax.semilogy(x, y, marker=".", markersize=2.5, label=lbl, alpha=0.95)
 
     _beautify(ax,
               xlabel="Mode index",
-              ylabel="STD of reconstructed modes [nm] RMS WF",
-              title=f"Temporal variability — {basis_name} base ({n_modes} modes)",
+              ylabel=r"$\sigma_{STD}$"+" [nm] RMS WF",
+              title=f"STD of reconstructed modes per loop — {basis_name} base",
               logy=True)
     ax.legend(ncols=2, frameon=True)
     fig.tight_layout()
@@ -816,7 +816,7 @@ def _plot_wf_diff_piston_removed(sr_zern, sr_kl, z_coeff_m, kl_coeff_m, cmask, d
     _beautify(ax,
               xlabel="Pixels",
               ylabel="Pixels",
-              title=("Open-loop WF difference W_$Z$-W$_{KL}$\n"
+              title=("Open-loop WF difference W$_Z$-W$_{KL}$\n"
                      f"P–V = {pv_nm:.1f} nm   |   RMS (std) = {std_nm:.1f} nm"))
 
     # -------------------- ROI helper --------------------
@@ -983,7 +983,7 @@ def display_rms_diff_wf_intra_dataset():
 
     _beautify(axC1,
               xlabel="Pupil reduction [% of radius]",
-              ylabel=r"std[ W$_Z$ − W$_{KL}$ ]  [nm] ",
+              ylabel=r"std[ W$_{Z}$ − W$_{KL}$ ]  [nm] ",
               title="Full (200 modes)")
     #axC1.legend(ncols=2, frameon=True)
 
