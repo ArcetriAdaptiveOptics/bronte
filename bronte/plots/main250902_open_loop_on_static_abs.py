@@ -5,7 +5,10 @@ import matplotlib as mpl
 import matplotlib.pyplot as plt
 from matplotlib.ticker import MaxNLocator, AutoMinorLocator
 from bronte.scao.telemetry.mains.main250902_analysing_bench_static_abs import load_ol_rec_modes
-
+from arte.types.mask import CircularMask
+from bronte.wfs.slm_rasterizer import SlmRasterizer
+from bronte.wfs.kl_slm_rasterizer import KLSlmRasterizer
+from bronte.startup import set_data_dir
 
 # ---------- stile generale (senza grid globale) ----------
 def _setup_matplotlib_for_thesis():
@@ -575,5 +578,441 @@ def display_results(save_prefix="bench_statics"):
             print(f"[{label}] Mode {k+2}: {mean_nm:.1f} ± {std_nm:.1f} nm (mean ± std across datasets)")
     _print_first3_modes_summary(kl_means, "KL")
     _print_first3_modes_summary(z_means, "Zernike")
+    
+    
+    # kl_coeff_stat = _compute_across_stats(kl_means)
+    # zc_coeff_stat = _compute_across_stats(z_means)
+    #
+    # zc2rast = zc_coeff_stat[0]*1e-9
+    # klc2rast = kl_coeff_stat[0]*1e-9
+    # cmask = _get_cmask()
+    #
+    # ol_wf_zc = _compute_ol_wf_zern(zc2rast, cmask) 
+    # ol_wf_kl = _compute_ol_wf_kl(klc2rast, cmask)
+    # return ol_wf_zc, ol_wf_kl
+
+def _get_cmask():
+    
+    SLM_PUPIL_CENTER = (579, 968)#YX in pixel
+    SLM_PUPIL_RADIUS = 545
+    FRAME_SHAPE = (1152, 1920)
+    cmask = CircularMask(
+        frameShape = FRAME_SHAPE,
+        maskRadius = SLM_PUPIL_RADIUS,
+        maskCenter = SLM_PUPIL_CENTER)
+    return cmask
+
+def _compute_ol_wf_zern(sr, zc_coeff, cmask):
+    
+    wfz = sr.zernike_coefficients_to_raster(zc_coeff)
+    return wfz.toNumpyArray()
+
+def _compute_ol_wf_kl(sr, kl_coeff, cmask):
+
+    wf_kl = sr.kl_coefficients_to_raster(kl_coeff)
+    return wf_kl
+
+# def display_rms_diff_wf_intra_dataset():
+#
+#     set_data_dir()
+#     ftag_ifs_kl = '250806_170800'
+#     cmask = _get_cmask()
+#     N_MODES_TO_CORRECT = 200
+#     sr_zern = SlmRasterizer(cmask, N_MODES_TO_CORRECT)
+#     sr_kl = KLSlmRasterizer(cmask, ftag_ifs_kl)
+#
+#     _setup_matplotlib_for_thesis()
+#
+#     rec_ftag_kl   = '250808_144900'
+#     rec_ftag_zern = '250616_103300'
+#     ol_ftag_list  = ['250808_151100','250808_161900','250828_133300',
+#                      '250829_111600','250902_101600']
+#
+#     # --- KL ---
+#     kl_means, kl_stds, kl_meas_errs, kl_tot_wfe = get_data_lists(ol_ftag_list, rec_ftag_kl)
+#     # --- Zernike ---
+#     z_means,  z_stds,  z_meas_errs,  z_tot_wfe  = get_data_lists(ol_ftag_list, rec_ftag_zern)
+#
+#     kl_coef_cube = np.array(kl_means)*1e-9
+#     z_coef_cube = np.array(z_means)*1e-9
+# def display_rms_diff_wf_intra_dataset():
+#     """
+#     Per ogni dataset:
+#       1) ricostruisce WF_zern e WF_kl (metri) dai coefficienti medi,
+#       2) calcola la differenza WF_zern - WF_kl (masked sulla pupilla),
+#       3) valuta la std (nm) della differenza sul pupillo.
+#     Produce:
+#       - bar plot delle std per dataset con linee guida 6 nm, 7 nm, sqrt(6^2+7^2) nm
+#       - un esempio 2D della mappa differenza (nm) per un dataset scelto.
+#     """
+#     # --- setup e oggetti di rasterizzazione ---
+#     set_data_dir()
+#     ftag_ifs_kl = '250806_170800'
+#     cmask = _get_cmask()
+#     N_MODES_TO_CORRECT = 200
+#     sr_zern = SlmRasterizer(cmask, N_MODES_TO_CORRECT)
+#     sr_kl   = KLSlmRasterizer(cmask, ftag_ifs_kl)
+#
+#     _setup_matplotlib_for_thesis()
+#
+#     # tag ricostruttori e dataset
+#     rec_ftag_kl   = '250808_144900'
+#     rec_ftag_zern = '250616_103300'
+#     ol_ftag_list  = ['250808_151100','250808_161900','250828_133300',
+#                      '250829_111600','250902_101600']
+#
+#     # carica coefficienti medi/std ecc. (in nm) e converti in metri
+#     kl_means, kl_stds, kl_meas_errs, kl_tot_wfe = get_data_lists(ol_ftag_list, rec_ftag_kl)
+#     z_means,  z_stds,  z_meas_errs,  z_tot_wfe  = get_data_lists(ol_ftag_list, rec_ftag_zern)
+#     kl_coef_cube = np.array(kl_means) * 1e-9   # (5, 200) in metri
+#     z_coef_cube  = np.array(z_means)  * 1e-9   # (5, 200) in metri
+#
+#     # per-dataset: WF diff std (nm)
+#     diff_std_nm = []
+#
+#     # salveremo anche la mappa differenza di un dataset di esempio
+#     example_idx = 2  # ad es. il terzo dataset della lista
+#     diff_map_example_nm = None
+#     title_example = None
+#
+#     for i, tag in enumerate(ol_ftag_list):
+#         # prendi i primi N_MODES_TO_CORRECT coefficienti (metri)
+#         zc  = z_coef_cube[i, :N_MODES_TO_CORRECT]
+#         klc = kl_coef_cube[i, :N_MODES_TO_CORRECT]
+#
+#         # ricostruisci le mappe (MaskedArray in metri)
+#         wf_z  = _compute_ol_wf_zern(sr_zern, zc, cmask)
+#         wf_kl = _compute_ol_wf_kl(sr_kl,   klc, cmask)
+#
+#         # assicurati che siano masked array
+#         wf_z  = np.ma.array(wf_z)
+#         wf_kl = np.ma.array(wf_kl)
+#         # differenza sul pupillo
+#         diff = (wf_z - wf_kl) - (wf_z - wf_kl).mean()  # metri, masked fuori dal pupillo
+#
+#         # std sul pupillo (metri) -> nm
+#         std_m  = float(np.ma.std(diff))
+#         std_nm = std_m * 1e9
+#         diff_std_nm.append(std_nm)
+#
+#         # salva un esempio 2D (nm)
+#         if i == example_idx:
+#             diff_map_example_nm = diff * 1e9
+#             title_example = _fmt_tag(tag)
+#
+#         # stampa numeri
+#         print(f"[{_fmt_tag(tag)}]  std(WF_Z - WF_KL) = {std_nm:.1f} nm (on pupil)")
+#
+#     diff_std_nm = np.asarray(diff_std_nm)
+#
+#     # --- Plot 1: barre per dataset con linee guida (6, 7, sqrt(6^2+7^2)) nm ---
+#     fig, ax = plt.subplots(figsize=(9.5, 4.8))
+#     x = np.arange(len(ol_ftag_list)) + 1
+#     ax.bar(x, diff_std_nm, width=0.55, alpha=0.85)
+#
+#     # etichette asse x = timestamp formattati
+#     ax.set_xticks(x)
+#     ax.set_xticklabels([_fmt_tag(t) for t in ol_ftag_list], rotation=0)
+#
+#     # linee guida: rumori singoli e combinati
+#     sigma_kl = 6.0   # nm
+#     sigma_z  = 7.0   # nm
+#     sigma_comb = (sigma_kl**2 + sigma_z**2) ** 0.5
+#     ax.axhline(sigma_kl,  color="k", linestyle="--", linewidth=0.9, alpha=0.6, label="6 nm (KL)")
+#     ax.axhline(sigma_z,   color="k", linestyle=":",  linewidth=0.9, alpha=0.6, label="7 nm (Zernike)")
+#     ax.axhline(sigma_comb,color="r", linestyle="-.", linewidth=1.0, alpha=0.8, label=r"$\sqrt{6^2+7^2}\,\approx\,9.2$ nm")
+#
+#     _beautify(ax,
+#               xlabel="Dataset (open-loop tag)",
+#               ylabel="std[ WF$_{\mathrm{Z}}$ − WF$_{\mathrm{KL}}$ ]  [nm]",
+#               title="Intra-dataset WF difference (Zernike − KL)")
+#     ax.legend(frameon=True, ncols=3)
+#     fig.tight_layout()
+#
+#     # --- Plot 2: esempio 2D della mappa differenza (nm) per un dataset ---
+#     if diff_map_example_nm is not None:
+#         fig2, ax2 = plt.subplots(figsize=(5.6, 5.2))
+#         # colormap centrata in 0
+#         vmax = float(np.nanmax(np.abs(diff_map_example_nm)))
+#         from matplotlib.colors import TwoSlopeNorm
+#         norm = TwoSlopeNorm(vmin=-vmax, vcenter=0.0, vmax=vmax)
+#
+#         im = ax2.imshow(diff_map_example_nm, origin='upper', norm=norm)
+#         cbar = fig2.colorbar(im, ax=ax2)
+#         cbar.set_label("WF$_{\mathrm{Z}}$ − WF$_{\mathrm{KL}}$  [nm]")
+#
+#         _beautify(ax2,
+#                   xlabel="Pixels",
+#                   ylabel="Pixels",
+#                   title=f"WF difference map (Z−KL) — {title_example}")
+#         fig2.tight_layout()
+#
+#     plt.show()
+
+def _erode_mask_from_center(base_mask_bool, center_yx, frac):
+    """
+    Erode radialmente la mask booleana del pupillo di una frazione 'frac' del raggio.
+    base_mask_bool: True sui pixel del pupillo (2D np.bool_)
+    center_yx: (cy, cx) in pixel
+    frac: 0.0 ... 0.05 (cioè 0% ... 5%)
+    """
+    cy, cx = center_yx
+    yy, xx = np.indices(base_mask_bool.shape)
+    rr = np.sqrt((yy - cy)**2 + (xx - cx)**2)
+    # raggio massimo calcolato sui soli pixel True del pupillo
+    R = rr[base_mask_bool].max()
+    eroded = base_mask_bool & (rr <= (1.0 - float(frac)) * R)
+    return eroded
+
+from matplotlib.colors import TwoSlopeNorm
+from matplotlib.patches import Rectangle
+from mpl_toolkits.axes_grid1 import make_axes_locatable, inset_locator
+
+
+def _plot_wf_diff_piston_removed(sr_zern, sr_kl, z_coeff_m, kl_coeff_m, cmask, dataset_label="",  overplot_zoom_roi=False):
+    """
+    Plotta WF_Z - WF_KL (piston-removed) con:
+      - colorbar alta come l'asse
+      - due inset di zoom su ROI fisse:
+          ROI1: 20x30 px centrata in (x=522, y=279)
+          ROI2: 20x30 px centrata in (x=1090, y=1109)
+      - titolo con P–V e RMS (std) della differenza
+    """
+    # Ricostruisci (MaskedArray in metri; la mask è il pupillo)
+    wf_z  = np.ma.array(_compute_ol_wf_zern(sr_zern, z_coeff_m, cmask))
+    wf_kl = np.ma.array(_compute_ol_wf_kl(  sr_kl,   kl_coeff_m, cmask))
+
+    # Rimuovi il pistone (media sul pupillo) da ciascuno
+    wf_z0 = wf_z  - np.ma.mean(wf_z)
+    wf_k0 = wf_kl - np.ma.mean(wf_kl)
+
+    # Differenza (in nm)
+    diff_nm = (wf_z0 - wf_k0) * 1e9
+
+    # Statistiche
+    std_nm = float(np.ma.std(diff_nm))                     # RMS come std
+    pv_nm  = float(np.ma.max(diff_nm) - np.ma.min(diff_nm))
+
+    # Setup figura
+    fig, ax = plt.subplots(figsize=(6.6, 5.6))
+
+    # Colormap centrata in 0
+    vmax = np.ma.max(diff_nm)
+    vmin = np.ma.min(diff_nm)
+    if not np.isfinite(vmax) or vmax == 0:
+        vmax = 1.0
+    norm = TwoSlopeNorm(vmin=-500, vcenter=0.0, vmax=500)
+
+    # Immagine principale
+    im = ax.imshow(diff_nm, origin="upper", norm=norm)
+
+    # Colorbar con altezza "legata" all'asse (non all'intera figura)
+    divider = make_axes_locatable(ax)
+    cax = divider.append_axes("right", size="4%", pad=0.06)
+    cb = fig.colorbar(im, cax=cax)
+    cb.set_label(r"W$_{\mathrm{Z}}$ − W$_{\mathrm{KL}}$ [nm]")
+
+    # Titolo con P–V e RMS(std)
+    _beautify(ax,
+              xlabel="Pixels",
+              ylabel="Pixels",
+              title=("Open-loop WF difference W_$Z$-W$_{KL}$\n"
+                     f"P–V = {pv_nm:.1f} nm   |   RMS (std) = {std_nm:.1f} nm"))
+
+    # -------------------- ROI helper --------------------
+    def _roi_bounds(center_xy, hw_y, hw_x, shape):
+        """
+        center_xy: (cx, cy) in pixel (attenzione: x=col, y=riga)
+        hw_y: half-height (in px), hw_x: half-width (in px)
+        shape: (H, W)
+        Ritorna (x1, x2, y1, y2) inclusivo/esclusivo compatibile con set_xlim/set_ylim.
+        """
+        cx, cy = center_xy
+        H, W = shape
+        y1 = max(0, int(round(cy - hw_y)))
+        y2 = min(H, int(round(cy + hw_y)))      # esclusivo per i limiti dell'inset
+        x1 = max(0, int(round(cx - hw_x)))
+        x2 = min(W, int(round(cx + hw_x)))
+        return x1, x2, y1, y2
+    
+    if overplot_zoom_roi is True: 
+        H, W = diff_nm.shape
+    
+        # --- ROI1: 20x30 px centrata in (x=522, y=279) ---
+        roi1_center_xy = (675, 130)
+        half_h1, half_w1 = 12, 12   # 20x30
+        x1a, x2a, y1a, y2a = _roi_bounds(roi1_center_xy, half_h1, half_w1, (H, W))
+    
+        # rettangolo ROI1
+        rect1 = Rectangle((x1a, y1a), (x2a - x1a), (y2a - y1a),
+                          fill=False, ec="k", lw=0.8, ls="-", alpha=0.9)
+        ax.add_patch(rect1)
+    
+        # inset ROI1 (in alto a destra)
+        axins1 = inset_locator.inset_axes(ax, width="28%", height="28%", loc="upper right", borderpad=1.0)
+        axins1.imshow(diff_nm, origin="upper", norm=norm)
+        axins1.set_xlim(x1a, x2a)
+        axins1.set_ylim(y2a, y1a)  # invertito perché origin="upper"
+        axins1.set_xticks([])
+        axins1.set_yticks([])
+        axins1.set_title("Zoom ROI1", fontsize=8, pad=4)
+    
+        # --- ROI2: 20x30 px centrata in (x=1090, y=1109) ---
+        roi2_center_xy = (591, 959)
+        half_h2, half_w2 = 80, 100   # 20x30
+        x1b, x2b, y1b, y2b = _roi_bounds(roi2_center_xy, half_h2, half_w2, (H, W))
+    
+        # rettangolo ROI2
+        rect2 = Rectangle((x1b, y1b), (x2b - x1b), (y2b - y1b),
+                          fill=False, ec="r", lw=0.8, ls="-", alpha=0.9)
+        ax.add_patch(rect2)
+    
+        # inset ROI2 (in basso a destra)
+        axins2 = inset_locator.inset_axes(ax, width="28%", height="28%", loc="lower right", borderpad=1.0)
+        axins2.imshow(diff_nm, origin="upper", norm=norm)
+        axins2.set_xlim(x1b, x2b)
+        axins2.set_ylim(y2b, y1b)  # invertito perché origin="upper"
+        axins2.set_xticks([])
+        axins2.set_yticks([])
+        axins2.set_title("Zoom ROI2", fontsize=8, pad=4)
+
+    fig.tight_layout()
+
+    # log numerico riepilogo
+    print(f"[{dataset_label}] std(diff, piston-removed) = {std_nm:.1f} nm   |   P–V = {pv_nm:.1f} nm")
+
+
+
+def display_rms_diff_wf_intra_dataset():
+    """
+    Per dataset:
+      - Ricostruisce WF_Z e WF_KL (metri) dai coefficienti medi (full e low-pass K=4),
+      - Calcola std_pupil(WF_Z - WF_KL) [nm] (full e low-pass),
+      - Calcola std su mask erosa per frac in [0%, 1%, 2%, 3%, 4%, 5%] (full e low-pass),
+      - Produce:
+          (A) bar plot std full-order,
+          (B) bar plot std low-pass (K=4),
+          (C) subplot 2×1: std vs erosione (sx full, dx low-pass) con curva media spessa.
+    """
+    # --- setup e rasterizer ---
+    set_data_dir()
+    ftag_ifs_kl = '250806_170800'
+    cmask = _get_cmask()
+    N_MODES_TO_CORRECT = 200
+    sr_zern = SlmRasterizer(cmask, N_MODES_TO_CORRECT)
+    sr_kl   = KLSlmRasterizer(cmask, ftag_ifs_kl)
+
+    _setup_matplotlib_for_thesis()
+
+    # ricostruttori e dataset
+    rec_ftag_kl   = '250808_144900'
+    rec_ftag_zern = '250616_103300'
+    ol_ftag_list  = ['250808_151100','250808_161900','250828_133300',
+                     '250829_111600','250902_101600']
+
+    # carica coefficienti medi (nm) e converti in metri
+    kl_means, kl_stds, kl_meas_errs, kl_tot_wfe = get_data_lists(ol_ftag_list, rec_ftag_kl)
+    z_means,  z_stds,  z_meas_errs,  z_tot_wfe  = get_data_lists(ol_ftag_list, rec_ftag_zern)
+    kl_coef_cube = np.array(kl_means) * 1e-9   # (5, 200) m
+    z_coef_cube  = np.array(z_means)  * 1e-9   # (5, 200) m
+
+    # impostazioni
+    K_LOW = 4
+    erosion_fracs = np.array([0.00, 0.01, 0.02, 0.03, 0.04, 0.05])  # 0%..5%
+
+    # risultati
+    std_full_nm = []
+    std_low_nm  = []
+    # shape: (n_datasets, n_fracs)
+    std_erosion_full_nm = np.zeros((len(ol_ftag_list), len(erosion_fracs)), dtype=float)
+    std_erosion_low_nm  = np.zeros_like(std_erosion_full_nm)
+
+    # per coerenza con _get_cmask()
+    SLM_PUPIL_CENTER = (579, 968)  # (y,x)
+
+    # loop sui dataset
+    for i, tag in enumerate(ol_ftag_list):
+        zc_full  = z_coef_cube[i, :N_MODES_TO_CORRECT]
+        klc_full = kl_coef_cube[i, :N_MODES_TO_CORRECT]
+        zc_low   = z_coef_cube[i, :K_LOW]
+        klc_low  = kl_coef_cube[i, :K_LOW]
+
+        # WF full-order (MaskedArray in metri)
+        wf_z_full  = np.ma.array(_compute_ol_wf_zern(sr_zern, zc_full, cmask))
+        wf_kl_full = np.ma.array(_compute_ol_wf_kl(  sr_kl,   klc_full, cmask))
+        diff_full  = wf_z_full - wf_kl_full
+
+        # WF low-pass K=4
+        wf_z_low   = np.ma.array(_compute_ol_wf_zern(sr_zern, zc_low, cmask))
+        wf_kl_low  = np.ma.array(_compute_ol_wf_kl(  sr_kl,   klc_low, cmask))
+        diff_low   = wf_z_low - wf_kl_low
+
+        # std sul pupillo intero (nm)
+        std_full_nm.append(float(np.ma.std(diff_full)) * 1e9)
+        std_low_nm.append( float(np.ma.std(diff_low))  * 1e9)
+
+        # mask booleana del pupillo (True dentro)
+        base_mask_bool = ~np.ma.getmaskarray(wf_z_full)
+
+        # sweep erosione 0..5%
+        for j, frac in enumerate(erosion_fracs):
+            m_eroded = _erode_mask_from_center(base_mask_bool, SLM_PUPIL_CENTER, frac)
+            # Applica la mask erosa alla differenza (mantieni masked fuori)
+            diff_full_e = np.ma.array(diff_full, mask=~m_eroded)
+            diff_low_e  = np.ma.array(diff_low,  mask=~m_eroded)
+            std_erosion_full_nm[i, j] = float(np.ma.std(diff_full_e)) * 1e9
+            std_erosion_low_nm[i, j]  = float(np.ma.std(diff_low_e))  * 1e9
+
+        # log numerico
+        print(f"[{_fmt_tag(tag)}] std_full = {std_full_nm[-1]:.1f} nm   |   std_low(K=4) = {std_low_nm[-1]:.1f} nm")
+
+    std_full_nm = np.asarray(std_full_nm)
+    std_low_nm  = np.asarray(std_low_nm)
+
+
+    # ===== Plot (C): std vs erosione (subplot: sx full, dx low) =====
+    figC, (axC1, axC2) = plt.subplots(1, 2, figsize=(13.6, 5.6), sharey=False)
+
+    # sinistra: full-order
+    for i, tag in enumerate(ol_ftag_list):
+        axC1.plot(100*erosion_fracs, std_erosion_full_nm[i], marker="o", markersize=3.0,
+                  linewidth=1.0, alpha=0.65)#, label=_fmt_tag(tag))
+    # curva media (spessa)
+    axC1.plot(100*erosion_fracs, std_erosion_full_nm.mean(axis=0),
+              linewidth=1.5,color='m')#, label="mean")
+
+    _beautify(axC1,
+              xlabel="Pupil reduction [% of radius]",
+              ylabel=r"std[ W$_Z$ − W$_{KL}$ ]  [nm] ",
+              title="Full (200 modes)")
+    #axC1.legend(ncols=2, frameon=True)
+
+    # destra: low-pass
+    for i, tag in enumerate(ol_ftag_list):
+        axC2.plot(100*erosion_fracs, std_erosion_low_nm[i], marker="o", markersize=3.0,
+                  linewidth=1.0, alpha=0.65, label=_fmt_tag(tag))
+    axC2.plot(100*erosion_fracs, std_erosion_low_nm.mean(axis=0),
+              linewidth=1.5,color='m', label="mean")
+
+    _beautify(axC2,
+              xlabel="Pupil reduction [% of radius]",
+              ylabel="",#r"std[ WF$_Z$ − WF$_{KL}$ ]  [nm]",
+              title="Filtered (only first 4 modes)")
+    # legenda solo a sinistra per non affollare; se la vuoi anche qui: axC2.legend(...)
+    figC.suptitle("W$_Z$ − W$_{KL}$: sensitivity to pupil size", fontsize=14)
+    figC.tight_layout(rect=[0, 0, 1, 0.95])
+    
+    i = 2  # ad es. il terzo dataset
+    _plot_wf_diff_piston_removed(
+        sr_zern, sr_kl,
+        z_coeff_m = z_coef_cube[i, :200],
+        kl_coeff_m = kl_coef_cube[i, :200],
+        cmask = _get_cmask(),
+        dataset_label = _fmt_tag(ol_ftag_list[i]),
+        overplot_zoom_roi = True
+    )
+
+
+    plt.show()
 
     
