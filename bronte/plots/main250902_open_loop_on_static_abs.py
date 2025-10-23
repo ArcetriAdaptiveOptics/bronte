@@ -781,7 +781,16 @@ def _plot_wf_diff_piston_removed(sr_zern, sr_kl, z_coeff_m, kl_coeff_m, cmask, d
     # Ricostruisci (MaskedArray in metri; la mask è il pupillo)
     wf_z  = np.ma.array(_compute_ol_wf_zern(sr_zern, z_coeff_m, cmask))
     wf_kl = np.ma.array(_compute_ol_wf_kl(  sr_kl,   kl_coeff_m, cmask))
-
+    
+    tilt_z_modal_command = z_coeff_m.copy()
+    tilt_z_modal_command[1:] = 0
+    tilt_z_modal_command[0] = 2e-6
+    tilt_kl_modal_command = kl_coeff_m.copy()
+    tilt_kl_modal_command[1:] = 0
+    tilt_kl_modal_command[0] = 2e-6
+    tilt_z = np.ma.array(_compute_ol_wf_zern(sr_zern, tilt_z_modal_command, cmask))
+    tilt_kl = np.ma.array(_compute_ol_wf_kl(sr_kl, tilt_kl_modal_command , cmask))
+    
     # Rimuovi il pistone (media sul pupillo) da ciascuno
     wf_z0 = wf_z  - np.ma.mean(wf_z)
     wf_k0 = wf_kl - np.ma.mean(wf_kl)
@@ -801,7 +810,7 @@ def _plot_wf_diff_piston_removed(sr_zern, sr_kl, z_coeff_m, kl_coeff_m, cmask, d
     vmin = np.ma.min(diff_nm)
     if not np.isfinite(vmax) or vmax == 0:
         vmax = 1.0
-    norm = TwoSlopeNorm(vmin=-500, vcenter=0.0, vmax=500)
+    norm = TwoSlopeNorm(vmin=-120, vcenter=0.0, vmax=120)
 
     # Immagine principale
     im = ax.imshow(diff_nm, origin="upper", norm=norm)
@@ -818,7 +827,21 @@ def _plot_wf_diff_piston_removed(sr_zern, sr_kl, z_coeff_m, kl_coeff_m, cmask, d
               ylabel="Pixels",
               title=("Open-loop WF difference W$_Z$-W$_{KL}$\n"
                      f"P–V = {pv_nm:.1f} nm   |   RMS (std) = {std_nm:.1f} nm"))
-
+    
+    fig, axes = plot_wf_triptych(wf_z, wf_kl, diff_nm,
+                             title_z="W$_Z$", title_kl="W$_{KL}$", title_diff="Z−KL", v_min_max_diff=120)
+    
+    fig2, axes2 = plot_wf_triptych(tilt_z, tilt_kl, (tilt_z-tilt_kl)*1e9,
+                             title_z="Tip$_Z$", title_kl="Tip$_{KL}$", title_diff="Z−KL", v_min_max_diff=20)
+    
+    fig3, axes3 = plot_radial_diagnostics(diff_nm_ma=diff_nm, center_yx=(579,968), nbins=48,
+                                    basis_label="Z−KL")
+    center = (579, 968)  # (y, x)
+    plot_x_profile_through_center(diff_nm, center_yx=center, normalize_radius=True,
+                              units_label="nm", title_prefix="W$_Z$ − W${_KL}$")
+    
+    plot_x_profile_through_center((tilt_z-tilt_kl)*1e9, center_yx=center, normalize_radius=True,
+                              units_label="nm", title_prefix="Z − KL")
     # -------------------- ROI helper --------------------
     def _roi_bounds(center_xy, hw_y, hw_x, shape):
         """
@@ -839,8 +862,8 @@ def _plot_wf_diff_piston_removed(sr_zern, sr_kl, z_coeff_m, kl_coeff_m, cmask, d
         H, W = diff_nm.shape
     
         # --- ROI1: 20x30 px centrata in (x=522, y=279) ---
-        roi1_center_xy = (675, 130)
-        half_h1, half_w1 = 12, 12   # 20x30
+        roi1_center_xy = (445, 490)
+        half_h1, half_w1 = 40,50 # 20x30
         x1a, x2a, y1a, y2a = _roi_bounds(roi1_center_xy, half_h1, half_w1, (H, W))
     
         # rettangolo ROI1
@@ -881,7 +904,59 @@ def _plot_wf_diff_piston_removed(sr_zern, sr_kl, z_coeff_m, kl_coeff_m, cmask, d
     # log numerico riepilogo
     print(f"[{dataset_label}] std(diff, piston-removed) = {std_nm:.1f} nm   |   P–V = {pv_nm:.1f} nm")
 
+def plot_wf_triptych(wf_z, wf_kl, diff_nm, title_z="WF (Zernike)", title_kl="WF (KL)", title_diff="Z − KL", v_min_max_diff = None):
+    fig, axes = plt.subplots(1, 3, figsize=(14, 4.8), sharex=True, sharey=True)
 
+    # --- normalizzazioni ---
+    # stessa scala per wf_z e wf_kl
+    vmin_wf = float(np.nanmin([np.ma.min(wf_z/1e-6), np.ma.min(wf_kl/1e-6)]))
+    vmax_wf = float(np.nanmax([np.ma.max(wf_z/1e-6), np.ma.max(wf_kl/1e-6)]))
+    # scala simmetrica per la differenza (centrata a 0)
+    vmax_diff = float(np.nanmax(np.abs(diff_nm)))
+    if not np.isfinite(vmax_diff) or vmax_diff == 0:
+        vmax_diff = 1.0
+    if v_min_max_diff is not None:
+        norm_diff = TwoSlopeNorm(vmin=-v_min_max_diff, vcenter=0.0, vmax=v_min_max_diff)
+    else:
+        norm_diff = TwoSlopeNorm(vmin=-vmax_diff, vcenter=0.0, vmax=vmax_diff)
+    # --- pannello 1: WF Zernike ---
+    ax = axes[0]
+    im0 = ax.imshow(wf_z/1e-6, origin="upper", vmin=vmin_wf, vmax=vmax_wf)
+    ptv_wf_z = np.ptp(wf_z/1e-6)
+    rms_wf_z = (wf_z/1e-6).std()
+    ax.set_title(f"{title_z}\n PtV={ptv_wf_z:0.2f} um,  RMS={rms_wf_z:.2f} um")
+    ax.set_xlabel("Pixels"); ax.set_ylabel("Pixels")
+    div0 = make_axes_locatable(ax)
+    cax0 = div0.append_axes("right", size="4%", pad=0.04)
+    cb0 = fig.colorbar(im0, cax=cax0)
+    cb0.set_label("Wavefront [um]")   # cambia unità se serve
+
+    # --- pannello 2: WF KL ---
+    ax = axes[1]
+    im1 = ax.imshow(wf_kl/1e-6, origin="upper", vmin=vmin_wf, vmax=vmax_wf)
+    ptv_wf_kl = np.ptp(wf_kl/1e-6)
+    rms_wf_kl = (wf_kl/1e-6).std()
+    ax.set_title(f"{title_kl}\n PtV={ptv_wf_kl:0.1f} um,  RMS={rms_wf_kl:.0f} um")
+    ax.set_xlabel("Pixels")
+    div1 = make_axes_locatable(ax)
+    cax1 = div1.append_axes("right", size="4%", pad=0.04)
+    cb1 = fig.colorbar(im1, cax=cax1)
+    cb1.set_label("Wavefront [um]")   # cambia unità se serve
+
+    # --- pannello 3: Differenza ---
+    ptv_diff = np.ptp(diff_nm*1e-3)
+    rms_diff = (diff_nm).std()
+    ax = axes[2]
+    im2 = ax.imshow(diff_nm, origin="upper", norm=norm_diff)
+    ax.set_title(f"{title_diff}\n PtV={ptv_diff:0.2f} um,  RMS={rms_diff:.0f} nm")
+    ax.set_xlabel("Pixels")
+    div2 = make_axes_locatable(ax)
+    cax2 = div2.append_axes("right", size="4%", pad=0.04)
+    cb2 = fig.colorbar(im2, cax=cax2)
+    cb2.set_label("WF Difference [nm]")
+
+    fig.tight_layout()
+    return fig, axes
 
 def display_rms_diff_wf_intra_dataset():
     """
@@ -918,7 +993,7 @@ def display_rms_diff_wf_intra_dataset():
 
     # impostazioni
     K_LOW = 4
-    erosion_fracs = np.array([0.00, 0.01, 0.02, 0.03, 0.04, 0.05])  # 0%..5%
+    erosion_fracs = np.array([0.00, 0.001, 0.002, 0.005, 0.01, 0.02, 0.03, 0.04, 0.05])  # 0%..5%
 
     # risultati
     std_full_nm = []
@@ -1011,8 +1086,193 @@ def display_rms_diff_wf_intra_dataset():
         dataset_label = _fmt_tag(ol_ftag_list[i]),
         overplot_zoom_roi = True
     )
-
-
-    plt.show()
+    
+    
 
     
+    plt.show()
+
+
+
+def _annular_rms(diff_ma, center_yx, nbins=40):
+    """
+    RMS anulare della mappa 'diff_ma' (MaskedArray).
+    Ritorna:
+      r_norm: raggio normalizzato (centro dei bin) in [0,1]
+      rms_nm: RMS per anello (stessa unità di diff_ma)
+    """
+    m = ~np.ma.getmaskarray(diff_ma)
+    y, x = np.indices(diff_ma.shape)
+    cy, cx = center_yx
+    r = np.hypot(y - cy, x - cx)
+
+    rb = r[m].astype(float)
+    vb = np.asarray(diff_ma)[m].astype(float)
+
+    R = rb.max()
+    edges = np.linspace(0.0, R, nbins + 1)
+    centers = 0.5 * (edges[:-1] + edges[1:])
+
+    rms = []
+    for i in range(nbins):
+        sel = (rb >= edges[i]) & (rb < edges[i+1])
+        if sel.any():
+            rms.append(np.sqrt((vb[sel]**2).mean()))
+        else:
+            rms.append(np.nan)
+
+    r_norm = centers / R
+    rms = np.array(rms)
+    return r_norm, rms
+
+def _cumulative_rms_vs_radius(diff_ma, center_yx, nbins=40):
+    """
+    RMS cumulativa della differenza entro un raggio crescente.
+    Per ogni R_cut: RMS = sqrt( mean( diff^2 | r <= R_cut ) ).
+    Ritorna r_norm (0..1) e cum_rms (stessa unità di diff_ma).
+    """
+    m = ~np.ma.getmaskarray(diff_ma)
+    y, x = np.indices(diff_ma.shape)
+    cy, cx = center_yx
+    r = np.hypot(y - cy, x - cx)
+
+    rb = r[m].astype(float)
+    vb2 = (np.asarray(diff_ma)[m].astype(float))**2
+
+    R = rb.max()
+    edges = np.linspace(0.0, R, nbins)  # nbins cut radii (escluso il bordo finale)
+    cum_rms = []
+
+    for Rcut in edges:
+        sel = rb <= Rcut
+        if sel.any():
+            cum_rms.append(np.sqrt(vb2[sel].mean()))
+        else:
+            cum_rms.append(np.nan)
+
+    r_norm = edges / R
+    return r_norm, np.array(cum_rms)
+
+def plot_radial_diagnostics(diff_nm_ma, center_yx, nbins=40, basis_label="Z−KL (piston removed)"):
+    """
+    Crea due pannelli (assi condivisi):
+      - SX: RMS anulare vs r/R
+      - DX: RMS cumulativa vs r/R
+    'diff_nm_ma' dev'essere in nm (MaskedArray) e 'center_yx' il centro pupilla (y,x).
+    """
+    r_norm_ann, rms_ann = _annular_rms(diff_nm_ma, center_yx, nbins=nbins)
+    r_norm_cum, rms_cum = _cumulative_rms_vs_radius(diff_nm_ma, center_yx, nbins=nbins)
+
+    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(11.5, 4.8), sharex=True, sharey=False)
+
+    # Pannello sinistro: RMS anulare
+    ax1.plot(r_norm_ann, rms_ann, marker='o', linewidth=1.1, markersize=3.2, alpha=0.9)
+    ax1.set_xlabel(r"Normalized radius $r/R$")
+    ax1.set_ylabel(r"Annular RMS of W$_Z$ - W$_{KL}$ [nm]")
+    ax1.set_title(f"")
+    ax1.grid(True, alpha=0.25, linestyle=':')
+
+    # Evidenzia l'ultimo 10% di raggio (tipico rim)
+    ax1.axvspan(0.9, 1.0, color='k', alpha=0.06)
+
+    # Pannello destro: RMS cumulativa entro r/R
+    ax2.plot(r_norm_cum, rms_cum, marker='.', linewidth=1.1, markersize=3.0, alpha=0.9)
+    ax2.set_xlabel(r"Normalized radius $r/R$")
+    ax2.set_ylabel(r"Cumulative RMS within $r$ [nm]")
+    ax2.set_title("Cumulative RMS within radius")
+    ax2.grid(True, alpha=0.25, linestyle=':')
+
+    fig.tight_layout()
+    return fig, (ax1, ax2)
+
+
+
+def plot_x_profile_through_center(diff_ma, center_yx, normalize_radius=True,
+                                  units_label="nm", title_prefix="WF difference"):
+    """
+    Traccia il profilo lungo l'asse x (riga passante per il centro pupilla) della mappa 'diff_ma'.
+
+    Parametri
+    ---------
+    diff_ma : np.ma.MaskedArray
+        Mappa differenza (es. in nm). La mask deve rappresentare il pupillo.
+    center_yx : tuple
+        Centro della pupilla (y, x) in pixel.
+    normalize_radius : bool
+        Se True, l'asse x è normalizzato al raggio (x/R in [-1, +1]).
+        Se False, mostra coordinate in pixel.
+    units_label : str
+        Etichetta dell'unità del profilo (es. "nm", "m").
+    title_prefix : str
+        Prefisso del titolo.
+
+    Ritorna
+    -------
+    fig, ax : figure e axes di matplotlib
+    """
+    # estrai riga al centro (y0) e mask
+    y0, x0 = int(round(center_yx[0])), int(round(center_yx[1]))
+    arr = np.ma.array(diff_ma)  # assicurati sia MaskedArray
+    H, W = arr.shape
+
+    # protezioni sui limiti
+    y0 = np.clip(y0, 0, H-1)
+    x0 = np.clip(x0, 0, W-1)
+
+    row_vals = arr[y0, :]
+    row_mask = ~np.ma.getmaskarray(row_vals)  # True = valido (dentro pupilla)
+
+    # indici validi (segmento pupilla sulla riga)
+    valid_idx = np.where(row_mask)[0]
+    if valid_idx.size == 0:
+        raise ValueError("La riga centrale non interseca la pupilla (nessun pixel valido).")
+
+    x_left, x_right = valid_idx[0], valid_idx[-1]
+    prof = row_vals[valid_idx].astype(float)
+
+    # coordinate x (relative al centro) e raggio
+    x_pix = valid_idx
+    x_rel = x_pix - x0
+    R_pix = max(x0 - x_left, x_right - x0)  # raggio orizzontale sulla riga
+
+    if normalize_radius and R_pix > 0:
+        x_axis = x_rel / float(R_pix)  # in [-1, +1] (almeno idealmente)
+        x_label = r"$x/R$ (centered)"
+    else:
+        x_axis = x_pix
+        x_label = "Pixels (x-axis)"
+
+    # statistiche del profilo (sul solo segmento in pupilla)
+    prof_mean = float(np.mean(prof))
+    prof_std  = float(np.std(prof, ddof=0))   # std come RMS del profilo (già zero-mean? no: std è robusta)
+    prof_pv   = float(np.max(prof) - np.min(prof))
+
+    # plot
+    fig, ax = plt.subplots(figsize=(8.8, 4.2))
+    ax.plot(x_axis, prof, lw=1.4, marker='.', ms=3.0, alpha=0.95)
+
+    # linee verticali ai bordi della pupilla
+    if normalize_radius and R_pix > 0:
+        ax.axvline(- (x0 - x_left)/R_pix, color='k', ls='--', lw=0.9, alpha=0.7)
+        ax.axvline(  (x_right - x0)/R_pix, color='k', ls='--', lw=0.9, alpha=0.7)
+    else:
+        ax.axvline(x_left,  color='k', ls='--', lw=0.9, alpha=0.7)
+        ax.axvline(x_right, color='k', ls='--', lw=0.9, alpha=0.7)
+
+    # estetica
+    try:
+        _beautify(ax,
+                  xlabel=x_label,
+                  ylabel=f"Difference [{units_label}]",
+                  title=(f"{title_prefix} — X profile\n"
+                         f"RMS (std) = {prof_std:.1f} {units_label}   |   P–V = {prof_pv:.1f} {units_label}"),
+                  xmaj=7, ymaj=6)
+    except NameError:
+        # fallback se _beautify non è definita nel tuo ambiente
+        ax.set_xlabel(x_label); ax.set_ylabel(f"Difference [{units_label}]")
+        ax.set_title(f"{title_prefix} — X profile through pupil center\n"
+                     f"RMS (std) = {prof_std:.1f} {units_label}   |   P–V = {prof_pv:.1f} {units_label}")
+        ax.grid(alpha=0.25, linestyle=":")
+
+    fig.tight_layout()
+    return fig, ax
