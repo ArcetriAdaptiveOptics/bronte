@@ -124,6 +124,7 @@ def compare_calib_with_subapset_250612_143100():
     plt.ylabel('Eigen-Value [Normalized]')
     
     fig, axes = plt.subplots(1, 3, sharex = True, sharey = True)
+
     ima0 = axes[0].imshow(epp0._dsm._full_slopes_map)
     axes[0].set_title(intmat_tag0)
     axes[0].axis('off')
@@ -210,7 +211,7 @@ def compare_calib_iterations_with_subapset_250612_143100():
     plt.grid('--', alpha=0.3)
     plt.legend(loc='best')
     plt.xlabel('Eigen-Mode index')
-    plt.ylabel('Eigen-Value [Normalized]')
+    plt.ylabel('Eigen-Value')
     
     print(f"{intmat_tag0}: Eigen-value ratio (MAX/MIN) = {s0.max()/s0.min()} ")
     print(f"{intmat_tag1}: Eigen-value ratio (MAX/MIN) = {s1.max()/s1.min()} ")
@@ -222,22 +223,24 @@ def compare_calib_iterations_with_subapset_250612_143100():
     epp2._dsm._compute_full_slopes_map(size=45, ncols=5, nrows=40)
     epp3._dsm._compute_full_slopes_map(size=45, ncols=5, nrows=40)
     
+    vmin=-0.635
+    vmax=+0.635
     fig, axes = plt.subplots(1, 4, sharex = True, sharey = True)
-    ima0 = axes[0].imshow(epp0._dsm._full_slopes_map)
+    ima0 = axes[0].imshow(epp0._dsm._full_slopes_map, vmin=vmin, vmax=vmax)
     axes[0].set_title(intmat_tag0)
     axes[0].axis('off')
     cbar0 = fig.colorbar(ima0, ax=axes[0], orientation='horizontal')#, fraction=0.046, pad=0.08)
     #cbar0.ax.tick_params(labelsize=6)
-    ima1 = axes[1].imshow(epp1._dsm._full_slopes_map)
+    ima1 = axes[1].imshow(epp1._dsm._full_slopes_map, vmin=vmin, vmax=vmax)
     axes[1].set_title(intmat_tag1)
     axes[1].axis('off')
     cbar1 = fig.colorbar(ima1, ax=axes[1], orientation='horizontal')#, fraction=0.046, pad=0.08)
     #cbar1.ax.tick_params(labelsize=6)
-    ima2 = axes[2].imshow(epp2._dsm._full_slopes_map)
+    ima2 = axes[2].imshow(epp2._dsm._full_slopes_map, vmin=vmin, vmax=vmax)
     axes[2].set_title(intmat_tag2)
     axes[2].axis('off')
     cbar2 = fig.colorbar(ima2, ax=axes[2], orientation='horizontal')
-    ima3 = axes[3].imshow(epp3._dsm._full_slopes_map)
+    ima3 = axes[3].imshow(epp3._dsm._full_slopes_map, vmin=vmin, vmax=vmax)
     axes[3].set_title(intmat_tag3)
     axes[3].axis('off')
     cbar3 = fig.colorbar(ima3, ax=axes[3], orientation='horizontal')

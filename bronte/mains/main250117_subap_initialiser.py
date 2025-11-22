@@ -41,4 +41,4 @@ def main():
     #
     #sgi._subaps.save(subaperture_set_folder()/ "fname.fits", None)
     #
-    return sgi
+    return sgi, data_laser

@@ -334,13 +334,13 @@ class ScaoTelemetryDataAnalyser():
         if self._ol_cmds is not None:
             ol_cmd_std = compute_modal_evolution(self._ol_cmds, rms_or_std)
             if rms_or_std == 'std':
-                ol_label = 'OL (std)'
+                ol_label = 'OL'
             else:
-                ol_label = 'OL (rms)'
+                ol_label = 'OL'
                 
             plt.loglog(mode_index_list, ol_cmd_std[:self.corrected_modes],'g--', label=ol_label)
-        plt.xlabel('j Noll index')
-        plt.ylabel('modal temporal variation '+ r'$\sigma_{std or rms}$' + ' [m rms wf]')
+        plt.xlabel('Mode index')
+        plt.ylabel('modal temporal variation '+ r'$\sigma$' + ' [m rms wf]')
         plt.legend(loc='best')
         plt.grid('--', alpha=0.3)
     

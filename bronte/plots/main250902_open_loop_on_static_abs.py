@@ -532,9 +532,10 @@ def display_results(save_prefix="bench_statics"):
     _plot_cumulative_pair(kl_means, "KL", save_prefix, ol_ftag_list, wfe_list=kl_tot_wfe, target_frac=0.9989)
     _plot_cumulative_pair(z_means, "Zernike", save_prefix, ol_ftag_list, wfe_list=z_tot_wfe, target_frac=0.9989)
 
-
+    
     
     plt.show()
+    return  np.array(z_means),  np.array(z_stds), np.array(kl_means), np.array(kl_stds)
     # ---------- PRINT SUMMARY: KL, ZERNIKE, COMBINED ----------
     def _print_wfe_summary(label, wfe_list, meas_err_list):
         wfe = np.asarray(wfe_list, dtype=float)
@@ -783,11 +784,11 @@ def _plot_wf_diff_piston_removed(sr_zern, sr_kl, z_coeff_m, kl_coeff_m, cmask, d
     wf_kl = np.ma.array(_compute_ol_wf_kl(  sr_kl,   kl_coeff_m, cmask))
     
     tilt_z_modal_command = z_coeff_m.copy()
-    tilt_z_modal_command[1:] = 0
-    tilt_z_modal_command[0] = 2e-6
+    tilt_z_modal_command[:3] = 0
+    #tilt_z_modal_command[0] = 2e-6
     tilt_kl_modal_command = kl_coeff_m.copy()
-    tilt_kl_modal_command[1:] = 0
-    tilt_kl_modal_command[0] = 2e-6
+    tilt_kl_modal_command[:3] = 0
+    #tilt_kl_modal_command[0] = 2e-6
     tilt_z = np.ma.array(_compute_ol_wf_zern(sr_zern, tilt_z_modal_command, cmask))
     tilt_kl = np.ma.array(_compute_ol_wf_kl(sr_kl, tilt_kl_modal_command , cmask))
     
@@ -828,20 +829,40 @@ def _plot_wf_diff_piston_removed(sr_zern, sr_kl, z_coeff_m, kl_coeff_m, cmask, d
               title=("Open-loop WF difference W$_Z$-W$_{KL}$\n"
                      f"P–V = {pv_nm:.1f} nm   |   RMS (std) = {std_nm:.1f} nm"))
     
-    fig, axes = plot_wf_triptych(wf_z, wf_kl, diff_nm,
-                             title_z="W$_Z$", title_kl="W$_{KL}$", title_diff="Z−KL", v_min_max_diff=120)
+    fig, axes = plot_wf_triptych(wf_z, tilt_z, diff_nm,
+                              title_z="W$_Z$", title_kl="W$_{KL}$", title_diff="Z−KL", v_min_max_diff=120)
     
-    fig2, axes2 = plot_wf_triptych(tilt_z, tilt_kl, (tilt_z-tilt_kl)*1e9,
-                             title_z="Tip$_Z$", title_kl="Tip$_{KL}$", title_diff="Z−KL", v_min_max_diff=20)
+    fig2, axes2 = plot_wf_triptych(wf_kl, tilt_kl, (tilt_z-tilt_kl)*1e9,
+                             title_z="W$_{KL}$", title_kl="TTF$_{KL}$", title_diff="Z−KL", v_min_max_diff=20)
     
-    fig3, axes3 = plot_radial_diagnostics(diff_nm_ma=diff_nm, center_yx=(579,968), nbins=48,
-                                    basis_label="Z−KL")
+    # fig3, axes3 = plot_radial_diagnostics(diff_nm_ma=diff_nm, center_yx=(579,968), nbins=500,
+    #                                 basis_label="Z−KL")
     center = (579, 968)  # (y, x)
-    plot_x_profile_through_center(diff_nm, center_yx=center, normalize_radius=True,
-                              units_label="nm", title_prefix="W$_Z$ − W${_KL}$")
+    # plot_x_profile_through_center(diff_nm, center_yx=center, normalize_radius=True,
+    #                           units_label="nm", title_prefix="W$_Z$ − W$_{KL}$")
+    #
+    # plot_x_profile_through_center((tilt_z-tilt_kl)*1e9, center_yx=center, normalize_radius=True,
+    #                           units_label="nm", title_prefix="W$_Z$ − W$_{KL}$")
     
-    plot_x_profile_through_center((tilt_z-tilt_kl)*1e9, center_yx=center, normalize_radius=True,
-                              units_label="nm", title_prefix="Z − KL")
+    # fig65, ax65 = plot_x_profile_through_center2(
+    #     diff_ma=diff_nm, center_yx=(579,968),
+    #     normalize_radius=True,
+    #     show_actuators=True,
+    #     n_actuators=41,
+    #     actuator_kwargs={"color":"tab:gray","ls":":","lw":0.8,"alpha":0.8},
+    #     title_prefix="W$_Z$ − W$_{KL}$",
+    #     units_label="nm",
+    # )
+    
+    # fig77, ax77 = plot_x_profile_through_center2(
+    #     diff_ma=(tilt_z-tilt_kl)*1e9, center_yx=(579,968),
+    #     normalize_radius=True,
+    #     show_actuators=True,
+    #     n_actuators=41,
+    #     actuator_kwargs={"color":"tab:gray","ls":":","lw":0.8,"alpha":0.8},
+    #     title_prefix="W$_Z$ − W$_{KL}$",
+    #     units_label="nm",
+    # )
     # -------------------- ROI helper --------------------
     def _roi_bounds(center_xy, hw_y, hw_x, shape):
         """
@@ -991,91 +1012,91 @@ def display_rms_diff_wf_intra_dataset():
     kl_coef_cube = np.array(kl_means) * 1e-9   # (5, 200) m
     z_coef_cube  = np.array(z_means)  * 1e-9   # (5, 200) m
 
-    # impostazioni
-    K_LOW = 4
-    erosion_fracs = np.array([0.00, 0.001, 0.002, 0.005, 0.01, 0.02, 0.03, 0.04, 0.05])  # 0%..5%
-
-    # risultati
-    std_full_nm = []
-    std_low_nm  = []
-    # shape: (n_datasets, n_fracs)
-    std_erosion_full_nm = np.zeros((len(ol_ftag_list), len(erosion_fracs)), dtype=float)
-    std_erosion_low_nm  = np.zeros_like(std_erosion_full_nm)
-
-    # per coerenza con _get_cmask()
-    SLM_PUPIL_CENTER = (579, 968)  # (y,x)
-
-    # loop sui dataset
-    for i, tag in enumerate(ol_ftag_list):
-        zc_full  = z_coef_cube[i, :N_MODES_TO_CORRECT]
-        klc_full = kl_coef_cube[i, :N_MODES_TO_CORRECT]
-        zc_low   = z_coef_cube[i, :K_LOW]
-        klc_low  = kl_coef_cube[i, :K_LOW]
-
-        # WF full-order (MaskedArray in metri)
-        wf_z_full  = np.ma.array(_compute_ol_wf_zern(sr_zern, zc_full, cmask))
-        wf_kl_full = np.ma.array(_compute_ol_wf_kl(  sr_kl,   klc_full, cmask))
-        diff_full  = wf_z_full - wf_kl_full
-
-        # WF low-pass K=4
-        wf_z_low   = np.ma.array(_compute_ol_wf_zern(sr_zern, zc_low, cmask))
-        wf_kl_low  = np.ma.array(_compute_ol_wf_kl(  sr_kl,   klc_low, cmask))
-        diff_low   = wf_z_low - wf_kl_low
-
-        # std sul pupillo intero (nm)
-        std_full_nm.append(float(np.ma.std(diff_full)) * 1e9)
-        std_low_nm.append( float(np.ma.std(diff_low))  * 1e9)
-
-        # mask booleana del pupillo (True dentro)
-        base_mask_bool = ~np.ma.getmaskarray(wf_z_full)
-
-        # sweep erosione 0..5%
-        for j, frac in enumerate(erosion_fracs):
-            m_eroded = _erode_mask_from_center(base_mask_bool, SLM_PUPIL_CENTER, frac)
-            # Applica la mask erosa alla differenza (mantieni masked fuori)
-            diff_full_e = np.ma.array(diff_full, mask=~m_eroded)
-            diff_low_e  = np.ma.array(diff_low,  mask=~m_eroded)
-            std_erosion_full_nm[i, j] = float(np.ma.std(diff_full_e)) * 1e9
-            std_erosion_low_nm[i, j]  = float(np.ma.std(diff_low_e))  * 1e9
-
-        # log numerico
-        print(f"[{_fmt_tag(tag)}] std_full = {std_full_nm[-1]:.1f} nm   |   std_low(K=4) = {std_low_nm[-1]:.1f} nm")
-
-    std_full_nm = np.asarray(std_full_nm)
-    std_low_nm  = np.asarray(std_low_nm)
-
-
-    # ===== Plot (C): std vs erosione (subplot: sx full, dx low) =====
-    figC, (axC1, axC2) = plt.subplots(1, 2, figsize=(13.6, 5.6), sharey=False)
-
-    # sinistra: full-order
-    for i, tag in enumerate(ol_ftag_list):
-        axC1.plot(100*erosion_fracs, std_erosion_full_nm[i], marker="o", markersize=3.0,
-                  linewidth=1.0, alpha=0.65)#, label=_fmt_tag(tag))
-    # curva media (spessa)
-    axC1.plot(100*erosion_fracs, std_erosion_full_nm.mean(axis=0),
-              linewidth=1.5,color='m')#, label="mean")
-
-    _beautify(axC1,
-              xlabel="Pupil reduction [% of radius]",
-              ylabel=r"std[ W$_{Z}$ − W$_{KL}$ ]  [nm] ",
-              title="Full (200 modes)")
-    #axC1.legend(ncols=2, frameon=True)
-
-    # destra: low-pass
-    for i, tag in enumerate(ol_ftag_list):
-        axC2.plot(100*erosion_fracs, std_erosion_low_nm[i], marker="o", markersize=3.0,
-                  linewidth=1.0, alpha=0.65, label=_fmt_tag(tag))
-    axC2.plot(100*erosion_fracs, std_erosion_low_nm.mean(axis=0),
-              linewidth=1.5,color='m', label="mean")
-
-    _beautify(axC2,
-              xlabel="Pupil reduction [% of radius]",
-              ylabel="",#r"std[ WF$_Z$ − WF$_{KL}$ ]  [nm]",
-              title="Filtered (only first 4 modes)")
-    # legenda solo a sinistra per non affollare; se la vuoi anche qui: axC2.legend(...)
-    figC.suptitle("W$_Z$ − W$_{KL}$: sensitivity to pupil size", fontsize=14)
-    figC.tight_layout(rect=[0, 0, 1, 0.95])
+    # # impostazioni
+    # K_LOW = 4
+    # erosion_fracs = np.array([0.00, 0.001, 0.002, 0.005, 0.01, 0.02, 0.03, 0.04, 0.05])  # 0%..5%
+    #
+    # # risultati
+    # std_full_nm = []
+    # std_low_nm  = []
+    # # shape: (n_datasets, n_fracs)
+    # std_erosion_full_nm = np.zeros((len(ol_ftag_list), len(erosion_fracs)), dtype=float)
+    # std_erosion_low_nm  = np.zeros_like(std_erosion_full_nm)
+    #
+    # # per coerenza con _get_cmask()
+    # SLM_PUPIL_CENTER = (579, 968)  # (y,x)
+    #
+    # # loop sui dataset
+    # for i, tag in enumerate(ol_ftag_list):
+    #     zc_full  = z_coef_cube[i, :N_MODES_TO_CORRECT]
+    #     klc_full = kl_coef_cube[i, :N_MODES_TO_CORRECT]
+    #     zc_low   = z_coef_cube[i, :K_LOW]
+    #     klc_low  = kl_coef_cube[i, :K_LOW]
+    #
+    #     # WF full-order (MaskedArray in metri)
+    #     wf_z_full  = np.ma.array(_compute_ol_wf_zern(sr_zern, zc_full, cmask))
+    #     wf_kl_full = np.ma.array(_compute_ol_wf_kl(  sr_kl,   klc_full, cmask))
+    #     diff_full  = wf_z_full - wf_kl_full
+    #
+    #     # WF low-pass K=4
+    #     wf_z_low   = np.ma.array(_compute_ol_wf_zern(sr_zern, zc_low, cmask))
+    #     wf_kl_low  = np.ma.array(_compute_ol_wf_kl(  sr_kl,   klc_low, cmask))
+    #     diff_low   = wf_z_low - wf_kl_low
+    #
+    #     # std sul pupillo intero (nm)
+    #     std_full_nm.append(float(np.ma.std(diff_full)) * 1e9)
+    #     std_low_nm.append( float(np.ma.std(diff_low))  * 1e9)
+    #
+    #     # mask booleana del pupillo (True dentro)
+    #     base_mask_bool = ~np.ma.getmaskarray(wf_z_full)
+    #
+    #     # sweep erosione 0..5%
+    #     for j, frac in enumerate(erosion_fracs):
+    #         m_eroded = _erode_mask_from_center(base_mask_bool, SLM_PUPIL_CENTER, frac)
+    #         # Applica la mask erosa alla differenza (mantieni masked fuori)
+    #         diff_full_e = np.ma.array(diff_full, mask=~m_eroded)
+    #         diff_low_e  = np.ma.array(diff_low,  mask=~m_eroded)
+    #         std_erosion_full_nm[i, j] = float(np.ma.std(diff_full_e)) * 1e9
+    #         std_erosion_low_nm[i, j]  = float(np.ma.std(diff_low_e))  * 1e9
+    #
+    #     # log numerico
+    #     print(f"[{_fmt_tag(tag)}] std_full = {std_full_nm[-1]:.1f} nm   |   std_low(K=4) = {std_low_nm[-1]:.1f} nm")
+    #
+    # std_full_nm = np.asarray(std_full_nm)
+    # std_low_nm  = np.asarray(std_low_nm)
+    #
+    #
+    # # ===== Plot (C): std vs erosione (subplot: sx full, dx low) =====
+    # figC, (axC1, axC2) = plt.subplots(1, 2, figsize=(13.6, 5.6), sharey=False)
+    #
+    # # sinistra: full-order
+    # for i, tag in enumerate(ol_ftag_list):
+    #     axC1.plot(100*erosion_fracs, std_erosion_full_nm[i], marker="o", markersize=3.0,
+    #               linewidth=1.0, alpha=0.65)#, label=_fmt_tag(tag))
+    # # curva media (spessa)
+    # axC1.plot(100*erosion_fracs, std_erosion_full_nm.mean(axis=0),
+    #           linewidth=1.5,color='m')#, label="mean")
+    #
+    # _beautify(axC1,
+    #           xlabel="Pupil reduction [% of radius]",
+    #           ylabel=r"std[ W$_{Z}$ − W$_{KL}$ ]  [nm] ",
+    #           title="Full (200 modes)")
+    # #axC1.legend(ncols=2, frameon=True)
+    #
+    # # destra: low-pass
+    # for i, tag in enumerate(ol_ftag_list):
+    #     axC2.plot(100*erosion_fracs, std_erosion_low_nm[i], marker="o", markersize=3.0,
+    #               linewidth=1.0, alpha=0.65, label=_fmt_tag(tag))
+    # axC2.plot(100*erosion_fracs, std_erosion_low_nm.mean(axis=0),
+    #           linewidth=1.5,color='m', label="mean")
+    #
+    # _beautify(axC2,
+    #           xlabel="Pupil reduction [% of radius]",
+    #           ylabel="",#r"std[ WF$_Z$ − WF$_{KL}$ ]  [nm]",
+    #           title="Filtered (only first 4 modes)")
+    # # legenda solo a sinistra per non affollare; se la vuoi anche qui: axC2.legend(...)
+    # figC.suptitle("W$_Z$ − W$_{KL}$: sensitivity to pupil size", fontsize=14)
+    # figC.tight_layout(rect=[0, 0, 1, 0.95])
     
     i = 2  # ad es. il terzo dataset
     _plot_wf_diff_piston_removed(
@@ -1169,17 +1190,17 @@ def plot_radial_diagnostics(diff_nm_ma, center_yx, nbins=40, basis_label="Z−KL
     ax1.plot(r_norm_ann, rms_ann, marker='o', linewidth=1.1, markersize=3.2, alpha=0.9)
     ax1.set_xlabel(r"Normalized radius $r/R$")
     ax1.set_ylabel(r"Annular RMS of W$_Z$ - W$_{KL}$ [nm]")
-    ax1.set_title(f"")
+    ax1.set_title(f"Annular RMS of $\Delta W$")
     ax1.grid(True, alpha=0.25, linestyle=':')
 
     # Evidenzia l'ultimo 10% di raggio (tipico rim)
-    ax1.axvspan(0.9, 1.0, color='k', alpha=0.06)
+    ax1.axvspan(0.95, 1.0, color='k', alpha=0.06)
 
     # Pannello destro: RMS cumulativa entro r/R
     ax2.plot(r_norm_cum, rms_cum, marker='.', linewidth=1.1, markersize=3.0, alpha=0.9)
     ax2.set_xlabel(r"Normalized radius $r/R$")
     ax2.set_ylabel(r"Cumulative RMS within $r$ [nm]")
-    ax2.set_title("Cumulative RMS within radius")
+    ax2.set_title("Cumulative RMS of $\Delta W$")
     ax2.grid(True, alpha=0.25, linestyle=':')
 
     fig.tight_layout()
@@ -1248,31 +1269,172 @@ def plot_x_profile_through_center(diff_ma, center_yx, normalize_radius=True,
     prof_pv   = float(np.max(prof) - np.min(prof))
 
     # plot
-    fig, ax = plt.subplots(figsize=(8.8, 4.2))
-    ax.plot(x_axis, prof, lw=1.4, marker='.', ms=3.0, alpha=0.95)
+    fig77, ax77 = plt.subplots(figsize=(8.8, 4.2))
+    ax77.plot(x_axis, prof, lw=1.4, marker='.', ms=3.0, alpha=0.95)
 
     # linee verticali ai bordi della pupilla
     if normalize_radius and R_pix > 0:
-        ax.axvline(- (x0 - x_left)/R_pix, color='k', ls='--', lw=0.9, alpha=0.7)
-        ax.axvline(  (x_right - x0)/R_pix, color='k', ls='--', lw=0.9, alpha=0.7)
+        ax77.axvline(- (x0 - x_left)/R_pix, color='k', ls='--', lw=0.9, alpha=0.7)
+        ax77.axvline(  (x_right - x0)/R_pix, color='k', ls='--', lw=0.9, alpha=0.7)
     else:
-        ax.axvline(x_left,  color='k', ls='--', lw=0.9, alpha=0.7)
-        ax.axvline(x_right, color='k', ls='--', lw=0.9, alpha=0.7)
+        ax77.axvline(x_left,  color='k', ls='--', lw=0.9, alpha=0.7)
+        ax77.axvline(x_right, color='k', ls='--', lw=0.9, alpha=0.7)
 
     # estetica
     try:
-        _beautify(ax,
+        _beautify(ax77,
                   xlabel=x_label,
                   ylabel=f"Difference [{units_label}]",
-                  title=(f"{title_prefix} — X profile\n"
-                         f"RMS (std) = {prof_std:.1f} {units_label}   |   P–V = {prof_pv:.1f} {units_label}"),
+                  title=(f"{title_prefix} — X profile"),
                   xmaj=7, ymaj=6)
     except NameError:
         # fallback se _beautify non è definita nel tuo ambiente
-        ax.set_xlabel(x_label); ax.set_ylabel(f"Difference [{units_label}]")
-        ax.set_title(f"{title_prefix} — X profile through pupil center\n"
-                     f"RMS (std) = {prof_std:.1f} {units_label}   |   P–V = {prof_pv:.1f} {units_label}")
-        ax.grid(alpha=0.25, linestyle=":")
+        ax77.set_xlabel(x_label); ax77.set_ylabel(f"Difference [{units_label}]")
+        ax77.set_title(f"{title_prefix} — X profile")
+        ax77.grid(alpha=0.25, linestyle=":")
 
-    fig.tight_layout()
-    return fig, ax
+    fig77.tight_layout()
+    return fig77, ax77
+
+
+def plot_x_profile_through_center2(
+    diff_ma,
+    center_yx,
+    normalize_radius=True,
+    units_label="nm",
+    title_prefix="WF difference",
+    show_actuators=False,
+    n_actuators=41,
+    actuator_kwargs=None,
+):
+    """
+    Traccia il profilo lungo l'asse x (riga passante per il centro pupilla) della mappa 'diff_ma'
+    e, opzionalmente, disegna le linee verticali alle posizioni degli attuatori (n_actuators lungo il diametro).
+
+    Parametri
+    ---------
+    diff_ma : np.ma.MaskedArray
+        Mappa differenza (es. in nm). La mask deve rappresentare il pupillo.
+    center_yx : tuple
+        Centro della pupilla (y, x) in pixel.
+    normalize_radius : bool
+        Se True, l'asse x è normalizzato al raggio (x/R in [-1, +1]).
+        Se False, mostra coordinate in pixel.
+    units_label : str
+        Etichetta dell'unità del profilo (es. "nm", "m").
+    title_prefix : str
+        Prefisso del titolo.
+    show_actuators : bool
+        Se True, disegna le linee verticali alle posizioni degli attuatori lungo il diametro.
+    n_actuators : int
+        Numero di attuatori lungo il diametro (default 41).
+    actuator_kwargs : dict | None
+        Stile delle linee degli attuatori (es. {"color":"0.5","ls":":","lw":0.7,"alpha":0.7}).
+
+    Ritorna
+    -------
+    fig, ax : figure e axes di matplotlib
+    """
+    # estrai riga al centro (y0) e mask
+    y0, x0 = int(round(center_yx[0])), int(round(center_yx[1]))
+    arr = np.ma.array(diff_ma)  # assicurati sia MaskedArray
+    H, W = arr.shape
+
+    # protezioni sui limiti
+    y0 = np.clip(y0, 0, H-1)
+    x0 = np.clip(x0, 0, W-1)
+
+    row_vals = arr[y0, :]
+    row_mask = ~np.ma.getmaskarray(row_vals)  # True = valido (dentro pupilla)
+
+    # indici validi (segmento pupilla sulla riga)
+    valid_idx = np.where(row_mask)[0]
+    if valid_idx.size == 0:
+        raise ValueError("La riga centrale non interseca la pupilla (nessun pixel valido).")
+
+    x_left, x_right = valid_idx[0], valid_idx[-1]
+    prof = row_vals[valid_idx].astype(float)
+
+    # coordinate x (relative al centro) e raggio
+    x_pix = valid_idx
+    x_rel = x_pix - x0
+    R_pix = max(x0 - x_left, x_right - x0)  # raggio orizzontale sulla riga
+
+    if normalize_radius and R_pix > 0:
+        x_axis = x_rel / float(R_pix)  # in [-1, +1] (idealmente)
+        x_label = r"$x/R$ (centered)"
+    else:
+        x_axis = x_pix
+        x_label = "Pixels (x-axis)"
+
+    # statistiche del profilo (sul solo segmento in pupilla)
+    prof_mean = float(np.mean(prof))
+    prof_std  = float(np.std(prof, ddof=0))   # std come RMS del profilo
+    prof_pv   = float(np.max(prof) - np.min(prof))
+
+    # plot
+    fig65, ax65 = plt.subplots(figsize=(8.8, 4.2))
+    ax65.plot(x_axis, prof, lw=1.4, marker='.', ms=3.0, alpha=0.95, label="center row")
+
+    # linee verticali ai bordi della pupilla
+    if normalize_radius and R_pix > 0:
+        ax65.axvline(- (x0 - x_left)/R_pix, color='k', ls='--', lw=0.9, alpha=0.7)
+        ax65.axvline(  (x_right - x0)/R_pix, color='k', ls='--', lw=0.9, alpha=0.7)
+    else:
+        ax65.axvline(x_left,  color='k', ls='--', lw=0.9, alpha=0.7)
+        ax65.axvline(x_right, color='k', ls='--', lw=0.9, alpha=0.7)
+
+    # --- opzionale: linee degli attuatori lungo il diametro ---
+    if show_actuators and n_actuators >= 2:
+        # default stile linee
+        if actuator_kwargs is None:
+            actuator_kwargs = {"color": "0.35", "ls": ":", "lw": 0.7, "alpha": 0.7}
+
+        # posizioni attuatori in pixel lungo il diametro (inclusi i bordi)
+        D_pix = (x_right - x_left)  # ampiezza (se vogliamo includere entrambi i bordi per 41 posizioni)
+        # uso spaziatura su [x_left, x_right] in n_actuators punti
+        x_act_pix = np.linspace(x_left, x_right, n_actuators-1)
+
+        # converti alle coordinate dell'asse corrente
+        if normalize_radius and R_pix > 0:
+            x_act = (x_act_pix - x0) / float(R_pix)
+        else:
+            x_act = x_act_pix
+
+        # disegna le linee
+        for xv in x_act:
+            ax65.axvline(float(xv), **actuator_kwargs)
+
+    # estetica
+    try:
+        _beautify(ax65,
+                  xlabel=x_label,
+                  ylabel=f"Difference [{units_label}]",
+                  title=(f"{title_prefix} — X profile"),
+                  xmaj=7, ymaj=6)
+    except NameError:
+        ax65.set_xlabel(x_label); ax65.set_ylabel(f"Difference [{units_label}]")
+        ax65.set_title(f"{title_prefix} — X profile")
+        ax65.grid(alpha=0.25, linestyle=":")
+
+    fig65.tight_layout()
+    return fig65, ax65
+
+def main251030():
+    
+
+    _setup_matplotlib_for_thesis()
+
+    rec_ftag_kl   = '250808_144900'
+    rec_ftag_zern = '250616_103300'
+    ol_ftag_list  = ['250808_151100','250808_161900','250828_133300',
+                     '250829_111600','250902_101600']
+
+    # --- KL ---
+    kl_means, kl_stds, kl_meas_errs, kl_tot_wfe = get_data_lists(ol_ftag_list, rec_ftag_kl)
+    # --- Zernike ---
+    z_means,  z_stds,  z_meas_errs,  z_tot_wfe  = get_data_lists(ol_ftag_list, rec_ftag_zern)
+
+    
+    
+    

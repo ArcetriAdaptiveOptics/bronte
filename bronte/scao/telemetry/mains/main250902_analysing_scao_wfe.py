@@ -14,29 +14,42 @@ def main(turb_cl_ftag, turb_ol_ftag, mifs_ftag, conv_index = 75, dispWFmap = Fal
     
     stda_cl._ol_cmds = stda_ol._delta_cmds
     Nmodes = stda_cl._delta_cmds.shape[-1]
+    stda_cl._ol_rms_slopes_x = stda_ol._rms_slopes_x
+    stda_cl._ol_rms_slopes_y = stda_ol._rms_slopes_y
     
     stda_cl.display_residual_wavefront(display_ol = True)
-
+    stda_cl.display_rms_slopes(display_ol=True)
     measured_cl_res_wf_in_nm = stda_cl._residual_wf[conv_index:].mean()/1e-9
     measured_ol_wfe_in_nm =  stda_cl._ol_residual_wf.mean()/1e-9
-    
+    print(f"slope_vector shape: {stda_cl._slopes_vect.shape}")
     print(f"Measured OL WFE [nm rms wf]: {measured_ol_wfe_in_nm:.0f} (on a base of 200 kl modes)")
     print(f"Measured CL Residual WF [nm rms wf]: {measured_cl_res_wf_in_nm:.0f} (on a base of 200 kl modes)")
     
     # modal plot an rejection ratio inspection and analysis
     conv_cl_dcmd = stda_cl._delta_cmds[conv_index:,:]
-    stda_cl.show_modal_plot(cl_delta_cmds = conv_cl_dcmd, rms_or_std='rms')
+    stda_cl.show_modal_plot(cl_delta_cmds = conv_cl_dcmd, rms_or_std='std')
     
     cl_rms_delta_cmds = stda_cl._rootm_mean_squared(conv_cl_dcmd, axis=0)
     ol_rms_delta_cmds = stda_cl._rootm_mean_squared(stda_cl._ol_cmds, axis = 0)
+    
+    
     j_vector = np.arange(Nmodes)+2
     plt.figure()
     plt.clf()
     plt.loglog(j_vector,ol_rms_delta_cmds/cl_rms_delta_cmds, '.-')
-    plt.ylabel('Rejection ratio')
+    plt.ylabel('Rejection ratio ' + "$\sigma_{OL}/\sigma_{CL}$")
     plt.xlabel('Mode Index')
     plt.grid('--', alpha=0.3)
     
+    plt.figure()
+    plt.clf()
+    plt.loglog(j_vector,1 - (cl_rms_delta_cmds**2/ol_rms_delta_cmds**2), '.-')
+    plt.ylabel('Removed variance ratio ' + "$1 \ - \ (\sigma^2_{CL}/\sigma^2_{OL})$")
+    plt.xlabel('Mode Index')
+    plt.grid('--', alpha=0.3)
+    
+    rejection_total = ((ol_rms_delta_cmds**2).sum())/((cl_rms_delta_cmds**2).sum())
+    print(f"TOTAL REJECTION: {rejection_total}")
     #computing average wf map residual in convergence regime
     if dispWFmap is True:
         mean_cl_dcmd_conv_in_nm = conv_cl_dcmd.mean(axis=0)/1e-9 
@@ -49,22 +62,50 @@ def main(turb_cl_ftag, turb_ol_ftag, mifs_ftag, conv_index = 75, dispWFmap = Fal
     tot_var_at633nm = (tot_res_wf_in_nm*2*np.pi/633)**2
     sr_at633nm = np.exp(-tot_var_at633nm)
     
-    plt.figure()
-    plt.clf()
-    plt.plot(tot_res_wf_in_nm)
-    plt.xlabel('N steps')
-    plt.ylabel('Total Wavefront Error '+'$\sigma_{res}$'+' [nm rms wf]')
-    plt.grid('--',alpha=0.3)
+    # plt.figure()
+    # plt.clf()
+    # plt.plot(tot_res_wf_in_nm)
+    # plt.xlabel('N steps')
+    # plt.ylabel('Total Wavefront Error  [nm rms wf]')
+    # plt.grid('--',alpha=0.3)
+    #
+    # sr_exp_at_500 = np.exp(-1*(2*np.pi*(142/500)**2))
+    # sr_exp_at_633 = np.exp(-1*(2*np.pi*(142/633)**2))
+    #
+    # plt.figure()
+    # plt.clf()
+    # plt.plot(sr_at500nm, '.-', label = 'SR@500nm')
+    # plt.plot(sr_at633nm, '.-', label = 'SR@633nm')
+    # plt.xlabel('N steps')
+    # plt.ylabel('Strhel Ratio')
+    # plt.legend(loc='best')
+    # plt.grid('--', alpha=0.3)
+    sigma_nm = 146.0  # WFE residuo in nm
+
+    sr_exp_at_500 = np.exp(-(2*np.pi * (sigma_nm/500.0))**2)
+    sr_exp_at_633 = np.exp(-(2*np.pi * (sigma_nm/633.0))**2)
     
     plt.figure()
     plt.clf()
-    plt.plot(sr_at500nm, '.-', label = 'SR@500nm')
-    plt.plot(sr_at633nm, '.-', label = 'SR@633nm')
+    # serie misurate
+    plt.plot(sr_at500nm, '.-', label='SR @ 500 nm', color='C0')
+    plt.plot(sr_at633nm, '.-', label='SR @ 633 nm', color='C1')
+    
+    # linee orizzontali attese (dashed)
+    plt.axhline(sr_exp_at_500, color='C0', linestyle='--', linewidth=1.5,
+                label=f'expected @ 500 nm ≈ {sr_exp_at_500:.3f}')
+    plt.axhline(sr_exp_at_633, color='C1', linestyle='--', linewidth=1.5,
+                label=f'expected @ 633 nm ≈ {sr_exp_at_633:.3f}')
+    
     plt.xlabel('N steps')
-    plt.ylabel('Strhel Ratio')
+    plt.ylabel('Strehl Ratio')
     plt.legend(loc='best')
-    plt.grid('--', alpha=0.3)
+    plt.grid(True, linestyle='--', alpha=0.3)
+    plt.tight_layout()
     
+    print('SR diff meas-exp STD')
+    print((sr_at633nm[50:]-sr_exp_at_633).std())
+    print((sr_at500nm[50:]-sr_exp_at_500).std())
     
     mean_tot_res_wf_in_nm = tot_res_wf_in_nm[50:].mean()
     exp_fitting_err = compute_approximated_exp_fitting_error_from_vk()

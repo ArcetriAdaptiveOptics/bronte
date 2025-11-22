@@ -6,7 +6,7 @@ from bronte.wfs.kl_slm_rasterizer import KLSlmRasterizer
 from bronte.wfs.slm_rasterizer import SlmRasterizer
 
 
-def main_kl_loop(ol_ftag, cl_ftag, base, ifs_ftag, k):
+def main_kl_loop(ol_ftag, cl_ftag, base, ifs_ftag, k, vmin=None, vmax=None):
     '''
     Telemetry data using measured KL control matrices
     '''
@@ -27,7 +27,7 @@ def main_kl_loop(ol_ftag, cl_ftag, base, ifs_ftag, k):
     # convergence thr
     res_wf_thr_in_nm = k*measurement_error_in_res_wf/1e-9
     print(f"Measurement Error(rms(ol_dcmds.std())): {measurement_error_in_res_wf/1e-9:.2f}[nm rms]")
-    stda_cl.display_residual_wavefront(display_ol = True, res_wf_thr=res_wf_thr_in_nm)
+    stda_cl.display_residual_wavefront(display_ol = True, res_wf_thr=None)
     conv_idx = stda_cl._get_convergence_idx_from_res_wf_thr(res_wf_thr_in_nm)
     
     #computing mean residual wavefront in CLOSE loop and convergence regime
@@ -117,7 +117,7 @@ def main_kl_loop(ol_ftag, cl_ftag, base, ifs_ftag, k):
     
     cl_delta_wf = coeff2rast(cl_delta_kl_coeff)
     cl_delta_wf_filtered = coeff2rast(cl_delta_kl_coeff_filtered)
-    display_filtered_and_full_wf(cl_delta_wf, cl_delta_wf_filtered,'CL-Residual WF')
+    display_filtered_and_full_wf(cl_delta_wf, cl_delta_wf_filtered,'CL-Residual WF',vmin,vmax)
     print(f"CL RES WF: PtV = {np.ptp(cl_delta_wf):.0f} nm rms wf \t Amp = {cl_delta_wf.std():.2f} nm rms wf")
     print(f"CL RES WF (Filtered): PtV = {np.ptp(cl_delta_wf_filtered):.0f} nm rms wf \t Amp = {cl_delta_wf_filtered.std():.2f} nm rms wf")
     
@@ -125,17 +125,18 @@ def main_kl_loop(ol_ftag, cl_ftag, base, ifs_ftag, k):
     return stda_cl, stda_ol
 
 
-def display_filtered_and_full_wf(full_wf_in_nm, filtered_wf_in_nm, sup_title_str='CL'):
+def display_filtered_and_full_wf(full_wf_in_nm, filtered_wf_in_nm, sup_title_str='CL', vmin=None,vmax=None):
+    
     
     plt.subplots(1, 2, sharex = True, sharey= True)
     plt.suptitle(sup_title_str)
     plt.subplot(1, 2, 1)
     plt.title('Full WF')
-    plt.imshow(full_wf_in_nm)
+    plt.imshow(full_wf_in_nm, vmin=vmin,vmax=vmax)
     plt.colorbar(orientation='horizontal', label='nm rms wf')
     plt.subplot(1, 2, 2)
     plt.title('Filtered WF')
-    plt.imshow(filtered_wf_in_nm)
+    plt.imshow(filtered_wf_in_nm, vmin=vmin,vmax=vmax)
     plt.colorbar(orientation='horizontal', label='nm rms wf')
     
 def filter_tt_and_focus(modal_coeff):
@@ -221,7 +222,7 @@ def main250813_110600():
     ol_ftag = '250808_161900' # Nstep=300 dt=1ms Nmodes=200
     cl_ftag = '250808_162500' # gain=-0.3
     ifs_ftag = None 
-    stda_cl, stda_ol = main_kl_loop(ol_ftag, cl_ftag, modal_base, ifs_ftag, k=12)
+    stda_cl, stda_ol = main_kl_loop(ol_ftag, cl_ftag, modal_base, ifs_ftag, k=12,vmin=-30,vmax=30)
     
     return stda_cl, stda_ol
 

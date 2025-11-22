@@ -74,6 +74,7 @@ class PhaseScreenAnalyser():
         plt.legend(loc = 'best')
         plt.xlabel('Noll index')
         plt.ylabel('std [m] rms wf')
+        return self._noll_index_vector, exp_zc_std, obs_zc_std
         
     def get_phase_screen_at_step(self, step):
         wfz = self._sr.zernike_coefficients_to_raster(self._modal_coef_cube[step])
