@@ -1,8 +1,24 @@
 import numpy as np
 import matplotlib.pyplot as plt
+import matplotlib as mpl
+
+def _setup_matplotlib_for_thesis():
+    mpl.rcParams.update({
+        "figure.dpi": 170,
+        "savefig.dpi": 300,
+        "font.size": 12,
+        "axes.labelsize": 13,
+        "axes.titlesize": 14,
+        "xtick.labelsize": 11,
+        "ytick.labelsize": 11,
+        "legend.fontsize": 10,
+        "lines.linewidth": 1.6,
+        "errorbar.capsize": 2.5,
+    })
 
 def main():
     # ----- Parametri comodi da scegliere -----
+    _setup_matplotlib_for_thesis()
     wr_factor = 1
     phi_w   = 2*np.pi*wr_factor          # stroke di wrapping (rad)
     Lambda  = 15*wr_factor               # periodo del sawtooth in pixel (es. 12 px)
@@ -55,9 +71,9 @@ def main():
     # ----- Plot 2: stepped vs sawtooth -----
     #plt.figure(figsize=(8,3))
     plt.figure()
-    plt.plot(x, tilt_phase2, 'k--', label='Commanded)')
-    plt.plot(xs, sawtooth_phase, 'k--')
-    plt.step(x, stepped_phase, where='post', label=f'Stepped (N={N} steps/period)', linewidth=2)
+    plt.plot(x, tilt_phase2, '--', label='Commanded (continuous tilt)')
+    plt.plot(xs, sawtooth_phase, '--', label ='Wrapped (sawtooth)')
+    plt.step(x, stepped_phase,'r', where='post', label=f'Stepped (N={N} steps/period)', linewidth=2)
     plt.xlabel(r'$\xi$'); plt.ylabel('Phase [rad]')
     plt.title(f"Stepped grating: N={N} steps/period  (Δ = φw/N = {phi_w/N:.2f} rad)")
     plt.grid('--', alpha=0.3); plt.legend(loc='best')

@@ -9,6 +9,7 @@ from arte.types.mask import CircularMask
 from bronte.wfs.slm_rasterizer import SlmRasterizer
 from bronte.wfs.kl_slm_rasterizer import KLSlmRasterizer
 from bronte.startup import set_data_dir
+import matplotlib.ticker as mticker
 
 # ---------- stile generale (senza grid globale) ----------
 def _setup_matplotlib_for_thesis():
@@ -128,7 +129,7 @@ def _plot_overlay_means_plus_summary_split(ol_ftag_list, means_list, wfe_list, b
 
     n_modes = y_all.size
     x_all = np.arange(2, n_modes + 2)               # 2..201
-    x_left = x_all[:3]                               # 2,3,4
+    x_left = np.int16(x_all[:3])                               # 2,3,4
     x_right = x_all[3:]                              # 5..201
 
     # Slices per i due pannelli
@@ -147,11 +148,12 @@ def _plot_overlay_means_plus_summary_split(ol_ftag_list, means_list, wfe_list, b
     axL.fill_between(x_left, y_L - 3*yerr_L, y_L + 3*yerr_L, alpha=0.25, label="<WFE> ±3σ")
     axL.plot(x_left, y_L, color='m', ls='-',linewidth=0.8, label="<WFE>")
     axL.axhline(0, color="k", linewidth=0.8, alpha=0.6)
+    axL.xaxis.set_major_locator(mticker.MaxNLocator(integer=True))
     _beautify(axL,
               xlabel="Mode index",
               ylabel="Reconstructed mode " +r"$\Delta c$"+" [nm] RMS WF",
               title=f"{basis_name} first 3 modes")
-
+    axL.xaxis.set_major_locator(mticker.MaxNLocator(integer=True))
     # --- PANNELLO DESTRO: restanti modi
     for tag, m, wfe in zip(ol_ftag_list, means_list, wfe_list):
         axR.plot(x_right, m[3:], marker=".", markersize=2.0, linewidth=0.0,

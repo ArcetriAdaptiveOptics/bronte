@@ -296,20 +296,22 @@ class ScaoTelemetryDataAnalyser():
         
         plt.figure()
         plt.clf()
-        plt.plot(self._rms_slopes_x, label='slope-x')
-        plt.plot(self._rms_slopes_y, label='slope-y')
+        N=len(self._rms_slopes_x)
+        time_vector = np.arange(N)*self.loop_time_step
+        plt.plot(time_vector, self._rms_slopes_x, label='slope-x')
+        plt.plot(time_vector, self._rms_slopes_y, label='slope-y')
         
         if display_ol is True:
             plt.clf()
-            plt.plot(self._rms_slopes_x, label='CL slope-x')
-            plt.plot(self._rms_slopes_y, label='CL slope-y')
-            plt.plot(self._ol_rms_slopes_x, label='OL slope-x')
-            plt.plot(self._ol_rms_slopes_y, label='OL slope-y')
+            plt.plot(time_vector, self._rms_slopes_x, label='CL slope-x')
+            plt.plot(time_vector, self._rms_slopes_y, label='CL slope-y')
+            plt.plot(time_vector, self._ol_rms_slopes_x, label='OL slope-x')
+            plt.plot(time_vector, self._ol_rms_slopes_y, label='OL slope-y')
             
         plt.grid(alpha = 0.3, ls='--')
         plt.legend(loc = 'best')
         plt.ylabel('rms slopes [normalized]')
-        plt.xlabel('step')
+        plt.xlabel('Time [s]')
         
     def show_modal_plot(self, cl_delta_cmds, rms_or_std = 'std'):
         '''
